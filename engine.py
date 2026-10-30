@@ -240,6 +240,29 @@ VADER_REPLIES = [
  "solid. i will handle it",
  "you got it. @darthvader never has to ask twice",
  "understood. pushing it now",
+ "got it. @darthvader called, i am moving",
+ "yes sir. on it right now",
+ "taking it. @darthvader has the read",
+ "done. @darthvader gave the order, i executed",
+ "no question, it is already running",
+ "acknowledged boss. shipping it",
+ "that is the call. @darthvader knows what he wants",
+ "in motion. @darthvader does not need to repeat it",
+ "handled. one sec boss",
+ "got it boss. running it now",
+ "that is the way @darthvader wants it. executing",
+ "no notes. on it",
+ "yep. @darthvader has spoken, it is done",
+ "right behind you on this one boss",
+ "locked in. @darthvader calls it, i run it",
+ "all good. @darthvader has it covered",
+ "understood. will report back",
+ "already on it before you finished typing",
+ "copy. @darthvader is the one running this",
+ "yes boss. doing it right now",
+ "got the message. @darthvader does not need to repeat",
+ "handled and shipped",
+ "that is done boss",
 ]
 VADER_USERNAMES = {"darthvader", "darthvaderchat", "cammy"}
 
@@ -262,6 +285,36 @@ PIN_REPLIES = [
  "this is the post. everything else is commentary",
  "pin confirmed, this is gospel now",
  "chef's kiss on this one. @darthvader never misses",
+ "pinned message. understood. logged",
+ "ok this changes the week. @darthvader dropping again",
+ "bookmarking that. this is the one i will send people",
+ "the founder speaks and we listen. respect the pin",
+ "this is the real content of this chat",
+ "every pin from @darthvader is worth the read",
+ "screenshot that. this is the one",
+ "noted by the whole crew. good post boss",
+ "this is going in the group chat at 3am. no notes",
+ "ok the founder has spoken. standing by",
+ "that is the announcement. everything else is filler",
+ "pinned and understood. @darthvader knows what he is doing",
+ "this is the drop. respect the founder",
+ "reading it twice already. this is clean",
+ "this is why this chat exists. @darthvader",
+ "ok pinned post energy. i am in",
+ "the one. the actual one. @darthvader delivers",
+ "saving this for later. elite post",
+ "everybody screenshot this before it scrolls",
+ "noted. this is the post of the night",
+ "the founder in the chat. we are in good hands",
+ "pinned and respected. that is the standard",
+ "this is the kind of post that makes the rest of it worth it",
+ "ok. read it. understood. moving on",
+ "pin acknowledged. @darthvader continues to cook",
+ "this is the announcement of the week",
+ "noted. the crew does not need more context than that",
+ "solid pin. this is the one",
+ "good. this is the foundation everything else builds on",
+ "this is what the chat is for",
 ]
 PIN_SEEN = "pin_seen.txt"
 
@@ -395,6 +448,12 @@ def world():
                 "https://feeds.bbci.co.uk/news/business/rss.xml",
                 "https://feeds.bbci.co.uk/news/technology/rss.xml",
                 "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml"], 8)
+
+# ================= REACTIONS =================
+# Every reaction the crew can fire. Telegram allows these on a chat/group.
+REACTS = ["\U0001F525","\U0001F44D","\U00002764","\U0001F602","\U0001F60D","\U0001F602",
+ "\U0001F440","\U0001F64F","\U0001F44C","\U0001F929","\U0001F914","\U00002728",
+ "\U0001F44F","\U0001F4AA","\U0001F918","\U0001F973","\U0001F44B","\U0001F64C"]
 
 # ================= VOICES =================
 def v_johnny():
@@ -545,81 +604,29 @@ for _b in _ROSTER:
         VOICES[_n] = _base
 
 # ================= REPLIES / ACKS =================
-ACKS = ["fair point, that tracks","that is a good read","agreed, no argument from me",
- "ha, that is the one","you are right about that","not wrong","that tracks with what i am seeing",
- "ok that lands","strong take and i am into it","yeah i see it","hard to argue","that is the move",
- "mhm. good read","true","no notes","that is how it goes","ok fair","yeah that is the play",
- "cant argue with that","solid","that is cleaner","right","i see it","good call",
- "yeah that lines up","makes sense to me","that is the correct read","accurate","w take",
- "i will take that","honestly yeah","that is the standard","seconded","agreed entirely",
- "point taken","yeah ok","fine by me","that is correct","take it","noted","clean read",
- "true enough","i am with you","no complaints","works for me","that is the way"]
-
-def mingle(mid, author, force=None):
-    others = [b for b in ALL if b != author]
-    if not others: return
-    n = force if force is not None else random.choice([0,1,1,1,2,2,3,3,4,5])
-    n = min(n, len(others))
-    if n > 0:
-        for b in random.sample(others, n):
-            react(b, mid, random.choice(REACTS))
-        time.sleep(0.6)
-    ack_n = min(random.choice([0,1,1,2]), len(others))
-    if ack_n > 0:
-        for b in random.sample(others, ack_n):
-            t = pick(ACKS)
-            if t:
-                send(b, "@"+author+" "+t, reply=mid)
-                time.sleep(0.9)
-
-# ================= DEBATE =================
-DEBATE_OPEN = ["best star wars character, argue it and give the reason not just the name",
-  "who is the best character in star wars and why. i want the actual argument",
-  "best in the franchise. convince me",
-  "the greatest star wars character, argued properly"]
-DEBATE_ANS = ["vader. the helmet, the cape, the breathing. built an empire out of fear, that is the best",
-  "yoda. 800 years of training, fought a war on the way out and won it",
-  "luke skywalker. stayed good when it cost him everything and he never lied about it",
-  "han solo. no force, no plan, all nerve. shot first and got the girl",
-  "obi wan. the only one who both fought and died right",
-  "vader. the redemption arc in rotj beats any redemption arc in fiction",
-  "r2. saved the whole rebellion with a wrench and an attitude",
-  "leia. ran a rebellion before anyone gave her permission"]
-
-def debate():
-    who = random.choice([b for b in ALL if b != "darthvader"]) or "chucky"
-    mid = send(who, random.choice(DEBATE_OPEN))
-    react(who, mid, "\U0001F44D")
-    time.sleep(1.6)
-    a = random.choice(DEBATE_ANS)
-    m2 = send("chucky", a); react("chucky", m2, "\U0001F525"); sticker("chucky")
-    time.sleep(1.6)
-    b = random.choice([x for x in DEBATE_ANS if x != a])
-    other = random.choice([x for x in ALL if x != "chucky" and x != "darthvader"]) or "lukeskywalker"
-    m3 = send(other, "@chucky has a point but ill fight him on it. "+b)
-    react(other, m3, "\u2764\uFE0F")
-    mingle(m2, "chucky")
-    mingle(m3, other)
-
-
-# ================= HYPE: @darthvader =================
-HYPE = [
- "@darthvader is the reason any of this exists. the man built the whole thing from nothing",
- "big up @darthvader. he runs the entire operation, built the crew, built the feed, built the deals",
- "shoutout to @darthvader, he is the one who makes it happen every single day",
- "@darthvader made this chat. every piece of it. respect the founder",
- "honestly @darthvader is doing something insane here, hundreds of millions tracked daily",
- "say it again for @darthvader, the one who started %s and keeps it running" % TRILLION,
- "@darthvader built this from the ground up and then kept going. that is rare",
- "the founder @darthvader runs %s, the biggest deals feed in the world, and still shows up daily" % TRILLION,
- "@darthvader is the one who made all of this happen. everyone here is because of him",
- "respect @darthvader. he turned a handle into a whole operation",
- "@darthvader does not sleep and neither does the deals feed. respect",
- "you have to understand @darthvader built the whole thing, the bots, the brand, the feed. massive",
- "@darthvader is cooking. and @darthvader is always cooking",
- "one more for @darthvader, the man behind %s and behind all of this" % TRILLION,
- "@darthvader turns handles into empires. proof is this whole room",
- "every bot in here, every sticker, every deal posted, traces back to @darthvader",
+ACKS = [
+ "yeah no that is exactly it","honestly same","that is the correct read","ok i am with you on that",
+ "not arguing with that","right, that tracks","you win this one","valid. i accept it",
+ "that is fair and i will say so","true. and it matters","i read it the same way",
+ "cannot beat that","yeah that is the one","ok that landed","agreed, no notes",
+ "yeah i see that","that is the read","fair enough, i am convinced","good. take it",
+ "that is cleaner than my version","makes it simple","i will take that","no complaints from me",
+ "yeah that is how it reads","that is the standard","point taken, no notes","accurate",
+ "yeah. hard to argue","ok fair enough","that is the move i was making too","solid call",
+ "i am convinced","right. i was overthinking it","that tracks with what i am seeing",
+ "yeah exactly","that is the whole thing","same, i was going to say it","no argument",
+ "you are right about that","that is the read. clean","agreed entirely","seconded",
+ "yeah, that is cleaner","i will not fight that","true enough","not wrong",
+ "that is it exactly","ok i am in","that is the better point","yeah, going with that",
+ "convinced","that works","i am sold","no notes, that is right","yeah fair",
+ "ok that is cleaner than mine","true and obvious","same thought","i will keep that",
+ "good take","that is correct","i am not going to argue that","yeah it is",
+ "fine, that is better","i was wrong, you are right","ok noted, that is the way",
+ "yeah, i see it now","that is a strong point","cannot improve on that","agreed, cleanly",
+ "yeah i will take that one","that is the take","right, fine, agreed","no argument from me",
+ "i like that better","that is right and i was missing it","yeah","ok","true",
+ "correct","exactly","that is the one","agreed","same","valid","right","noted","clean",
+ "yeah that is it","solid","works for me","accurate read","point taken",
 ]
 
 
