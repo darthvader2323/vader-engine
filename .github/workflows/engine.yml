@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '2354c4c9fb5a2277f38dd2610b167235cb49a652' || github.ref }}
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '3a5d82bd6168538bae6225190b498f546c5e0610' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 2354c4c9fb5a2277f38dd2610b167235cb49a652
+          ref: 3a5d82bd6168538bae6225190b498f546c5e0610
           persist-credentials: false
       - name: Load the current runtime ledger
         run: |
@@ -60,6 +60,7 @@ jobs:
           python-version: '3.11'
       - name: Check connectivity or run the community
         env:
+          CHAT_HANDLE: '@darthvaderchat2'
           CHAT_ID: ${{ secrets.CHAT_ID }}
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
           TG_YODA: ${{ secrets.TG_YODA }}
