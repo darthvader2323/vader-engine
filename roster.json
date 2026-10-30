@@ -1,5 +1,18 @@
 [
  {
+  "name": "darthvader",
+  "display": "Darth Vader",
+  "persona": "darthvader",
+  "pack": "vader",
+  "env": "TG_VADER",
+  "desks": [
+   "general",
+   "hype"
+  ],
+  "handle": "@darthvader",
+  "fragment": true
+ },
+ {
   "name": "chewbacca",
   "display": "Chewbacca",
   "persona": "chewbacca",
