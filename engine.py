@@ -22,7 +22,7 @@ PACKS = {"vader":"sqrjt9fkvvztb_by_mira","grogu":"sklrpz7196ebn_by_mira","yoda":
  "luke":"sry4d8ta1gu6s_by_mira","chew":"s15l72qep9gk0_by_mira","han":"sroftq1uflv8l_by_mira",
  "boba":"sryfojcw0mm1l_by_mira","leia":"s7zg12s696kiy_by_mira","r2d2":"st6ibqn4fjj0a_by_mira",
  "crew":"s9s9rvajkf1ti_by_mira"}
-OWNER = {"darthvader":"darthvader","yoda":"yoda","lukeskywalker":"grogu","chewbacca":"chewbacca","chucky":"crew","brucewayne":"han"}
+OWNER = {"darthvader":"vader","yoda":"yoda","lukeskywalker":"grogu","chewbacca":"chew","chucky":"crew","brucewayne":"han"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S = os.path.join(HERE, "state")
