@@ -1,0 +1,45 @@
+name: Inspect Telegram Delivery
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d726d38b2928063bd8f28db28f79028963f9b1fb
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect delivery without posts or acknowledgements
+        env:
+          CHAT_HANDLE: '@darthvaderchat2'
+          TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
+          TG_YODA: ${{ secrets.TG_YODA }}
+          TG_LUKE: ${{ secrets.TG_LUKE }}
+          TG_CHEW: ${{ secrets.TG_CHEW }}
+          TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
+        run: |
+          python3 - <<'PY'
+          import engine
+          engine.resolve_chat()
+          for name, token in engine.TOK.items():
+              identity = engine.tg(token, "getMe")
+              me = identity.get("result") or {}
+              member = engine.tg(token, "getChatMember", {"chat_id": engine.CHAT, "user_id": me.get("id", 0)})
+              webhook = engine.tg(token, "getWebhookInfo")
+              updates = engine.tg(token, "getUpdates", {"timeout": 0, "limit": 100})
+              messages = [(u.get("message") or u.get("edited_message") or {}) for u in (updates.get("result") or [])]
+              group = [m for m in messages if str((m.get("chat") or {}).get("id")) == engine.CHAT]
+              print("DELIVERY", name, "identity_ok", identity.get("ok"), "read_all", me.get("can_read_all_group_messages"),
+                    "membership", (member.get("result") or {}).get("status"),
+                    "webhook_present", bool((webhook.get("result") or {}).get("url")),
+                    "updates_ok", updates.get("ok"), "queued_total", len(messages), "target_group", len(group),
+                    "human_target", sum(not (m.get("from") or {}).get("is_bot", False) for m in group), flush=True)
+          PY
