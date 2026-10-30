@@ -90,23 +90,19 @@ def ts(): return datetime.datetime.now().strftime("%H:%M:%S")
 def send(who, text, reply=None):
     tok = TOK.get(who)
     if not tok or not text: return 0
-    p = {"chat_id": CHAT, "text": text, "disable_web_page_preview":"true"}
+    p = {"chat_id": CHAT, "text": text, "disable_web_page_preview": "true"}
     if reply: p["reply_to_message_id"] = reply
     r = tg(tok, "sendMessage", p)
-    # Telegram refuses replies to messages the bot cannot see yet (bot-to-bot).
-    # Retry unthreaded instead of dropping the message.
     if not r.get("ok") and reply:
-        p2 = {"chat_id": CHAT, "text": text, "disable_web_page_preview":"true"}
-        r = tg(tok, "sendMessage", p2)
-    if r.get("ok"):
-        mid = (r.get("result") or {}).get("message_id")
-        print("[%s] SENT %-7s %s" % (ts(), who, text[:80]), flush=True)
-        time.sleep(1.5); return mid
-    print("[%s] FAIL %-7s %s" % (ts(), who, str(r)[:80]), flush=True)
+        p.pop("reply_to_message_id", None)
+        r = tg(tok, "sendMessage", p)
+    mid = (r.get("result") or {}).get("message_id") if r.get("ok") else 0
+    if mid:
+        print("[%s] SENT %-7s %s" % (ts(), who, text[:70]), flush=True)
+        time.sleep(1.4); return mid
+    print("[%s] FAIL %-7s %s" % (ts(), who, str(r)[:70]), flush=True)
     return 0
 
-REACTS = ["\U0001F525","\U0001F44D","\u2764\uFE0F","\U0001F92E","\U0001F389","\U0001F602",
-          "\U0001F44F","\U0001F60A","\U0001F618","\U0001F44C","\U0001F622","\U0001F914","\U0001F440"]
 
 def react(who, mid, em=None):
     if not mid: return
@@ -116,20 +112,32 @@ def react(who, mid, em=None):
     time.sleep(0.4)
 
 def sticker(who):
+    """Prefer MOVING stickers (video > lottie > static). Never repeat one."""
     pk = OWNER.get(who, "vader")
     if pk not in PACKS: return
-    r = tg(TOK.get("johnny") or TOK.get(list(TOK)[0]), "getStickerSet", {"name": PACKS[pk]})
+    tok = TOK.get(who) or TOK.get("johnny") or TOK.get(list(TOK)[0])
+    r = tg(TOK.get("johnny") or tok, "getStickerSet", {"name": PACKS[pk]})
     if not r.get("ok"): return
-    ids = [s["file_id"] for s in r["result"]["stickers"] if s["file_id"] not in STK]
-    if not ids:
+    allst = r["result"]["stickers"]
+    unused = [s for s in allst if s["file_id"] not in STK]
+    if not unused:
         STK.clear(); save("stk_used.json", [])
-        ids = [s["file_id"] for s in r["result"]["stickers"]]
-    if not ids: return
-    fid = random.choice(ids)
-    res = tg(TOK.get(who), "sendSticker", {"chat_id": CHAT, "sticker": fid})
+        unused = list(allst)
+    if not unused: return
+    def rank(s):
+        if s.get("is_video"): return 0
+        if s.get("is_animated"): return 1
+        return 2
+    unused.sort(key=rank)
+    moving = [s for s in unused if rank(s) == 0]
+    anim = [s for s in unused if rank(s) == 1]
+    pool = moving or anim or unused
+    kind = "moving" if moving else ("animated" if anim else "static")
+    fid = random.choice(pool)["file_id"]
+    res = tg(tok, "sendSticker", {"chat_id": CHAT, "sticker": fid})
     if res.get("ok"):
         STK.add(fid); save("stk_used.json", list(STK))
-        print("[%s] STICKER %s" % (ts(), who), flush=True)
+        print("[%s] STICKER %s (%s)" % (ts(), who, kind), flush=True)
     time.sleep(1.0)
 
 
