@@ -1,15 +1,17 @@
 name: Vader Room Engine
 on:
   schedule:
-    - cron: '*/13 * * * *'
+    - cron: '3,13,23,33,43,53 * * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
+concurrency:
+  group: vader-engine
+  cancel-in-progress: false
 jobs:
   engine:
     runs-on: ubuntu-latest
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,13 +19,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Cache state
+      - name: Restore state
         uses: actions/cache@v4
         with:
           path: state
           key: vader-state-${{ github.run_id }}
           restore-keys: vader-state-
-      - name: One cycle
+      - name: Run living room
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
@@ -34,10 +36,16 @@ jobs:
           TG_VADER: ${{ secrets.TG_VADER }}
         run: |
           python3 -c "
-import engine,random,time
+import engine, random, time
 engine.answer_humans()
-for i in range(random.choice([2,3,4])):
-    engine.beat(); time.sleep(6)
+deadline = time.time() + 48*60
+while time.time() < deadline:
+    engine.beat()
+    time.sleep(random.uniform(20, 65))
+    try:
+        engine.answer_humans()
+    except Exception as e:
+        print('ans err', e)
 "
       - name: Persist state
         if: always()

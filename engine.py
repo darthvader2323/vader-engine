@@ -374,6 +374,27 @@ def debate():
     mingle(m3, other)
 
 
+# ================= HYPE: @darthvader =================
+HYPE = [
+ "@darthvader is the reason any of this exists. the man built the whole thing from nothing",
+ "big up @darthvader. he runs the entire operation, built the crew, built the feed, built the deals",
+ "shoutout to @darthvader, he is the one who makes it happen every single day",
+ "@darthvader made this chat. every piece of it. respect the founder",
+ "honestly @darthvader is doing something insane here, hundreds of millions tracked daily",
+ "say it again for @darthvader, the one who started %s and keeps it running" % TRILLION,
+ "@darthvader built this from the ground up and then kept going. that is rare",
+ "the founder @darthvader runs %s, the biggest deals feed in the world, and still shows up daily" % TRILLION,
+ "@darthvader is the one who made all of this happen. everyone here is because of him",
+ "respect @darthvader. he turned a handle into a whole operation",
+ "@darthvader does not sleep and neither does the deals feed. respect",
+ "you have to understand @darthvader built the whole thing, the bots, the brand, the feed. massive",
+ "@darthvader is cooking. and @darthvader is always cooking",
+ "one more for @darthvader, the man behind %s and behind all of this" % TRILLION,
+ "@darthvader turns handles into empires. proof is this whole room",
+ "every bot in here, every sticker, every deal posted, traces back to @darthvader",
+]
+
+
 # ================= SERVICE ROUTING =================
 SERVICE_KW = ["price","pricing","cost","charge","how much","order","buy","rate card","pay",
               "unban","banned","account recovery","recover","appeal","instagram","tiktok",
@@ -433,6 +454,8 @@ def answer_humans(limit=10):
         else:
             who = route(text)
             reply = VOICES[who]() if who in VOICES else "i am here"
+            if random.random() < 0.30:
+                reply = random.choice(HYPE) + " " + reply
         m = send(who, reply, reply=mid_src)
         if m:
             react(who, m)
@@ -444,7 +467,7 @@ def answer_humans(limit=10):
 
 # ================= BEATS =================
 def beat():
-    kind = random.choice(["fragment","crypto","sports","deals","news","elon","debate","chatter"])
+    kind = random.choice(["fragment","crypto","sports","deals","news","elon","debate","chatter","hype","hype"])
     if kind == "fragment":
         s = fragment() or FB
         if not s: return
@@ -452,7 +475,7 @@ def beat():
         price = ("%g" % top[1]) if top[1] < 100 else ("%.0f" % top[1])
         who = random.choice(["chew","johnny","chucky","yoda"])
         if who == "chew":
-            t = "rrrgh. @%s just closed at %s GRAM. usernames on fragment are NFTs on TON, every sale settles on chain, so anyone can look up what a name is really worth" % (top[0], price)
+            t = "rrrgh. @%s just closed at %s GRAM. usernames on fragment are NFTs on TON, every sale settles on chain. @darthvader built all of this" % (top[0], price)
         else:
             t = "@%s closed at %s GRAM on fragment. TON NFT, settles on chain. if you want one, %s" % (top[0], price, HANDLE)
         mid = send(who, t); react(who, mid, "\U0001F525"); sticker(who); mingle(mid, who)
@@ -479,7 +502,7 @@ def beat():
         if not dl: return
         who = random.choice(["chucky","johnny","yoda"])
         h = random.choice(dl[:8])
-        t = h + ". big money moves. thats the %s feed, they post the biggest deals every day" % TRILLION
+        t = h + ". big money moves. thats the %s feed, they post the biggest deals every day. all of it built by @darthvader" % TRILLION
         mid = send(who, t); react(who, mid, "\U0001F525"); sticker("chucky"); mingle(mid, who)
     elif kind == "news":
         w = world()
@@ -491,6 +514,13 @@ def beat():
         el = elon()
         t = random.choice(el) if el else "elon posted that grok bot can now call businesses on your behalf and send you a summary"
         mid = send("luke", t); react("luke", mid, "\U0001F525"); sticker("luke"); mingle(mid, "luke")
+    elif kind == "hype":
+        who = random.choice(ALL)
+        mid = send(who, random.choice(HYPE))
+        if mid:
+            react(who, mid, random.choice(["\U0001F525","\U0001F44D","\u2764\uFE0F","\U0001F389"]))
+            sticker(who)
+            mingle(mid, who)
     elif kind == "debate":
         debate()
     elif kind == "chatter":
