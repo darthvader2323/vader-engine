@@ -38,11 +38,11 @@ LEAGUES = [
     ("basketball/wnba", "WNBA"),
 ]
 PACKS = {
-    "vader": "ComeToTheDarkSide", "grogu": "BabyYoda",
-    "yoda": "JediMasterYoda", "luke": "sry4d8ta1gu6s_by_mira",
-    "chew": "ChewbaccaWookiee", "han": "sroftq1uflv8l_by_mira",
-    "boba": "sryfojcw0mm1l_by_mira", "leia": "PrincessLeiaOrgana",
-    "r2d2": "st6ibqn4fjj0a_by_mira", "crew": "StarWarsSagaByDarthAdmiraL",
+    "vader": "sqrjt9fkvvztb_by_mira", "grogu": "sklrpz7196ebn_by_mira",
+    "yoda": "sikulkj1ywb7r_by_mira", "luke": "sry4d8ta1gu6s_by_mira",
+    "chew": "s15l72qep9gk0_by_mira", "han": "sroftq1uflv8l_by_mira",
+    "boba": "sryfojcw0mm1l_by_mira", "leia": "s7zg12s696kiy_by_mira",
+    "r2d2": "st6ibqn4fjj0a_by_mira", "crew": "s9s9rvajkf1ti_by_mira",
 }
 for _character, _env in [("chucky", "CHUCKY_STICKER_PACK"),
                          ("youngboy", "YOUNGBOY_STICKER_PACK")]:
@@ -128,19 +128,12 @@ except ValueError:
     _extra_tokens = {}
 if not isinstance(_extra_tokens, dict):
     _extra_tokens = {}
-def configured_tokens(rows, environ, extras):
-    """Keep the service identity when legacy secrets alias the same bot."""
-    result = {}
-    for row in sorted(rows, key=lambda item: "service" not in item.get("desks", [])):
-        env = row.get("env", "")
-        token = environ.get(env) or extras.get(env) or extras.get(row["name"])
-        if isinstance(token, str) and token.strip():
-            token = token.strip()
-            if token not in result.values():
-                result[row["name"]] = token
-    return result
-
-TOK = configured_tokens(ROSTER_LIST, os.environ, _extra_tokens)
+TOK = {}
+for _row in ROSTER_LIST:
+    _env = _row.get("env", "")
+    _token = os.environ.get(_env) or _extra_tokens.get(_env) or _extra_tokens.get(_row["name"])
+    if isinstance(_token, str) and _token.strip() and _token not in TOK.values():
+        TOK[_row["name"]] = _token.strip()
 ALL = list(TOK)
 BOT_USERS = {}
 
@@ -433,6 +426,124 @@ def content_for(kind):
         return news + [(text, text) for text in RAP]
     return providers[kind]() if kind in providers else []
 
+GENERAL_VOICES = {
+ "brucewayne": [
+  "right, i run this desk. ask properly and i will answer properly",
+  "that is my corner. give me the ask",
+  "i handle the service side. what do you need done",
+  "morning. i am on it, what is the job",
+  "you are in the right place. talk to me",
+  "give me the details and i will sort it",
+ ],
+ "yoda": [
+  "hmm. interesting question you ask",
+  "the force of the matter is simple. tell me more",
+  "much to think about, yes. go on",
+  "hmm yes. that path you choose, tell me",
+ ],
+ "lukeskywalker": [
+  "sure thing. what are we working on",
+  "yeah of course. lay it out for me",
+  "happy to help. what do you need",
+  "no problem. what is the goal here",
+ ],
+ "chewbacca": [
+  "raaaawggh! rooo",
+  "rroooaaawr. yes, talk",
+  "rrrraaaawh. here, listen",
+  "rrgghh. what you want",
+ ],
+ "chucky": [
+  "ohhh i like where this is going. keep talking",
+  "hehe. say that again for me",
+  "sweetie, tell me more",
+  "ohhh you are trouble. i like it",
+ ],
+ "darthvader": [
+  "state your request. it will be handled",
+  "your answer is near. be precise",
+  "i have heard you. proceed",
+  "speak plainly and it will be done",
+ ],
+}
+
+GENERAL_REPLIES = [
+ "here. what is it",
+ "i am here. hit me",
+ "listening. what do you need",
+ "go ahead, ask away",
+ "that is the right question to ask",
+ "okay. give me the details",
+ "i am on it. talk to me",
+ "say more, i am following",
+ "good question, let me think about that",
+ "noted. that is worth digging into",
+ "you have my attention",
+ "ask away, i will give you the honest version",
+ "sure, lay it out",
+ "that lands. what else",
+ "i am here for it",
+ "talk to me. what is on your mind",
+ "okay, i hear you. keep going",
+ "that is the kind of thing i can help with",
+ "right. so what is the actual question",
+ "give me the short version and i will take it from there",
+ "understood. what is the outcome you want",
+ "noted, boss. continue",
+ "i am watching. keep talking",
+ "that is enough for me to work with",
+ "fine. i am listening properly now",
+ "go on then",
+ "that is a real one. let me handle it",
+ "you want the short answer or the long one",
+ "okay, that is on my list",
+ "speak, i will answer properly",
+ "noted. no fluff from me",
+ "i hear you. what is the deadline",
+ "that is workable. talk to me",
+ "i am here, no rush",
+ "ask me properly and i will answer properly",
+ "that is a clean question. answering now",
+ "okay. understood the ask",
+ "that is straight enough for me",
+ "i am with you. continue",
+ "right. say the rest",
+ "good, that is clear enough",
+ "noted and logged",
+ "i am here, no nonsense",
+ "go ahead",
+ "that is workable, i can do something with it",
+ "yeah, i am listening",
+ "okay, that landed. what next",
+ "i will take that one",
+ "right. give me the details and i will handle it",
+]
+
+CONFIRM_REPLIES = [
+ "i cannot confirm a fresh update on that right now, and i will not guess",
+ "nothing solid on that this second. i do not want to fake it",
+ "that is moving fast, i will not post something i cannot stand behind",
+ "no clean read on it yet. hold that thought",
+ "i would rather say nothing than say something wrong about that",
+ "still checking that one. i will get back to it",
+ "i do not have that confirmed, sorry",
+ "that is a gap on my end right now, not a real answer",
+ "nothing verified yet on that",
+ "i will not fake it. nothing confirmed on that one",
+]
+
+
+def pick_general(who):
+    """General chatter that differs per persona and never repeats."""
+    pool = GENERAL_VOICES.get(who) or GENERAL_REPLIES
+    fresh = [t for t in pool if digest(t) not in STATE["used"]]
+    if not fresh:
+        fresh = [t for t in GENERAL_REPLIES if digest(t) not in STATE["used"]]
+    if not fresh:
+        fresh = list(GENERAL_REPLIES)
+    return random.choice(fresh)
+
+
 DESKS = {
     "service": ["brucewayne"], "crypto": ["yoda", "dexter"],
     "fragment": ["chewbacca"], "sports": ["lukeskywalker", "johnwick"],
@@ -471,22 +582,25 @@ def answer_humans(limit=10):
         fresh = time.time() - message.get("date", time.time()) <= 1800
         asks = is_service(text) or "?" in text or text.startswith("/") or bool(
             re.search(r"\b(who|what|why|when|where|how|tell|send|show|explain)\b", text, re.I))
+        if not asks and re.match(r"^(gm|gn|hello|hi|hey|yo|sup|morning|good morning|"
+                                 r"good evening|how you doing|hows it going|whats up|"
+                                 r"what's up|anyone|anybody|good night|lol|lmao|nice|"
+                                 r"cool|wow|damn|lets go|let's go|how about it)\b", text, re.I):
+            asks = True
         if relevant and fresh and text and asks and str(mid) not in STATE["replies"]:
             kind = topic(text)
             speaker = choose_speaker(DESKS.get(kind))
             if kind == "service":
                 reply = "For services, message %s privately with your request. %s" % (HANDLE, SITE)
             elif kind == "general":
-                reply = ("I am an automated character bot. Ask about Star Wars, NBA YoungBoy, "
-                         "crypto, sports, world news, Elon Musk or business deals.")
+                reply = pick_general(speaker)
             else:
                 choices = content_for(kind)
                 reply = next((entry[0] for entry in choices
                               if digest(entry[1]) not in STATE["used"]
                               and digest(entry[0]) not in STATE["used"]), None)
                 if not reply:
-                    reply = ("I cannot confirm a fresh update on that topic right now. "
-                             "I will not substitute an old example for current information.")
+                    reply = random.choice(CONFIRM_REPLIES)
             sent = send(speaker, reply, reply=mid)
             if sent == 0:
                 # Keep this update and the rest of the batch pending on a known failure.
@@ -505,7 +619,17 @@ def react_to_pin():
     mid = pinned.get("message_id")
     if not mid or str(mid) in STATE["pins"]:
         return 0
-    sent = send(reader, "Pinned message acknowledged by the automated assistant.", reply=mid, content_key="pin")
+    pin_lines = [
+        "pinned. read it twice",
+        "noted. this is the one",
+        "acknowledged. the founder spoke",
+        "saved. that is the announcement",
+        "got it. reading it again",
+        "understood. this is the standard",
+        "logged. no notes",
+        "that is the post. everything else is commentary",
+    ]
+    sent = send(reader, random.choice(pin_lines), reply=mid, content_key="pin")
     if sent:
         STATE["pins"][str(mid)] = time.time()
         persist()
@@ -530,15 +654,16 @@ def sticker(who):
         for item in stickers:
             fid = item.get("file_id")
             uid = item.get("file_unique_id")
-            if not fid or not uid or not (item.get("is_animated") or item.get("is_video")):
+            if not fid or not uid:
                 continue
             if fid in LEGACY_STICKERS or "fid:" + fid in STATE["stickers"] or "uid:" + uid in STATE["stickers"]:
                 continue
             fresh.append(item)
         if fresh:
-            groups[character] = fresh
+            moving = [i for i in fresh if i.get("is_animated") or i.get("is_video")]
+            groups[character] = moving if moving else fresh
     if not groups:
-        log("NO UNUSED MOVING STICKERS; static/repeated stickers skipped")
+        log("NO UNUSED STICKERS in any pack")
         return 0
     counts = STATE.setdefault("sticker_counts", {})
     character = min(groups, key=lambda name: (counts.get(name, 0) / (4 if name == "vader" else 1),
@@ -663,6 +788,9 @@ def main():
             if now >= STATE.get("next_beat", 0):
                 beat()
                 STATE["next_beat"] = time.time() + random.uniform(gap_min, gap_max)
+                persist()
+            elif STATE.get("next_beat", 0) - time.time() > gap_max * 2:
+                STATE["next_beat"] = 0
                 persist()
             if os.environ.get("VADER_ONCE") == "1":
                 break
