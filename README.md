@@ -8,8 +8,14 @@ unofficial fictional personas, not independent people, customers or endorsements
 ## Behavior
 
 - One designated polling bot reads group messages; one bot answers each service request.
+  TG_READER_NAME selects the listener independently of the service responder. Production
+  uses Yoda because the delivery check verified incoming updates on that identity.
 - Service questions direct the person to @darthvader privately.
 - Owner questions follow the same topic routing and receive relevant replies.
+- Directly addressing a configured character selects that voice, except service requests
+  still go to the single service desk. Yoda uses inverted, reflective phrasing; Luke is
+  hopeful, Chewbacca uses brief roars, Bruce is measured and Chucky is playful. News
+  headlines, dates, scores, prices and source links are preserved verbatim within the post.
 - A new pin gets one neutral assistant acknowledgement, without a swarm of automated likes.
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
@@ -37,6 +43,8 @@ CHAT_ID must be the numeric ID of the authorized group. Tokens stay in deploymen
 CHAT_HANDLE can additionally name its public address (@darthvaderchat2). At startup the
 worker verifies the group title/handle and resolves its canonical numeric ID, so a group
 upgrade or an older ID alias cannot silently discard incoming messages.
+Unavailable account identities are excluded for that run and checked again on restart.
+A newly selected listener skips existing backlog once, then checkpoints its update offset.
 Existing token names are TG_JOHNNY, TG_YODA, TG_LUKE, TG_CHEW, TG_CHUCKY and TG_VADER.
 Additional owned bots can be configured in BOT_TOKENS_JSON as a JSON object mapping roster
 names or their TG_ environment-variable names to tokens. Duplicate tokens are ignored.

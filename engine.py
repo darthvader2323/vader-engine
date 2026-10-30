@@ -77,6 +77,67 @@ RAP = [
     "Fan question: when you call a rapper the greatest, are you judging lyrics, delivery, influence, or the full catalog?",
     "YoungBoy is the focus of this fan discussion. Which performance would you show somebody hearing him for the first time?",
 ]
+STAR_WARS_BY_PERSONA = {
+    "yoda": [
+        "Judge by size, do not. A choice in darkness reveals more than strength. Between Vader and Luke, who made the greater choice?",
+        "Much power, Vader had. Yet reach Anakin, Luke could. Stronger than fear, compassion proved. Your favorite moment, which is it?",
+        "Loyal, Chewbacca remains. Overlook that strength, we should not. A better companion in the saga, can you name?",
+        "A grand entrance, Vader makes. Wisdom in a quiet moment, I prefer. Which carries a scene for you, hmm?",
+    ],
+    "lukeskywalker": [
+        "I won’t write Vader off. Choosing his son over the Emperor is what makes the ending matter to me. What moment changes your view of him?",
+        "The strongest move isn’t always another swing of a lightsaber. Luke refusing to give up on his father is my pick. What’s yours?",
+        "Yoda has the wisdom; Vader has the presence. I’m backing the choice to keep hoping when the odds look terrible. Who gets your vote?",
+        "Chewie deserves more credit. Loyalty holds that whole team together. Which partnership in Star Wars beats Han and Chewbacca?",
+    ],
+    "chewbacca": [
+        "Rrrraaagh! Loyalty gets my vote. Han and Chewie keep showing up for each other—who’s your pick for the best team?",
+        "Rrrroww! Vader has the entrance, but Chewie has your back. Which matters more when you’re choosing a favorite character?",
+        "Wrrraaagh! Luke seeing the good in Vader is a strong case. Give me one scene that puts your favorite ahead.",
+        "Rrraawh! A helmet and a cape get attention. Loyalty earns it. Best Star Wars companion—who are you picking?",
+    ],
+    "brucewayne": [
+        "Vader wins on presence; Luke wins on restraint. I’d judge them by the choice they make when power is on the table. Who makes the better one?",
+        "The armor is memorable. The decision beneath it is more interesting. Which Vader scene tells you the most about the character?",
+        "Yoda understands discipline. Vader understands fear. Those are very different kinds of power. Which makes the stronger character?",
+    ],
+    "chucky": [
+        "Big cape, dramatic entrance—Vader knows how to steal a room. Yoda’s tiny and still runs the debate. Which one gets your vote?",
+        "Oh, that’s a fun argument. Vader barely has to move to own a scene. Who else in Star Wars can pull that off?",
+        "You’re all sleeping on Chewie. The loudest guy in the room is also the most loyal. Give me a better sidekick—go on.",
+    ],
+    "darthvader": [
+        "Power earns fear. Redemption earns a different kind of legacy. Which is the stronger reason to put Vader first?",
+        "An entrance can silence a room. A choice can change the saga. Which Vader moment carries more weight for you?",
+        "Luke saw Anakin where others saw only Vader. Was that hope the strongest force in the ending? Make your case.",
+    ],
+}
+VOICE_LEADS = {
+    "yoda": ["Much to consider, there is.", "Look closely at this, we should.",
+             "The details, important they are.", "A question for the room, this raises."],
+    "lukeskywalker": ["Here’s what caught my eye.", "There’s a bigger story to watch here.",
+                       "I’d start with these details.", "This gives us something to talk about."],
+    "chewbacca": ["Rrrraaagh! Here’s the update.", "Rrroww! Take a look at this.",
+                  "Wrrraaagh! What’s your take?", "Rrraawh! Something for the room."],
+    "brucewayne": ["Start with the details.", "The numbers deserve a closer look.",
+                   "One development to watch.", "Here’s the report behind the discussion."],
+    "chucky": ["Well, that got interesting.", "Now there’s a conversation starter.",
+               "Oh, this one should get the room talking.", "Alright, who’s got a take on this?"],
+    "darthvader": ["Consider this development.", "The situation has changed.",
+                   "Direct your attention here.", "There is much to discuss."],
+}
+
+def character_voice(who, text, kind):
+    if not kind or kind in ("service", "pin", "general"):
+        return text
+    if kind == "starwars" and who in STAR_WARS_BY_PERSONA:
+        return text
+    if text.startswith("I cannot confirm a fresh update"):
+        return text
+    leads = VOICE_LEADS.get(who)
+    if not leads:
+        return text
+    return leads[int(digest(text)[:8], 16) % len(leads)] + "\n\n" + text
 
 def load(name, default):
     try:
@@ -204,6 +265,42 @@ def resolve_chat():
     CHAT = resolved
     log("GROUP VERIFIED: Darth Vader Chat; canonical ID resolved")
 
+def verify_bots():
+    """Exclude an unavailable identity for this run instead of selecting it forever."""
+    for name, token in list(TOK.items()):
+        result = tg(token, "getMe")
+        user = result.get("result") or {}
+        if not result.get("ok") or not user.get("is_bot"):
+            TOK.pop(name, None)
+            log("IDENTITY UNAVAILABLE %s; skipped for this run" % name)
+        else:
+            BOT_USERS[name] = user.get("username", "")
+    if not TOK:
+        raise SystemExit("No responsive configured character accounts")
+
+def polling_reader():
+    requested = os.environ.get("TG_READER_NAME", "").strip()
+    if requested:
+        if requested not in TOK:
+            raise SystemExit("Configured message listener is unavailable")
+        return requested
+    return "brucewayne" if "brucewayne" in TOK else next(iter(TOK), None)
+
+def prime_reader():
+    """A newly selected listener starts with new messages, without flooding old chat."""
+    reader = polling_reader()
+    if not reader or reader in STATE["offsets"]:
+        return
+    if reader == "brucewayne" and STATE["offsets"].get("main"):
+        return
+    result = tg(TOK[reader], "getUpdates", {"timeout": 0, "limit": 100})
+    if not result.get("ok"):
+        raise SystemExit("Cannot initialize the incoming message listener")
+    updates = result.get("result") or []
+    STATE["offsets"][reader] = max((u.get("update_id", 0) + 1 for u in updates), default=0)
+    persist()
+    log("LISTENER READY %s; existing backlog skipped" % reader)
+
 def get_url(url, ttl=300):
     now = time.time()
     cached = CACHE.get(url)
@@ -244,7 +341,7 @@ def choose_speaker(preferred=None):
     return random.choice([name for name in candidates
                           if STATE["last_spoke"].get(name, 0) == oldest])
 
-def send(who, text, reply=None, content_key=None):
+def send(who, text, reply=None, content_key=None, kind=None):
     if who not in TOK or not text:
         return 0
     key = digest(content_key or text)
@@ -262,7 +359,7 @@ def send(who, text, reply=None, content_key=None):
     persist()
     # Telegram account status and the profile disclose automation; avoid a
     # repetitive identity banner in every message body.
-    params = {"chat_id": CHAT, "text": text,
+    params = {"chat_id": CHAT, "text": character_voice(who, text, kind),
               "link_preview_options": {"is_disabled": True}}
     if reply_key:
         params["reply_parameters"] = {"message_id": int(reply),
@@ -463,11 +560,11 @@ def topic(text):
             return name
     return "general"
 
-def content_for(kind):
+def content_for(kind, speaker=None):
     providers = {"world": world, "elon": elon, "deals": deals, "rap": youngboy,
                  "crypto": crypto, "sports": sports, "fragment": fragment}
     if kind == "starwars":
-        return [(text, text) for text in STAR_WARS]
+        return [(text, text) for text in STAR_WARS_BY_PERSONA.get(speaker, STAR_WARS)]
     if kind == "rap":
         news = youngboy()
         return news + [(text, text) for text in RAP]
@@ -481,8 +578,20 @@ DESKS = {
     "rap": ["chucky", "brucewayne"], "starwars": ["darthvader", "yoda", "chewbacca", "lukeskywalker"],
 }
 
+def speaker_for(text, kind):
+    if kind == "service":
+        return choose_speaker(DESKS["service"])
+    for name in TOK:
+        display = ROSTER.get(name, {}).get("display", name)
+        if re.match(r"^%s(?:\b|[,!?:])" % re.escape(display), text, re.I):
+            return name
+        username = BOT_USERS.get(name)
+        if username and re.search(r"@%s\b" % re.escape(username), text, re.I):
+            return name
+    return choose_speaker(DESKS.get(kind))
+
 def answer_humans(limit=10):
-    reader = "brucewayne" if "brucewayne" in TOK else next(iter(TOK), None)
+    reader = polling_reader()
     if not reader:
         return 0
     params = {"timeout": 0, "limit": 100,
@@ -514,21 +623,21 @@ def answer_humans(limit=10):
             re.search(r"\b(who|what|why|when|where|how|tell|send|show|explain)\b", text, re.I))
         if relevant and fresh and text and asks and str(mid) not in STATE["replies"]:
             kind = topic(text)
-            speaker = choose_speaker(DESKS.get(kind))
+            speaker = speaker_for(text, kind)
             if kind == "service":
                 reply = "For services, message %s privately with your request. %s" % (HANDLE, SITE)
             elif kind == "general":
                 reply = ("I am an automated character assistant. Ask about Star Wars, NBA YoungBoy, "
                          "crypto, sports, world news, Elon Musk or business deals.")
             else:
-                choices = content_for(kind)
+                choices = content_for(kind, speaker)
                 reply = next((entry[0] for entry in choices
                               if digest(entry[1]) not in STATE["used"]
                               and digest(entry[0]) not in STATE["used"]), None)
                 if not reply:
                     reply = ("I cannot confirm a fresh update on that topic right now. "
                              "I will not substitute an old example for current information.")
-            sent = send(speaker, reply, reply=mid)
+            sent = send(speaker, reply, reply=mid, kind=kind)
             if sent == 0:
                 # Keep this update and the rest of the batch pending on a known failure.
                 break
@@ -607,7 +716,8 @@ def beat():
         kind = rotation[(cursor + attempt) % len(rotation)]
         if kind == "crypto" and time.time() - STATE["last_topic_at"].get(kind, 0) < 3600:
             continue
-        choices = [(text, key) for text, key in content_for(kind)
+        speaker = choose_speaker(DESKS.get(kind))
+        choices = [(text, key) for text, key in content_for(kind, speaker)
                    if digest(key) not in STATE["used"] and digest(text) not in STATE["used"]]
         if not choices:
             continue
@@ -615,8 +725,7 @@ def beat():
         if kind == "deals":
             text += ("\n@trillion on Instagram covers major business deals. "
                      "The group owner identifies @darthvader as its creator.")
-        speaker = choose_speaker(DESKS.get(kind))
-        sent = send(speaker, text, content_key=key)
+        sent = send(speaker, text, content_key=key, kind=kind)
         STATE["cursor"] = (cursor + attempt + 1) % len(rotation)
         if sent:
             STATE["last_topic_at"][kind] = time.time()
@@ -706,6 +815,7 @@ def main():
         raise SystemExit("No configured bot tokens.")
     if not CHAT or not re.fullmatch(r"-\d+", CHAT):
         raise SystemExit("CHAT_ID must be the numeric ID of the authorized Telegram group.")
+    verify_bots()
     resolve_chat()
     STOP.clear()
     for sig in (signal.SIGTERM, signal.SIGINT):
@@ -717,6 +827,7 @@ def main():
     bootstrap_all()
     if not TOK:
         raise SystemExit("No valid configured bot tokens.")
+    prime_reader()
     gap_min = max(60, float(os.environ.get("GAP_MIN", "600")))
     gap_max = max(gap_min, float(os.environ.get("GAP_MAX", "1200")))
     next_pin = 0

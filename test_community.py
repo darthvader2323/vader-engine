@@ -117,6 +117,47 @@ class CommunityTests(unittest.TestCase):
             engine.resolve_chat()
         self.assertEqual(engine.CHAT, "-1003758482841")
 
+    def test_separate_listener_still_uses_one_service_responder(self):
+        outgoing = []
+        with patch.dict(os.environ, {"TG_READER_NAME": "yoda"}), \
+             patch.object(engine, "tg", side_effect=self.api_for([self.message()], outgoing)):
+            self.assertEqual(engine.answer_humans(), 1)
+        self.assertEqual(len(outgoing), 1)
+        self.assertEqual(outgoing[0][0], "desk-token")
+        self.assertEqual(engine.STATE["offsets"]["yoda"], 101)
+
+    def test_new_listener_skips_backlog_without_replying(self):
+        outgoing = []
+        with patch.dict(os.environ, {"TG_READER_NAME": "yoda"}), \
+             patch.object(engine, "tg", side_effect=self.api_for([self.message()], outgoing)):
+            engine.prime_reader()
+        self.assertEqual(outgoing, [])
+        self.assertEqual(engine.STATE["offsets"]["yoda"], 101)
+
+    def test_unavailable_identity_cannot_keep_winning_rotation(self):
+        def identity(token, method, params=None):
+            if token == "chucky-token":
+                return {"ok": False, "uncertain": True}
+            return {"ok": True, "result": {"is_bot": True, "username": "examplebot"}}
+        with patch.object(engine, "tg", side_effect=identity):
+            engine.verify_bots()
+        self.assertNotIn("chucky", engine.TOK)
+        self.assertIn(engine.choose_speaker(["chucky"]), ("brucewayne", "yoda"))
+
+    def test_yoda_voice_keeps_the_entire_sourced_report_intact(self):
+        report = "BTC: $1 example. Oct 30, 2026. Source: https://example.org/report"
+        voiced = engine.character_voice("yoda", report, "crypto")
+        self.assertIn(report, voiced)
+        self.assertNotEqual(voiced, engine.character_voice("lukeskywalker", report, "crypto"))
+        self.assertNotIn("bot", voiced.lower())
+        self.assertEqual(engine.character_voice("yoda", report, "service"), report)
+
+    def test_addressed_yoda_uses_his_voice_but_service_goes_to_desk(self):
+        self.assertEqual(engine.speaker_for("Yoda, who is the best Jedi?", "starwars"), "yoda")
+        self.assertEqual(engine.speaker_for("Yoda, how much for account recovery?", "service"), "brucewayne")
+        lines = engine.content_for("starwars", "yoda")
+        self.assertTrue(any("Judge by size, do not" in text for text, _ in lines))
+
     def test_owner_music_question_gets_a_relevant_answer_not_praise(self):
         outgoing = []
         update = self.message(text="Yo everybody who is your favorite rapper?", username="darthvader")
