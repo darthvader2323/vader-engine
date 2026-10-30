@@ -9,78 +9,83 @@ TRILLION = "@trillion"
 
 
 # ================= BOOTSTRAP (self-setup) =================
-# Every bot sets up itself the moment it has a token: its display name, its
-# bio, its admin rights in the chat, and its profile photo. No manual steps.
-CID = os.environ.get("TG_CHAT_ID", "-1003758482841")
+# Every bot sets itself up the moment it has a token: display name, bio,
+# admin rights in the chat, and its profile photo. No manual steps needed.
+CID = os.environ.get("CHAT_ID", "-1003758482841")
 ADMIN_TOKEN = os.environ.get("TG_JOHNNY", "")   # Johnny can promote members
+API = "https://api.telegram.org/bot%s/%s"
 
-def _tg_post(token, method, **params):
+def _post_multipart(token, method, fields, files):
+    """urllib multipart upload - used for setMyProfilePhoto."""
+    boundary = "----vaderengine%s" % int(time.time() * 1000)
+    parts = []
+    for k, v in fields.items():
+        parts.append(("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n" % (boundary, k, v)).encode())
+    for k, (fname, data, ctype) in files.items():
+        head = ("--%s\r\nContent-Disposition: form-data; name=\"%s\"; filename=\"%s\"\r\nContent-Type: %s\r\n\r\n" % (boundary, k, fname, ctype)).encode()
+        parts.append(head + data + b"\r\n")
+    parts.append(("--%s--\r\n" % boundary).encode())
+    body = b"".join(parts)
+    req = urllib.request.Request(API % (token, method), data=body,
+        headers={"Content-Type": "multipart/form-data; boundary=%s" % boundary,
+                 "User-Agent": "Mozilla/5.0"})
     try:
-        return requests.post(API % (token, method), data=params, timeout=90).json()
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        try: return json.loads(e.read())
+        except Exception: return {"ok": False}
     except Exception:
         return {"ok": False}
 
-def _tg_post_json(token, method, payload):
+def _bot_id(token):
     try:
-        return requests.post(API % (token, method), json=payload, timeout=90).json()
+        return (tg(token, "getMe").get("result") or {}).get("id")
     except Exception:
-        return {"ok": False}
+        return None
 
 def bootstrap_bot(name, token):
     """Name, bio, admin rights and profile photo for one bot."""
     if not token:
         return
     out = []
-    # 1. display name
-    j = _tg_post(token, "setMyName", name=name)
-    out.append("name:" + ("ok" if j.get("ok") else "fail"))
-    # 2. bio + short bio (Fragment handle pitch)
-    j = _tg_post(token, "setMyDescription",
-                 description="%s is a Fragment TON NFT username. DM @darthvader to buy." % name)
-    out.append("bio:" + ("ok" if j.get("ok") else "fail"))
-    j = _tg_post(token, "setMyShortDescription",
-                 short_description="%s - Fragment TON NFT username" % name)
-    out.append("sdesc:" + ("ok" if j.get("ok") else "fail"))
-    # 3. admin rights in the chat (promoted by the admin bot)
+    out.append("name:" + ("ok" if tg(token, "setMyName", {"name": name}).get("ok") else "fail"))
+    out.append("bio:" + ("ok" if tg(token, "setMyDescription",
+        {"description": "%s is a Fragment TON NFT username. DM @darthvader to buy." % name}).get("ok") else "fail"))
+    out.append("sdesc:" + ("ok" if tg(token, "setMyShortDescription",
+        {"short_description": "%s - Fragment TON NFT username" % name}).get("ok") else "fail"))
     if ADMIN_TOKEN and token != ADMIN_TOKEN:
-        p = {"chat_id": CID, "user_id": token_id(token),
-             "can_post_messages": "true", "can_edit_messages": "true",
-             "can_delete_messages": "true", "can_manage_chat": "false",
-             "can_restrict_members": "false", "can_invite_users": "true",
-             "can_pin_messages": "true", "can_promote_members": "false"}
-        j = _tg_post(ADMIN_TOKEN, "promoteChatMember", **p)
-        out.append("admin:" + ("ok" if j.get("ok") else "fail"))
-    # 4. profile photo from avatars/<name>.jpg
+        bid = _bot_id(token)
+        if bid:
+            j = tg(ADMIN_TOKEN, "promoteChatMember", {
+                "chat_id": CID, "user_id": bid,
+                "can_post_messages": "true", "can_edit_messages": "true",
+                "can_delete_messages": "true", "can_manage_chat": "false",
+                "can_restrict_members": "false", "can_invite_users": "true",
+                "can_pin_messages": "true", "can_promote_members": "false"})
+            out.append("admin:" + ("ok" if j.get("ok") else "fail"))
     ap = os.path.join(os.path.dirname(os.path.abspath(__file__)), "avatars", name + ".jpg")
     if os.path.exists(ap):
         try:
             with open(ap, "rb") as fh:
-                r = requests.post(API % (token, "setMyProfilePhoto"),
-                                  data={"type": "static"},
-                                  files={"photo": (name + ".jpg", fh, "image/jpeg")},
-                                  timeout=120)
-            j = r.json()
-            if not j.get("ok"):
-                out.append("photo:fail")
-            else:
-                out.append("photo:ok")
+                data = fh.read()
+            j = _post_multipart(token, "setMyProfilePhoto", {"type": "static"},
+                {"photo": (name + ".jpg", data, "image/jpeg")})
+            out.append("photo:" + ("ok" if j.get("ok") else "fail"))
         except Exception:
             out.append("photo:exc")
     print("  bootstrap %-14s %s" % (name, " ".join(out)), flush=True)
-
-def token_id(token):
-    try:
-        j = requests.get(API % (token, "getMe"), timeout=40).json()
-        return (j.get("result") or {}).get("id")
-    except Exception:
-        return None
 
 def bootstrap_all():
     if os.environ.get("TG_BOOTSTRAP", "1") != "1":
         return
     print("=== BOOTSTRAP ===", flush=True)
     for name, token in TOK.items():
-        bootstrap_bot(name, token)
+        try:
+            bootstrap_bot(name, token)
+        except Exception as e:
+            print("  bootstrap %-14s ERR %s" % (name, e), flush=True)
+        time.sleep(1.2)
     print("=== BOOTSTRAP DONE ===", flush=True)
 
 # ================= ROSTER (data-driven) =================

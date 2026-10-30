@@ -7,7 +7,7 @@ permissions:
   contents: write
 concurrency:
   group: vader-engine
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   engine:
     runs-on: ubuntu-latest
@@ -25,6 +25,16 @@ jobs:
           path: state
           key: vader-state-${{ github.run_id }}
           restore-keys: vader-state-
+      - name: Upload profile photos
+        env:
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
+          TG_YODA: ${{ secrets.TG_YODA }}
+          TG_LUKE: ${{ secrets.TG_LUKE }}
+          TG_CHEW: ${{ secrets.TG_CHEW }}
+          TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
+          TG_VADER: ${{ secrets.TG_VADER }}
+        run: python3 avatars.py
       - name: Run living room
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
@@ -34,6 +44,7 @@ jobs:
           TG_CHEW: ${{ secrets.TG_CHEW }}
           TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
           TG_VADER: ${{ secrets.TG_VADER }}
+          TG_BOOTSTRAP: ${{ vars.TG_BOOTSTRAP || '1' }}
         run: python3 run.py
       - name: Persist state
         if: always()
