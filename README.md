@@ -12,8 +12,16 @@ Posts beats with live data and answers human messages:
 - **Elon** - Grok / SpaceX / xAI updates
 - **Debate** - two personas argue over the best Star Wars character
 
-Rules: one persona answers each human message, bots never reply to bots,
-sentences never repeat, stickers never repeat, like counts are mixed.
+## Rules
+
+One persona answers each human message. Bots never reply to bots. No repeated
+sentences. No repeated stickers. Mixed like counts. Max 8 replies per run.
+
+## State
+
+State lives in `state/` inside the repo and is committed back each run, so the
+update offset and the seen-message ledger survive between runs. Also cached
+with `actions/cache` as a second layer.
 
 ## Secrets
 

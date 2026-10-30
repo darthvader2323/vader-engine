@@ -53,7 +53,7 @@ def jget(url, timeout=15):
     try: return json.loads(body)
     except Exception: return None
 
-STATE_DIR = os.environ.get("STATE_DIR", "/tmp/vader")
+STATE_DIR = os.environ.get("STATE_DIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "state")
 os.makedirs(STATE_DIR, exist_ok=True)
 
 def load(name, default):
@@ -63,8 +63,13 @@ def load(name, default):
 
 def save(name, obj):
     try:
-        with open(os.path.join(STATE_DIR, name), "w") as f: json.dump(obj, f)
-    except Exception: pass
+        os.makedirs(STATE_DIR, exist_ok=True)
+        p = os.path.join(STATE_DIR, name)
+        tmp = p + ".tmp"
+        with open(tmp, "w") as f: json.dump(obj, f)
+        os.replace(tmp, p)
+    except Exception as e:
+        print("SAVE ERR %s: %s" % (name, e), flush=True)
 
 USED = set(load("used.json", []))
 STK_USED = set(load("stk_used.json", []))
@@ -249,6 +254,9 @@ def poll_and_answer():
     SEEN_MSGS.update(seen)
     save("seen_msgs.json", list(SEEN_MSGS)[-800:])
     save("offsets.json", OFFSETS)
+    save("used.json", list(USED)[-500:])
+    save("stk_used.json", list(STK_USED))
+    print("STATE offset=%s seen=%d" % (OFFSETS.get("main"), len(SEEN_MSGS)), flush=True)
     return answered
 
 def poll_and_answer():
@@ -317,6 +325,10 @@ def reply_for(who, text):
               line + ". macro is driving this, the fed and CPI, not the coin",
               line + ". watch the chart, not the narrative. liquidity is the whole game",
               line + ". heavy money moved into this one. the chart is not the story, the tape is",
+              line + ". down today but the market is not the story, the liquidity is",
+              line + ". numbers only, no advice from me. volume tells the truth",
+              line + ". the coin is following the market, not leading it",
+              line + ". i watch this one. rate cuts decide it, not sentiment",
             ])
         return fresh([
           "the market is moving on macro, not on the coin. fed, CPI, then liquidity. watch the chart, not the narrative",
@@ -371,6 +383,7 @@ def reply_for(who, text):
 def beat():
     picks = ["fragment","crypto","sports","deals","news","elon","debate"]
     random.shuffle(picks)
+    if picks.count("crypto") > 1: picks.remove("crypto")
     n = random.choice([3,4,4,5]); did = 0
     for p in picks[:n]:
         try:
