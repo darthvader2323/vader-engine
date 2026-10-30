@@ -1,0 +1,25 @@
+name: Vader Room Engine
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run engine
+        env:
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
+          TG_YODA: ${{ secrets.TG_YODA }}
+          TG_LUKE: ${{ secrets.TG_LUKE }}
+          TG_CHEW: ${{ secrets.TG_CHEW }}
+          TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
+          TG_VADER: ${{ secrets.TG_VADER }}
+        run: |
+          python3 engine.py
