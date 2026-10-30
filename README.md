@@ -63,7 +63,9 @@ blockchain transactions. There is no fallback list of supposed recent sales.
 
 ## Persistence and hosting
 
-The one active workflow is engine.yml (Vader Character Community). The old room.yml is
+The one active workflow is engine.yml (Vader Character Community), scheduled from main.
+It validates and runs the community-live branch and saves runtime checkpoints there.
+This separates production from overlapping experiments on main. The old room.yml is
 manual-only and does not post. Production workers share a concurrency group and do not
 cancel an active worker every ten minutes.
 
