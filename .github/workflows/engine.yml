@@ -11,7 +11,7 @@ on:
       mode:
         description: Validate only, inspect connectivity, or run the community
         type: choice
-        options: [run, probe, validate]
+        options: [run, probe, validate, profiles]
         default: run
       minutes:
         description: Worker duration; 2 minutes is for a deployment smoke check
@@ -68,7 +68,7 @@ jobs:
           TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
           TG_VADER: ${{ secrets.TG_VADER }}
           BOT_TOKENS_JSON: ${{ secrets.BOT_TOKENS_JSON }}
-          TG_BOOTSTRAP: ${{ vars.TG_BOOTSTRAP || '1' }}
+          TG_BOOTSTRAP: ${{ inputs.mode == 'profiles' && '1' || '0' }}
           STICKER_PACKS_JSON: ${{ vars.STICKER_PACKS_JSON }}
           CHUCKY_STICKER_PACK: ${{ vars.CHUCKY_STICKER_PACK }}
           YOUNGBOY_STICKER_PACK: ${{ vars.YOUNGBOY_STICKER_PACK }}
@@ -82,6 +82,8 @@ jobs:
           git rev-parse --short HEAD
           if [ "$RUN_MODE" = "probe" ]; then
             python3 healthcheck.py
+          elif [ "$RUN_MODE" = "profiles" ]; then
+            python3 avatars.py
           else
             python3 run.py
           fi
