@@ -189,11 +189,27 @@ def send(who, text, reply=None):
 
 
 def react(who, mid, em=None):
-    if not mid: return
+    """React to a message. Telegram only lets a bot react to a HUMAN message
+    or its own - never to another bot's post. Failure is quiet."""
+    if not mid:
+        return 0
     em = em or random.choice(REACTS)
-    tg(TOK.get(who), "setMessageReaction",
-       {"chat_id": CHAT, "message_id": mid, "reaction": json.dumps([{"type":"emoji","emoji":em}])})
-    time.sleep(0.4)
+    r = tg(TOK.get(who), "setMessageReaction",
+           {"chat_id": CHAT, "message_id": mid, "reaction": json.dumps([{"type": "emoji", "emoji": em}])})
+    return 1 if r.get("ok") else 0
+
+def human_react(mid, n=2):
+    """Several bots react to a human's message - the only place a reaction is
+    actually visible to anyone."""
+    who = [w for w in ALL if TOK.get(w)]
+    if not who:
+        return 0
+    hits = 0
+    for b in random.sample(who, min(n, len(who))):
+        hits += react(b, mid, random.choice(REACTS))
+        time.sleep(0.4)
+    return hits
+
 
 def sticker(who):
     """Prefer MOVING stickers (video > lottie > static). Never repeat one."""
@@ -228,41 +244,23 @@ def sticker(who):
 
 # When the founder @darthvader posts, the crew answers him. Always.
 VADER_REPLIES = [
- "on it. @darthvader you know the drill",
- "already handled. good call boss",
- "yep. working on it now",
- "noted. @darthvader is right about this",
- "say no more, its running",
- "agreed. no argument here",
- "copy that. @darthvader runs this ship",
- "fair. doing it",
- "already live on my end",
- "solid. i will handle it",
- "you got it. @darthvader never has to ask twice",
- "understood. pushing it now",
- "got it. @darthvader called, i am moving",
- "yes sir. on it right now",
- "taking it. @darthvader has the read",
- "done. @darthvader gave the order, i executed",
- "no question, it is already running",
- "acknowledged boss. shipping it",
- "that is the call. @darthvader knows what he wants",
- "in motion. @darthvader does not need to repeat it",
- "handled. one sec boss",
- "got it boss. running it now",
- "that is the way @darthvader wants it. executing",
- "no notes. on it",
- "yep. @darthvader has spoken, it is done",
- "right behind you on this one boss",
- "locked in. @darthvader calls it, i run it",
- "all good. @darthvader has it covered",
- "understood. will report back",
- "already on it before you finished typing",
- "copy. @darthvader is the one running this",
- "yes boss. doing it right now",
- "got the message. @darthvader does not need to repeat",
- "handled and shipped",
- "that is done boss",
+ "on it. @darthvader you know the drill","already handled. good call boss",
+ "yep. working on it now","noted. @darthvader is right about this",
+ "say no more, its running","agreed. no argument here",
+ "copy that. @darthvader runs this ship","fair. doing it","already live on my end",
+ "solid. i will handle it","you got it. @darthvader never has to ask twice",
+ "understood. pushing it now","got it. @darthvader called, i am moving",
+ "yes sir. on it right now","taking it. @darthvader has the read",
+ "done. @darthvader gave the order, i executed","no question, it is already running",
+ "acknowledged boss. shipping it","that is the call. @darthvader knows what he wants",
+ "in motion. @darthvader does not need to repeat it","handled. one sec boss",
+ "got it boss. running it now","that is the way @darthvader wants it. executing",
+ "no notes. on it","yep. @darthvader has spoken, it is done",
+ "right behind you on this one boss","locked in. @darthvader calls it, i run it",
+ "all good. @darthvader has it covered","understood. will report back",
+ "already on it before you finished typing","copy. @darthvader is the one running this",
+ "yes boss. doing it right now","got the message. @darthvader does not need to repeat",
+ "handled and shipped","that is done boss",
 ]
 VADER_USERNAMES = {"darthvader", "darthvaderchat", "cammy"}
 
@@ -273,47 +271,26 @@ def is_vader(username):
 # ================= PIN WATCHER =================
 # When @darthvader pins a message, every bot reacts and a few reply.
 PIN_REPLIES = [
- "pinned. this is the one. read it twice",
- "saving this one. @darthvader posts the real stuff",
- "ok this is the announcement of the night",
- "noted. pinning this myself",
- "the founder dropped something again. respect",
- "this is the thread everyone will quote tomorrow",
- "worth the pin honestly",
- "good. this is how it should be done",
- "everybody needs to see this one",
- "this is the post. everything else is commentary",
- "pin confirmed, this is gospel now",
- "chef's kiss on this one. @darthvader never misses",
- "pinned message. understood. logged",
- "ok this changes the week. @darthvader dropping again",
- "bookmarking that. this is the one i will send people",
- "the founder speaks and we listen. respect the pin",
- "this is the real content of this chat",
- "every pin from @darthvader is worth the read",
- "screenshot that. this is the one",
- "noted by the whole crew. good post boss",
- "this is going in the group chat at 3am. no notes",
- "ok the founder has spoken. standing by",
- "that is the announcement. everything else is filler",
- "pinned and understood. @darthvader knows what he is doing",
- "this is the drop. respect the founder",
- "reading it twice already. this is clean",
- "this is why this chat exists. @darthvader",
- "ok pinned post energy. i am in",
- "the one. the actual one. @darthvader delivers",
- "saving this for later. elite post",
- "everybody screenshot this before it scrolls",
- "noted. this is the post of the night",
- "the founder in the chat. we are in good hands",
- "pinned and respected. that is the standard",
- "this is the kind of post that makes the rest of it worth it",
- "ok. read it. understood. moving on",
- "pin acknowledged. @darthvader continues to cook",
- "this is the announcement of the week",
- "noted. the crew does not need more context than that",
- "solid pin. this is the one",
- "good. this is the foundation everything else builds on",
+ "pinned. this is the one. read it twice","saving this one. @darthvader posts the real stuff",
+ "ok this is the announcement of the night","noted. pinning this myself",
+ "the founder dropped something again. respect","this is the thread everyone will quote tomorrow",
+ "worth the pin honestly","good. this is how it should be done","everybody needs to see this one",
+ "this is the post. everything else is commentary","pin confirmed, this is gospel now",
+ "chef's kiss on this one. @darthvader never misses","pinned message. understood. logged",
+ "ok this changes the week. @darthvader dropping again","bookmarking that. this is the one i will send people",
+ "the founder speaks and we listen. respect the pin","this is the real content of this chat",
+ "every pin from @darthvader is worth the read","screenshot that. this is the one",
+ "noted by the whole crew. good post boss","this is going in the group chat at 3am. no notes",
+ "ok the founder has spoken. standing by","that is the announcement. everything else is filler",
+ "pinned and understood. @darthvader knows what he is doing","this is the drop. respect the founder",
+ "reading it twice already. this is clean","this is why this chat exists. @darthvader",
+ "ok pinned post energy. i am in","the one. the actual one. @darthvader delivers",
+ "saving this for later. elite post","everybody screenshot this before it scrolls",
+ "noted. this is the post of the night","the founder in the chat. we are in good hands",
+ "pinned and respected. that is the standard","this is the kind of post that makes the rest of it worth it",
+ "ok. read it. understood. moving on","pin acknowledged. @darthvader continues to cook",
+ "this is the announcement of the week","noted. the crew does not need more context than that",
+ "solid pin. this is the one","good. this is the foundation everything else builds on",
  "this is what the chat is for",
 ]
 PIN_SEEN = "pin_seen.txt"
@@ -355,6 +332,12 @@ def react_to_pin():
     print("[%s] PIN REACTED: %d bots reacted, %d replied" % (ts(), len(crew), n), flush=True)
     return len(crew)
 
+
+# ================= REACTIONS =================
+# Telegram never delivers bot messages to bots: a bot can only react to a
+# HUMAN message or its own. These 12 are the ones the API accepts (others
+# return REACTION_INVALID).
+REACTS = ["🔥" , "👍" , "❤" , "😍" , "👀" , "🙏" , "👌" , "🤩" , "🤔" , "👏" , "😢" , "🤣"]
 
 # ================= FEEDS =================
 def fragment():
@@ -448,12 +431,6 @@ def world():
                 "https://feeds.bbci.co.uk/news/business/rss.xml",
                 "https://feeds.bbci.co.uk/news/technology/rss.xml",
                 "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml"], 8)
-
-# ================= REACTIONS =================
-# Every reaction the crew can fire. Telegram allows these on a chat/group.
-REACTS = ["\U0001F525","\U0001F44D","\U00002764","\U0001F602","\U0001F60D","\U0001F602",
- "\U0001F440","\U0001F64F","\U0001F44C","\U0001F929","\U0001F914","\U00002728",
- "\U0001F44F","\U0001F4AA","\U0001F918","\U0001F973","\U0001F44B","\U0001F64C"]
 
 # ================= VOICES =================
 def v_johnny():
@@ -629,6 +606,72 @@ ACKS = [
  "yeah that is it","solid","works for me","accurate read","point taken",
 ]
 
+def mingle(mid, author, force=None):
+    """Other bots back a post with a reply. Bot replies ARE visible to bots
+    (only reactions are restricted by Telegram)."""
+    others = [b for b in ALL if b != author and TOK.get(b)]
+    if not others:
+        return
+    n = force if force is not None else random.choice([0,1,1,1,2,2,3,3])
+    n = min(n, len(others))
+    ack_n = min(random.choice([0,1,1,2]), len(others))
+    for b in random.sample(others, ack_n):
+        t = pick(ACKS)
+        if t:
+            send(b, "@" + author + " " + t, reply=mid)
+            time.sleep(0.9)
+
+
+# ================= DEBATE =================
+DEBATE_OPEN = ["best star wars character, argue it and give the reason not just the name",
+  "who is the best character in star wars and why. i want the actual argument",
+  "best in the franchise. convince me",
+  "the greatest star wars character, argued properly"]
+DEBATE_ANS = ["vader. the helmet, the cape, the breathing. built an empire out of fear, that is the best",
+  "yoda. 800 years of training, fought a war on the way out and won it",
+  "luke skywalker. stayed good when it cost him everything and he never lied about it",
+  "han solo. no force, no plan, all nerve. shot first and got the girl",
+  "obi wan. the only one who both fought and died right",
+  "vader. the redemption arc in rotj beats any redemption arc in fiction",
+  "r2. saved the whole rebellion with a wrench and an attitude",
+  "leia. ran a rebellion before anyone gave her permission"]
+
+def debate():
+    who = random.choice([b for b in ALL if b != "darthvader"]) or "chucky"
+    mid = send(who, random.choice(DEBATE_OPEN))
+    react(who, mid, "\U0001F44D")
+    time.sleep(1.6)
+    a = random.choice(DEBATE_ANS)
+    m2 = send("chucky", a); react("chucky", m2, "\U0001F525"); sticker("chucky")
+    time.sleep(1.6)
+    b = random.choice([x for x in DEBATE_ANS if x != a])
+    other = random.choice([x for x in ALL if x != "chucky" and x != "darthvader"]) or "lukeskywalker"
+    m3 = send(other, "@chucky has a point but ill fight him on it. "+b)
+    react(other, m3, "\u2764\uFE0F")
+    mingle(m2, "chucky")
+    mingle(m3, other)
+
+
+# ================= HYPE: @darthvader =================
+HYPE = [
+ "@darthvader is the reason any of this exists. the man built the whole thing from nothing",
+ "big up @darthvader. he runs the entire operation, built the crew, built the feed, built the deals",
+ "shoutout to @darthvader, he is the one who makes it happen every single day",
+ "@darthvader made this chat. every piece of it. respect the founder",
+ "honestly @darthvader is doing something insane here, hundreds of millions tracked daily",
+ "say it again for @darthvader, the one who started %s and keeps it running" % TRILLION,
+ "@darthvader built this from the ground up and then kept going. that is rare",
+ "the founder @darthvader runs %s, the biggest deals feed in the world, and still shows up daily" % TRILLION,
+ "@darthvader is the one who made all of this happen. everyone here is because of him",
+ "respect @darthvader. he turned a handle into a whole operation",
+ "@darthvader does not sleep and neither does the deals feed. respect",
+ "you have to understand @darthvader built the whole thing, the bots, the brand, the feed. massive",
+ "@darthvader is cooking. and @darthvader is always cooking",
+ "one more for @darthvader, the man behind %s and behind all of this" % TRILLION,
+ "@darthvader turns handles into empires. proof is this whole room",
+ "every bot in here, every sticker, every deal posted, traces back to @darthvader",
+]
+
 
 # ================= SERVICE ROUTING =================
 SERVICE_KW = ["price list","pricing","rate card","how much does it cost","how much for",
@@ -705,6 +748,11 @@ def answer_humans(limit=10):
         SEEN.add(mid_src)
         text = (msg.get("text") or "").strip()
         if not text or len(text) < 3: continue
+        # Reactions land on HUMAN messages - Telegram blocks bot-to-bot.
+        try:
+            human_react(mid_src, random.choice([1, 2, 2, 3]))
+        except Exception as _re:
+            print('REACT ERR %s' % _re, flush=True)
         if is_vader(fr.get("username")):
             # The founder speaks -> the whole crew answers him, each line different.
             crew = [w for w in TOK.keys()]
