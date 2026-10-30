@@ -141,6 +141,63 @@ def sticker(who):
     time.sleep(1.0)
 
 
+
+# ================= PIN WATCHER =================
+# When @darthvader pins a message, every bot reacts and a few reply.
+PIN_REPLIES = [
+ "pinned. this is the one. read it twice",
+ "saving this one. @darthvader posts the real stuff",
+ "ok this is the announcement of the night",
+ "noted. pinning this myself",
+ "the founder dropped something again. respect",
+ "this is the thread everyone will quote tomorrow",
+ "worth the pin honestly",
+ "good. this is how it should be done",
+ "everybody needs to see this one",
+ "this is the post. everything else is commentary",
+ "pin confirmed, this is gospel now",
+ "chef's kiss on this one. @darthvader never misses",
+]
+PIN_SEEN = "pin_seen.txt"
+
+def pin_text():
+    """Return (message_id, text) of the currently pinned message, or (None, None)."""
+    r = tg(TOK.get("johnny") or TOK.get(list(TOK)[0]), "getChatPinnedMessage", {"chat_id": CHAT})
+    if not r.get("ok"): return None, None
+    m = (r.get("result") or {}).get("message") or {}
+    if not m.get("message_id"): return None, None
+    txt = m.get("text") or m.get("caption") or ""
+    return m.get("message_id"), txt
+
+def react_to_pin():
+    """Called every cycle. If the pinned message changed, the whole crew reacts and replies."""
+    mid, txt = pin_text()
+    if not mid: return 0
+    seen = load(PIN_SEEN, "")
+    if str(mid) in seen: return 0
+    save(PIN_SEEN, (seen + "\n" + str(mid)).strip())
+    print("[%s] NEW PIN %s" % (ts(), mid), flush=True)
+
+    crew = [w for w in TOK.keys()]
+    random.shuffle(crew)
+    # everyone reacts, but vary the emoji so it reads human
+    for w in crew:
+        react(w, mid, random.choice(REACTS))
+        time.sleep(0.35)
+    # a handful reply, each with a DIFFERENT line
+    replies = list(PIN_REPLIES)
+    random.shuffle(replies)
+    n = max(2, min(len(replies), len(crew) // 2 + random.randint(0, 2)))
+    used = replies[:n]
+    for i, w in enumerate(crew[:n]):
+        mid2 = send(w, used[i], reply=mid)
+        if mid2:
+            react(w, mid2, random.choice(REACTS))
+            time.sleep(0.6)
+    print("[%s] PIN REACTED: %d bots reacted, %d replied" % (ts(), len(crew), n), flush=True)
+    return len(crew)
+
+
 # ================= FEEDS =================
 def fragment():
     d = jget("https://namespace.my/api/sales?limit=200")
@@ -440,6 +497,10 @@ def route(text):
     return random.choice(ALL) if ALL else None
 
 def answer_humans(limit=10):
+    try:
+        react_to_pin()
+    except Exception as _pe:
+        print('PIN ERR %s' % _pe, flush=True)
     ans = 0
     tok = TOK.get("johnny") or (list(TOK.values())[0] if TOK else "")
     if not tok: return 0

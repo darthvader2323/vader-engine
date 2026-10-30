@@ -21,5 +21,7 @@ while time.time() < deadline:
     except Exception as e: print("BEAT ERR %s" % e, flush=True)
     try: engine.answer_humans()
     except Exception as e: print("ANSWER ERR %s" % e, flush=True)
+    try: engine.react_to_pin()
+    except Exception as e: print("PIN ERR %s" % e, flush=True)
     time.sleep(random.uniform(GAP_MIN, GAP_MAX))
 print("RUNNER DONE %d cycles" % cycle, flush=True)
