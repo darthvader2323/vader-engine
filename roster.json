@@ -7,7 +7,9 @@
   "desks": [
    "service",
    "street"
-  ]
+  ],
+  "handle": "@brucewayne",
+  "fragment": true
  },
  {
   "name": "yoda",
@@ -16,7 +18,9 @@
   "env": "TG_YODA",
   "desks": [
    "crypto"
-  ]
+  ],
+  "handle": "@yoda",
+  "fragment": true
  },
  {
   "name": "lukeskywalker",
@@ -26,7 +30,9 @@
   "desks": [
    "sports",
    "elon"
-  ]
+  ],
+  "handle": "@lukeskywalker",
+  "fragment": true
  },
  {
   "name": "chewbacca",
@@ -35,7 +41,9 @@
   "env": "TG_CHEW",
   "desks": [
    "fragment"
-  ]
+  ],
+  "handle": "@chewbacca",
+  "fragment": true
  },
  {
   "name": "chucky",
@@ -44,7 +52,9 @@
   "env": "TG_CHUCKY",
   "desks": [
    "deals"
-  ]
+  ],
+  "handle": "@chucky",
+  "fragment": true
  },
  {
   "name": "darthvader",
@@ -54,7 +64,9 @@
   "desks": [
    "world",
    "founder"
-  ]
+  ],
+  "handle": "@darthvader",
+  "fragment": true
  },
  {
   "name": "killer",
@@ -63,7 +75,9 @@
   "env": "TG_KILLER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@killer",
+  "fragment": true
  },
  {
   "name": "assassin",
@@ -72,7 +86,9 @@
   "env": "TG_ASSASSIN",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@assassin",
+  "fragment": true
  },
  {
   "name": "hitman",
@@ -81,7 +97,9 @@
   "env": "TG_HITMAN",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@hitman",
+  "fragment": true
  },
  {
   "name": "gangsta",
@@ -90,7 +108,9 @@
   "env": "TG_GANGSTA",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@gangsta",
+  "fragment": true
  },
  {
   "name": "tonysoprano",
@@ -99,7 +119,9 @@
   "env": "TG_TONYSOPRANO",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@tonysoprano",
+  "fragment": true
  },
  {
   "name": "peterparker",
@@ -108,7 +130,9 @@
   "env": "TG_PETERPARKER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@peterparker",
+  "fragment": true
  },
  {
   "name": "jacksparrow",
@@ -117,7 +141,9 @@
   "env": "TG_JACKSPARROW",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@jacksparrow",
+  "fragment": true
  },
  {
   "name": "dexter",
@@ -126,7 +152,9 @@
   "env": "TG_DEXTER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@dexter",
+  "fragment": true
  },
  {
   "name": "johnwick",
@@ -135,7 +163,9 @@
   "env": "TG_JOHNWICK",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@johnwick",
+  "fragment": true
  },
  {
   "name": "murder",
@@ -144,7 +174,9 @@
   "env": "TG_MURDER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@murder",
+  "fragment": true
  },
  {
   "name": "ghost",
@@ -153,7 +185,9 @@
   "env": "TG_GHOST",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@ghost",
+  "fragment": true
  },
  {
   "name": "devil",
@@ -162,7 +196,9 @@
   "env": "TG_DEVIL",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@devil",
+  "fragment": true
  },
  {
   "name": "demon",
@@ -171,7 +207,9 @@
   "env": "TG_DEMON",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@demon",
+  "fragment": true
  },
  {
   "name": "hacker",
@@ -180,7 +218,9 @@
   "env": "TG_HACKER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@hacker",
+  "fragment": true
  },
  {
   "name": "michaelmyers",
@@ -189,7 +229,9 @@
   "env": "TG_MICHAELMYERS",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@michaelmyers",
+  "fragment": true
  },
  {
   "name": "misaamane",
@@ -198,7 +240,9 @@
   "env": "TG_MISAAMANE",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@misaamane",
+  "fragment": true
  },
  {
   "name": "harleyquinn",
@@ -207,7 +251,9 @@
   "env": "TG_HARLEYQUINN",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@harleyquinn",
+  "fragment": true
  },
  {
   "name": "slaughter",
@@ -216,7 +262,9 @@
   "env": "TG_SLAUGHTER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@slaughter",
+  "fragment": true
  },
  {
   "name": "exclusive",
@@ -225,7 +273,9 @@
   "env": "TG_EXCLUSIVE",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@exclusive",
+  "fragment": true
  },
  {
   "name": "freddykrueger",
@@ -234,7 +284,9 @@
   "env": "TG_FREDDYKRUEGER",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@freddykrueger",
+  "fragment": true
  },
  {
   "name": "porn",
@@ -243,6 +295,8 @@
   "env": "TG_PORN",
   "desks": [
    "general"
-  ]
+  ],
+  "handle": "@porn",
+  "fragment": true
  }
 ]

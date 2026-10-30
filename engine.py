@@ -410,6 +410,25 @@ def v_vader():
 
 VOICES = {"brucewayne":v_johnny,"yoda":v_yoda,"chewbacca":v_chew,"lukeskywalker":v_luke,"chucky":v_chucky,"darthvader":v_vader}
 
+# ================= FRAGMENT HANDLE VOICE =================
+# Every bot in the roster owns a Telegram username that is a Fragment TON NFT.
+# People want to buy these handles. Each bot talks up its own handle; every
+# actual purchase goes through the service desk (@darthvader).
+def _frag_voice(name):
+    h = "@" + name
+    def v():
+        return pick([
+            "%s is my name on telegram. it is a fragment username, a ton nft, and people are trying to buy it. if you want it, message %s and we will talk price." % (h, HANDLE),
+            "everyone keeps asking about %s. it is up on fragment as a ton nft. want it? %s handles the sale." % (h, HANDLE),
+            "real talk, %s is the handle people want. fragment username, ton nft, settles on chain. %s can get it for you." % (h, HANDLE),
+            "%s is mine and it is for sale. fragment listing, ton nft. hit %s with the details." % (h, HANDLE),
+            "the handle %s is worth more than most of the coins people talk about here. ton nft on fragment. ask %s." % (h, HANDLE),
+            "if you have been looking at %s, that is a fragment ton nft and it moves fast. %s is the one to talk to." % (h, HANDLE),
+            "people buy %s because the name is clean and short. it lives on fragment as a ton nft. %s does the transfer." % (h, HANDLE),
+            "my handle %s is a fragment username on ton. supply is short. %s can make it yours." % (h, HANDLE),
+        ])
+    return v
+
 # ================= VOICE REGISTRY =================
 # Every bot gets a distinct voice. Existing personas keep their hand-written
 # voice; every new bot in roster.json gets a generated one built from its
@@ -437,7 +456,12 @@ VOICES = {}
 for _b in _ROSTER:
     _n = _b["name"]
     _fn = globals().get(_CUST.get(_n, ""))
-    VOICES[_n] = _fn if _fn else _mk_voice(_n, _b.get("persona", _n))
+    _base = _fn if _fn else _mk_voice(_n, _b.get("persona", _n))
+    if _b.get("fragment"):
+        _frag = _frag_voice(_n)
+        VOICES[_n] = (lambda bb, ff: (lambda: bb() if random.random() < 0.55 else ff()))(_base, _frag)
+    else:
+        VOICES[_n] = _base
 
 # ================= REPLIES / ACKS =================
 ACKS = ["fair point, that tracks","that is a good read","agreed, no argument from me",
@@ -530,11 +554,11 @@ SERVICE_STRONG = ["price list","rate card","how much","order","buy","unban","ban
 
 def is_service(text):
     t = text.lower()
-    if any(k in t for k in ["btc","bitcoin","eth","gram","crypto","coin","market cap","solana","mcap","ton ",
+    if _kw(t, ["btc","bitcoin","eth","gram","crypto","coin","market cap","solana","mcap","ton ",
                             "nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league",
                             "elon","musk","grok","spacex","tesla","xai","fragment","acquisition","ipo","merger"]):
         return False
-    return any(k in t for k in SERVICE_KW)
+    return _kw(t, SERVICE_KW)
 
 def service_reply():
     return pick([
@@ -547,14 +571,23 @@ def service_reply():
     ])
 
 # ================= HUMAN ANSWERING =================
+def _kw(t, kws):
+    """Word-boundary match so 'unban' never matches 'nba'."""
+    for k in kws:
+        k = k.strip()
+        if not k: continue
+        if re.search(r"(?<![a-z0-9])" + re.escape(k) + r"(?![a-z0-9])", t):
+            return True
+    return False
+
 def route(text):
     t = text.lower()
-    if any(k in t for k in ["btc","bitcoin","eth","ton ","gram","crypto","market cap","coin","solana","mcap"]): return "yoda"
-    if any(k in t for k in ["elon","musk","grok","spacex","tesla","xai"]): return "lukeskywalker"
-    if any(k in t for k in ["nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league","wnba"]): return "lukeskywalker"
-    if any(k in t for k in ["username","handle","fragment","for sale","og name","sold","ton nft"]): return "chewbacca"
-    if any(k in t for k in ["acquisition","acquires","merger","billion","ipo","deal","funding"]): return "chucky"
-    if any(k in t for k in ["news","world","going on","happening","politics","war","election"]): return "darthvader"
+    if _kw(t, ["btc","bitcoin","eth","ton ","gram","crypto","market cap","coin","solana","mcap"]): return "yoda"
+    if _kw(t, ["elon","musk","grok","spacex","tesla","xai"]): return "lukeskywalker"
+    if _kw(t, ["nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league","wnba"]): return "lukeskywalker"
+    if _kw(t, ["username","handle","fragment","for sale","og name","sold","ton nft"]): return "chewbacca"
+    if _kw(t, ["acquisition","acquires","merger","billion","ipo","deal","funding"]): return "chucky"
+    if _kw(t, ["news","world","going on","happening","politics","war","election"]): return "darthvader"
     if is_service(t): return "brucewayne"
     return random.choice(ALL) if ALL else None
 
