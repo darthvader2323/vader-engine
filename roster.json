@@ -320,5 +320,16 @@
   ],
   "handle": "@chew",
   "fragment": true
+ },
+ {
+  "name": "p0rn",
+  "persona": "p0rn",
+  "pack": "han",
+  "env": "TG_P0RN",
+  "desks": [
+   "general"
+  ],
+  "handle": "@p0rn",
+  "fragment": true
  }
 ]
