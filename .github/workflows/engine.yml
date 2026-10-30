@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'community-live' || github.ref }}
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '2354c4c9fb5a2277f38dd2610b167235cb49a652' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -49,8 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: community-live
+          ref: 2354c4c9fb5a2277f38dd2610b167235cb49a652
           persist-credentials: false
+      - name: Load the current runtime ledger
+        run: |
+          git fetch --no-tags origin community-live
+          git checkout FETCH_HEAD -- state/runtime.json
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
