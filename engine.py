@@ -38,11 +38,11 @@ LEAGUES = [
     ("basketball/wnba", "WNBA"),
 ]
 PACKS = {
-    "vader": "sqrjt9fkvvztb_by_mira", "grogu": "sklrpz7196ebn_by_mira",
-    "yoda": "sikulkj1ywb7r_by_mira", "luke": "sry4d8ta1gu6s_by_mira",
-    "chew": "s15l72qep9gk0_by_mira", "han": "sroftq1uflv8l_by_mira",
-    "boba": "sryfojcw0mm1l_by_mira", "leia": "s7zg12s696kiy_by_mira",
-    "r2d2": "st6ibqn4fjj0a_by_mira", "crew": "s9s9rvajkf1ti_by_mira",
+    "vader": "ComeToTheDarkSide", "grogu": "BabyYoda",
+    "yoda": "JediMasterYoda", "luke": "sry4d8ta1gu6s_by_mira",
+    "chew": "ChewbaccaWookiee", "han": "sroftq1uflv8l_by_mira",
+    "boba": "sryfojcw0mm1l_by_mira", "leia": "PrincessLeiaOrgana",
+    "r2d2": "st6ibqn4fjj0a_by_mira", "crew": "StarWarsSagaByDarthAdmiraL",
 }
 for _character, _env in [("chucky", "CHUCKY_STICKER_PACK"),
                          ("youngboy", "YOUNGBOY_STICKER_PACK")]:
@@ -128,12 +128,19 @@ except ValueError:
     _extra_tokens = {}
 if not isinstance(_extra_tokens, dict):
     _extra_tokens = {}
-TOK = {}
-for _row in ROSTER_LIST:
-    _env = _row.get("env", "")
-    _token = os.environ.get(_env) or _extra_tokens.get(_env) or _extra_tokens.get(_row["name"])
-    if isinstance(_token, str) and _token.strip() and _token not in TOK.values():
-        TOK[_row["name"]] = _token.strip()
+def configured_tokens(rows, environ, extras):
+    """Keep the service identity when legacy secrets alias the same bot."""
+    result = {}
+    for row in sorted(rows, key=lambda item: "service" not in item.get("desks", [])):
+        env = row.get("env", "")
+        token = environ.get(env) or extras.get(env) or extras.get(row["name"])
+        if isinstance(token, str) and token.strip():
+            token = token.strip()
+            if token not in result.values():
+                result[row["name"]] = token
+    return result
+
+TOK = configured_tokens(ROSTER_LIST, os.environ, _extra_tokens)
 ALL = list(TOK)
 BOT_USERS = {}
 

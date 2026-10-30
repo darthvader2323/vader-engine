@@ -45,6 +45,17 @@ class CommunityTests(unittest.TestCase):
             return {"ok": True, "result": {}}
         return api
 
+    def test_legacy_token_alias_keeps_the_service_bots_identity(self):
+        rows = [
+            {"name": "darthvader", "env": "TG_VADER", "desks": ["general"]},
+            {"name": "brucewayne", "env": "TG_JOHNNY", "desks": ["service"]},
+            {"name": "yoda", "env": "TG_YODA", "desks": ["crypto"]},
+        ]
+        tokens = engine.configured_tokens(rows, {
+            "TG_VADER": " same-token ", "TG_JOHNNY": "same-token", "TG_YODA": "yoda-token",
+        }, {})
+        self.assertEqual(tokens, {"brucewayne": "same-token", "yoda": "yoda-token"})
+
     def test_replayed_service_question_gets_one_designated_answer(self):
         outgoing = []
         with patch.object(engine, "tg", side_effect=self.api_for([self.message()], outgoing)):
