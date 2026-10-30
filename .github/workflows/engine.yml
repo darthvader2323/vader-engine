@@ -5,7 +5,7 @@ on:
     paths: ['*.py', 'roster.json', '.github/workflows/**']
   pull_request:
   schedule:
-    - cron: '3,13,23,33,43,53 * * * *'
+    - cron: '7,27,47 * * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'community-live' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -42,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: community-live
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -64,8 +66,8 @@ jobs:
           FRAGMENT_SALES_FEED_URL: ${{ vars.FRAGMENT_SALES_FEED_URL || 'https://namespace.my/api/sales?limit=30' }}
           VADER_TIMEZONE: America/Chicago
           RUN_MINUTES: '48'
-          GAP_MIN: '240'
-          GAP_MAX: '420'
+          GAP_MIN: '600'
+          GAP_MAX: '1200'
           RUN_MODE: ${{ inputs.mode }}
         run: |
           git rev-parse --short HEAD
@@ -78,5 +80,5 @@ jobs:
         if: always() && inputs.mode != 'probe'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          STATE_BRANCH: main
+          STATE_BRANCH: community-live
         run: python3 checkpoint.py
