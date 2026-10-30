@@ -1,341 +1,340 @@
 [
- {
-  "name": "darthvader",
-  "display": "Darth Vader",
-  "persona": "darthvader",
-  "pack": "vader",
-  "env": "TG_VADER",
-  "desks": [
-   "general",
-   "hype"
-  ],
-  "handle": "@darthvader",
-  "fragment": true
- },
- {
-  "name": "chewbacca",
-  "display": "Chewbacca",
-  "persona": "chewbacca",
-  "pack": "chew",
-  "env": "TG_CHEW",
-  "desks": [
-   "fragment"
-  ],
-  "handle": "@chewbacca",
-  "fragment": true
- },
- {
-  "name": "yoda",
-  "display": "yoda",
-  "persona": "yoda",
-  "pack": "yoda",
-  "env": "TG_YODA",
-  "desks": [
-   "crypto"
-  ],
-  "handle": "@yoda",
-  "fragment": true
- },
- {
-  "name": "brucewayne",
-  "display": "brucewayne",
-  "persona": "brucewayne",
-  "pack": "han",
-  "env": "TG_JOHNNY",
-  "desks": [
-   "service",
-   "street"
-  ],
-  "handle": "@brucewayne",
-  "fragment": true
- },
- {
-  "name": "killer",
-  "display": "killer",
-  "persona": "killer",
-  "pack": "vader",
-  "env": "TG_KILLER",
-  "desks": [
-   "general"
-  ],
-  "handle": "@killer",
-  "fragment": true
- },
- {
-  "name": "assassin",
-  "display": "assassin",
-  "persona": "assassin",
-  "pack": "vader",
-  "env": "TG_ASSASSIN",
-  "desks": [
-   "general"
-  ],
-  "handle": "@assassin",
-  "fragment": true
- },
- {
-  "name": "hitman",
-  "display": "hitman",
-  "persona": "hitman",
-  "pack": "vader",
-  "env": "TG_HITMAN",
-  "desks": [
-   "general"
-  ],
-  "handle": "@hitman",
-  "fragment": true
- },
- {
-  "name": "gangsta",
-  "display": "gangsta",
-  "persona": "gangsta",
-  "pack": "crew",
-  "env": "TG_GANGSTA",
-  "desks": [
-   "general"
-  ],
-  "handle": "@gangsta",
-  "fragment": true
- },
- {
-  "name": "tonysoprano",
-  "display": "tonysoprano",
-  "persona": "tonysoprano",
-  "pack": "han",
-  "env": "TG_TONYSOPRANO",
-  "desks": [
-   "deals"
-  ],
-  "handle": "@tonysoprano",
-  "fragment": true
- },
- {
-  "name": "peterparker",
-  "display": "peterparker",
-  "persona": "peterparker",
-  "pack": "han",
-  "env": "TG_PETERPARKER",
-  "desks": [
-   "world"
-  ],
-  "handle": "@peterparker",
-  "fragment": true
- },
- {
-  "name": "jacksparrow",
-  "display": "jacksparrow",
-  "persona": "jacksparrow",
-  "pack": "han",
-  "env": "TG_JACKSPARROW",
-  "desks": [
-   "general"
-  ],
-  "handle": "@jacksparrow",
-  "fragment": true
- },
- {
-  "name": "lukeskywalker",
-  "display": "lukeskywalker",
-  "persona": "lukeskywalker",
-  "pack": "han",
-  "env": "TG_LUKE",
-  "desks": [
-   "elon",
-   "sports"
-  ],
-  "handle": "@lukeskywalker",
-  "fragment": true
- },
- {
-  "name": "dexter",
-  "display": "dexter",
-  "persona": "dexter",
-  "pack": "crew",
-  "env": "TG_DEXTER",
-  "desks": [
-   "crypto"
-  ],
-  "handle": "@dexter",
-  "fragment": true
- },
- {
-  "name": "johnwick",
-  "display": "johnwick",
-  "persona": "johnwick",
-  "pack": "vader",
-  "env": "TG_JOHNWICK",
-  "desks": [
-   "sports"
-  ],
-  "handle": "@johnwick",
-  "fragment": true
- },
- {
-  "name": "murder",
-  "display": "murder",
-  "persona": "murder",
-  "pack": "vader",
-  "env": "TG_MURDER",
-  "desks": [
-   "general"
-  ],
-  "handle": "@murder",
-  "fragment": true
- },
- {
-  "name": "ghost",
-  "display": "ghost",
-  "persona": "ghost",
-  "pack": "crew",
-  "env": "TG_GHOST",
-  "desks": [
-   "general"
-  ],
-  "handle": "@ghost",
-  "fragment": true
- },
- {
-  "name": "devil",
-  "display": "devil",
-  "persona": "devil",
-  "pack": "vader",
-  "env": "TG_DEVIL",
-  "desks": [
-   "general"
-  ],
-  "handle": "@devil",
-  "fragment": true
- },
- {
-  "name": "demon",
-  "display": "demon",
-  "persona": "demon",
-  "pack": "vader",
-  "env": "TG_DEMON",
-  "desks": [
-   "general"
-  ],
-  "handle": "@demon",
-  "fragment": true
- },
- {
-  "name": "hacker",
-  "display": "hacker",
-  "persona": "hacker",
-  "pack": "crew",
-  "env": "TG_HACKER",
-  "desks": [
-   "crypto"
-  ],
-  "handle": "@hacker",
-  "fragment": true
- },
- {
-  "name": "michaelmyers",
-  "display": "michaelmyers",
-  "persona": "michaelmyers",
-  "pack": "vader",
-  "env": "TG_MICHAELMYERS",
-  "desks": [
-   "general"
-  ],
-  "handle": "@michaelmyers",
-  "fragment": true
- },
- {
-  "name": "misaamane",
-  "display": "Misaamane",
-  "persona": "misaamane",
-  "pack": "crew",
-  "env": "TG_MISAAMANE",
-  "desks": [
-   "general"
-  ],
-  "handle": "@misaamane",
-  "fragment": true
- },
- {
-  "name": "harleyquinn",
-  "display": "harleyquinn",
-  "persona": "harleyquinn",
-  "pack": "crew",
-  "env": "TG_HARLEYQUINN",
-  "desks": [
-   "chatter"
-  ],
-  "handle": "@harleyquinn",
-  "fragment": true
- },
- {
-  "name": "porn",
-  "display": "porn",
-  "persona": "porn",
-  "pack": "crew",
-  "env": "TG_PORN",
-  "desks": [
-   "general"
-  ],
-  "handle": "@porn",
-  "fragment": true
- },
- {
-  "name": "slaughter",
-  "display": "slaughter",
-  "persona": "slaughter",
-  "pack": "vader",
-  "env": "TG_SLAUGHTER",
-  "desks": [
-   "general"
-  ],
-  "handle": "@slaughter",
-  "fragment": true
- },
- {
-  "name": "exclusive",
-  "display": "exclusive",
-  "persona": "exclusive",
-  "pack": "crew",
-  "env": "TG_EXCLUSIVE",
-  "desks": [
-   "general"
-  ],
-  "handle": "@exclusive",
-  "fragment": true
- },
- {
-  "name": "chucky",
-  "display": "chucky",
-  "persona": "chucky",
-  "pack": "crew",
-  "env": "TG_CHUCKY",
-  "desks": [
-   "fragment"
-  ],
-  "handle": "@chucky",
-  "fragment": true
- },
- {
-  "name": "freddykrueger",
-  "display": "freddykrueger",
-  "persona": "freddykrueger",
-  "pack": "vader",
-  "env": "TG_FREDDYKRUEGER",
-  "desks": [
-   "general"
-  ],
-  "handle": "@freddykrueger",
-  "fragment": true
- },
- {
-  "name": "batman",
-  "display": "batman",
-  "persona": "batman",
-  "pack": "vader",
-  "env": "TG_BATMAN",
-  "desks": [
-   "general"
-  ],
-  "handle": "@batman",
-  "fragment": true
- }
+  {
+    "name": "darthvader",
+    "display": "Darth Vader",
+    "persona": "darthvader",
+    "pack": "vader",
+    "env": "TG_VADER",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@darthvader",
+    "automated": true
+  },
+  {
+    "name": "chewbacca",
+    "display": "Chewbacca",
+    "persona": "chewbacca",
+    "pack": "chew",
+    "env": "TG_CHEW",
+    "desks": [
+      "fragment"
+    ],
+    "desired_username": "@chewbacca",
+    "automated": true
+  },
+  {
+    "name": "yoda",
+    "display": "Yoda",
+    "persona": "yoda",
+    "pack": "yoda",
+    "env": "TG_YODA",
+    "desks": [
+      "crypto"
+    ],
+    "desired_username": "@yoda",
+    "automated": true
+  },
+  {
+    "name": "brucewayne",
+    "display": "Bruce Wayne",
+    "persona": "brucewayne",
+    "pack": "han",
+    "env": "TG_JOHNNY",
+    "desks": [
+      "service",
+      "street"
+    ],
+    "desired_username": "@brucewayne",
+    "automated": true
+  },
+  {
+    "name": "killer",
+    "display": "killer",
+    "persona": "killer",
+    "pack": "vader",
+    "env": "TG_KILLER",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@killer",
+    "automated": true
+  },
+  {
+    "name": "assassin",
+    "display": "assassin",
+    "persona": "assassin",
+    "pack": "vader",
+    "env": "TG_ASSASSIN",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@assassin",
+    "automated": true
+  },
+  {
+    "name": "hitman",
+    "display": "hitman",
+    "persona": "hitman",
+    "pack": "vader",
+    "env": "TG_HITMAN",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@hitman",
+    "automated": true
+  },
+  {
+    "name": "gangsta",
+    "display": "gangsta",
+    "persona": "gangsta",
+    "pack": "crew",
+    "env": "TG_GANGSTA",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@gangsta",
+    "automated": true
+  },
+  {
+    "name": "tonysoprano",
+    "display": "tonysoprano",
+    "persona": "tonysoprano",
+    "pack": "han",
+    "env": "TG_TONYSOPRANO",
+    "desks": [
+      "deals"
+    ],
+    "desired_username": "@tonysoprano",
+    "automated": true
+  },
+  {
+    "name": "peterparker",
+    "display": "peterparker",
+    "persona": "peterparker",
+    "pack": "han",
+    "env": "TG_PETERPARKER",
+    "desks": [
+      "world"
+    ],
+    "desired_username": "@peterparker",
+    "automated": true
+  },
+  {
+    "name": "jacksparrow",
+    "display": "jacksparrow",
+    "persona": "jacksparrow",
+    "pack": "han",
+    "env": "TG_JACKSPARROW",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@jacksparrow",
+    "automated": true
+  },
+  {
+    "name": "lukeskywalker",
+    "display": "Luke Skywalker",
+    "persona": "lukeskywalker",
+    "pack": "luke",
+    "env": "TG_LUKE",
+    "desks": [
+      "elon",
+      "sports"
+    ],
+    "desired_username": "@lukeskywalker",
+    "automated": true
+  },
+  {
+    "name": "dexter",
+    "display": "dexter",
+    "persona": "dexter",
+    "pack": "crew",
+    "env": "TG_DEXTER",
+    "desks": [
+      "crypto"
+    ],
+    "desired_username": "@dexter",
+    "automated": true
+  },
+  {
+    "name": "johnwick",
+    "display": "johnwick",
+    "persona": "johnwick",
+    "pack": "vader",
+    "env": "TG_JOHNWICK",
+    "desks": [
+      "sports"
+    ],
+    "desired_username": "@johnwick",
+    "automated": true
+  },
+  {
+    "name": "murder",
+    "display": "murder",
+    "persona": "murder",
+    "pack": "vader",
+    "env": "TG_MURDER",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@murder",
+    "automated": true
+  },
+  {
+    "name": "ghost",
+    "display": "ghost",
+    "persona": "ghost",
+    "pack": "crew",
+    "env": "TG_GHOST",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@ghost",
+    "automated": true
+  },
+  {
+    "name": "devil",
+    "display": "devil",
+    "persona": "devil",
+    "pack": "vader",
+    "env": "TG_DEVIL",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@devil",
+    "automated": true
+  },
+  {
+    "name": "demon",
+    "display": "demon",
+    "persona": "demon",
+    "pack": "vader",
+    "env": "TG_DEMON",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@demon",
+    "automated": true
+  },
+  {
+    "name": "hacker",
+    "display": "hacker",
+    "persona": "hacker",
+    "pack": "crew",
+    "env": "TG_HACKER",
+    "desks": [
+      "crypto"
+    ],
+    "desired_username": "@hacker",
+    "automated": true
+  },
+  {
+    "name": "michaelmyers",
+    "display": "michaelmyers",
+    "persona": "michaelmyers",
+    "pack": "vader",
+    "env": "TG_MICHAELMYERS",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@michaelmyers",
+    "automated": true
+  },
+  {
+    "name": "misaamane",
+    "display": "Misa Amane",
+    "persona": "misaamane",
+    "pack": "crew",
+    "env": "TG_MISAAMANE",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@misaamane",
+    "automated": true
+  },
+  {
+    "name": "harleyquinn",
+    "display": "harleyquinn",
+    "persona": "harleyquinn",
+    "pack": "crew",
+    "env": "TG_HARLEYQUINN",
+    "desks": [
+      "chatter"
+    ],
+    "desired_username": "@harleyquinn",
+    "automated": true
+  },
+  {
+    "name": "porn",
+    "display": "porn",
+    "persona": "porn",
+    "pack": "crew",
+    "env": "TG_PORN",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@porn",
+    "automated": true
+  },
+  {
+    "name": "slaughter",
+    "display": "slaughter",
+    "persona": "slaughter",
+    "pack": "vader",
+    "env": "TG_SLAUGHTER",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@slaughter",
+    "automated": true
+  },
+  {
+    "name": "exclusive",
+    "display": "exclusive",
+    "persona": "exclusive",
+    "pack": "crew",
+    "env": "TG_EXCLUSIVE",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@exclusive",
+    "automated": true
+  },
+  {
+    "name": "chucky",
+    "display": "Chucky",
+    "persona": "chucky",
+    "pack": "crew",
+    "env": "TG_CHUCKY",
+    "desks": [
+      "fragment"
+    ],
+    "desired_username": "@chucky",
+    "automated": true
+  },
+  {
+    "name": "freddykrueger",
+    "display": "Freddy Krueger",
+    "persona": "freddykrueger",
+    "pack": "vader",
+    "env": "TG_FREDDYKRUEGER",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@freddykrueger",
+    "automated": true
+  },
+  {
+    "name": "batman",
+    "display": "Batman",
+    "persona": "batman",
+    "pack": "vader",
+    "env": "TG_BATMAN",
+    "desks": [
+      "general"
+    ],
+    "desired_username": "@batman",
+    "automated": true
+  }
 ]
