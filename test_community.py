@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 import engine
+from conversation import compact_sources
 from checkpoint import merge_state
 
 class CommunityTests(unittest.TestCase):
@@ -144,19 +145,24 @@ class CommunityTests(unittest.TestCase):
         self.assertNotIn("chucky", engine.TOK)
         self.assertIn(engine.choose_speaker(["chucky"]), ("brucewayne", "yoda"))
 
-    def test_yoda_voice_keeps_the_entire_sourced_report_intact(self):
-        report = "BTC: $1 example. Oct 30, 2026. Source: https://example.org/report"
-        voiced = engine.character_voice("yoda", report, "crypto")
-        self.assertIn(report, voiced)
-        self.assertNotEqual(voiced, engine.character_voice("lukeskywalker", report, "crypto"))
-        self.assertNotIn("bot", voiced.lower())
-        self.assertEqual(engine.character_voice("yoda", report, "service"), report)
+    def test_news_has_no_stock_introduction_and_keeps_a_clickable_source(self):
+        outgoing = []
+        report = "🚀 Acme opens a new research center\nExample Wire · Oct 30, 2026\nhttps://example.org/report"
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            engine.send("yoda", report, content_key="news:one", kind="world")
+        payload = outgoing[0][1]
+        self.assertEqual(payload["text"], report.rsplit("\n", 1)[0])
+        entity = payload["entities"][0]
+        self.assertEqual(entity["url"], "https://example.org/report")
+        encoded = payload["text"].encode("utf-16-le")
+        label = encoded[entity["offset"] * 2:(entity["offset"] + entity["length"]) * 2].decode("utf-16-le")
+        self.assertEqual(label, "Example Wire · Oct 30, 2026")
 
     def test_addressed_yoda_uses_his_voice_but_service_goes_to_desk(self):
         self.assertEqual(engine.speaker_for("Yoda, who is the best Jedi?", "starwars"), "yoda")
         self.assertEqual(engine.speaker_for("Yoda, how much for account recovery?", "service"), "brucewayne")
         lines = engine.content_for("starwars", "yoda")
-        self.assertTrue(any("Judge by size, do not" in text for text, _ in lines))
+        self.assertTrue(any("Before a word, the music speaks" in text for text, _ in lines))
 
     def test_owner_music_question_gets_a_relevant_answer_not_praise(self):
         outgoing = []
@@ -214,10 +220,136 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(outgoing, [])
         self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
 
-    def test_scripted_pool_does_not_reset_when_exhausted(self):
-        for text in engine.STAR_WARS:
-            engine.STATE["used"][engine.digest(text)] = time.time()
-        self.assertIsNone(engine.pick(engine.STAR_WARS))
+    def test_shared_discussion_idea_cannot_be_repeated_by_another_character(self):
+        outgoing = []
+        text, key = next(item for item in engine.available_content("starwars", "yoda")
+                         if item[1].endswith(":music"))
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            engine.send("yoda", text, content_key=key, kind="starwars")
+        next_choices = engine.available_content("starwars", "chucky")
+        self.assertNotIn(key, [key for _, key in next_choices])
+        self.assertTrue(next_choices)
+
+    def test_legacy_variations_mark_the_shared_idea_as_used(self):
+        engine.STATE["used"][engine.digest(engine.STAR_WARS_BY_PERSONA["chewbacca"][0])] = time.time()
+        choices = engine.available_content("starwars", "lukeskywalker")
+        self.assertNotIn("discussion:starwars:loyalty", [key for _, key in choices])
+
+    def test_near_duplicate_headline_is_blocked_across_speakers_and_topics(self):
+        outgoing = []
+        first = "Acme wins regulatory approval to buy Beta for $200 million\nWire · today\nhttps://example.org/one"
+        second = "Regulatory approval for Acme to buy Beta for $200 million\nOther Wire · today\nhttps://example.org/two"
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            self.assertGreater(engine.send("yoda", first, content_key="one", kind="world"), 0)
+            self.assertEqual(engine.send("chucky", second, content_key="two", kind="deals"), 0)
+        self.assertEqual(len(outgoing), 1)
+        saved = (engine.S / "runtime.json").read_text()
+        self.assertNotIn("Acme", saved)
+        self.assertIn("recent_content", saved)
+
+    def test_changed_amount_and_negative_update_are_not_lost_as_duplicates(self):
+        outgoing = []
+        reports = ["Regulators approve Acme purchase of Beta for $200 million",
+                   "Regulators approve Acme purchase of Beta for $300 million",
+                   "Regulators do not approve Acme purchase of Beta for $200 million"]
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            for index, report in enumerate(reports):
+                self.assertGreater(engine.send("yoda", report, content_key=str(index), kind="world"), 0)
+        self.assertEqual(len(outgoing), 3)
+
+    def test_failed_post_does_not_consume_the_idea_or_recent_signature(self):
+        text = "Acme wins regulatory approval to buy Beta for $200 million"
+        with patch.object(engine, "tg", return_value={"ok": False, "error_code": 403}):
+            self.assertEqual(engine.send("yoda", text, content_key="one", kind="world"), 0)
+        self.assertNotIn(engine.digest("one"), engine.STATE["used"])
+        self.assertEqual(engine.STATE["recent_content"], {})
+        with patch.object(engine, "tg", return_value={"ok": True, "result": {"message_id": 9}}):
+            self.assertEqual(engine.send("yoda", text, content_key="one", kind="world"), 9)
+
+    def test_uncertain_discussion_reply_cannot_be_replayed_by_another_character(self):
+        text, key = next(item for item in engine.available_content("starwars", "yoda")
+                         if item[1].endswith(":music"))
+        other = next(text for text, other_key in engine.content_for("starwars", "chucky") if other_key == key)
+        with patch.object(engine, "tg", return_value={"ok": False, "uncertain": True}) as api:
+            self.assertEqual(engine.send("yoda", text, reply=1, content_key=key, kind="starwars"), -1)
+            self.assertEqual(engine.send("chucky", other, reply=2, content_key=key, kind="starwars"), 0)
+        self.assertEqual(api.call_count, 1)
+
+    def test_empty_news_is_acknowledged_without_a_fallback_post(self):
+        outgoing = []
+        update = self.message(text="Any new NBA YoungBoy news?")
+        with patch.object(engine, "youngboy", return_value=[]), \
+             patch.object(engine, "tg", side_effect=self.api_for([update], outgoing)):
+            self.assertEqual(engine.answer_humans(), 0)
+        self.assertEqual(outgoing, [])
+        self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
+
+    def test_general_question_does_not_trigger_the_same_help_pitch(self):
+        outgoing = []
+        with patch.object(engine, "tg", side_effect=self.api_for(
+                [self.message(text="How is everyone?")], outgoing)):
+            self.assertEqual(engine.answer_humans(), 0)
+        self.assertEqual(outgoing, [])
+        self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
+
+    def test_scheduled_rap_has_no_scripted_opinion_fallback(self):
+        with patch.object(engine, "youngboy", return_value=[]):
+            self.assertEqual(engine.content_for("rap", "chucky", scheduled=True), [])
+            self.assertTrue(engine.content_for("rap", "chucky"))
+
+    def test_scheduled_post_waits_while_people_are_talking(self):
+        engine.STATE["last_topic_at"]["human_activity"] = time.time()
+        with patch.object(engine, "available_content") as provider:
+            self.assertEqual(engine.beat(), 0)
+        provider.assert_not_called()
+
+    def test_broadcast_speaker_rotation_is_shared_across_topics(self):
+        outgoing = []
+        engine.STATE["cursor"] = 2
+        engine.STATE["last_spoke"] = {"yoda": 200, "brucewayne": 300, "chucky": 100}
+        with patch.object(engine, "available_content", return_value=[("NBA scheduled fixture", "fixture:1")]), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
+             patch.object(engine.random, "random", return_value=1):
+            self.assertGreater(engine.beat(), 0)
+        self.assertEqual(outgoing[0][0], "chucky-token")
+
+    def test_topic_cooldown_moves_on_instead_of_posting_another_similar_prompt(self):
+        outgoing = []
+        engine.STATE["last_topic_at"]["starwars"] = time.time()
+        engine.STATE["last_topic_at"]["crypto"] = time.time()
+        with patch.object(engine, "available_content", return_value=[("NBA fixture", "fixture:2")]) as provider, \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
+             patch.object(engine.random, "random", return_value=1):
+            self.assertGreater(engine.beat(), 0)
+        self.assertEqual(provider.call_args.args[0], "sports")
+
+    def test_recent_fingerprints_survive_checkpoint_merges(self):
+        remote = {"updated_at": 3, "recent_content": {"a": {"at": 1, "signature": {}}, "b": {"at": 3, "signature": {}}}}
+        local = {"updated_at": 2, "recent_content": {"a": {"at": 2, "signature": {}}, "c": {"at": 2, "signature": {}}}}
+        merged = merge_state(remote, local)
+        self.assertEqual(set(merged["recent_content"]), {"a", "b", "c"})
+        self.assertEqual(merged["recent_content"]["a"]["at"], 2)
+
+    def test_compact_source_link_preserves_fragment_username_and_context(self):
+        text = "Reported username sale: @example · 100 TON\nOct 30, 2026\nhttps://fragment.com/username/example\nSale details above."
+        body, entities = compact_sources(text, "fragment")
+        self.assertIn("@example · 100 TON", body)
+        self.assertIn("Sale details above.", body)
+        self.assertEqual(entities[0]["url"], "https://fragment.com/username/example")
+
+    def test_topic_filters_reject_irrelevant_headlines_and_aggregate_deal_reports(self):
+        with patch.object(engine, "gnews", return_value=[
+                ("Celebrity welcomes a child", "unrelated"),
+                ("NBA YoungBoy releases a new album", "youngboy")]):
+            self.assertEqual([key for _, key in engine.youngboy()], ["youngboy"])
+        with patch.object(engine, "gnews", return_value=[
+                ("Mergers and acquisitions move $70 billion through September", "aggregate"),
+                ("Acme buys Beta for $200 million", "deal")]):
+            self.assertEqual([key for _, key in engine.deals()], ["deal"])
+        with patch.object(engine, "gnews", return_value=[
+                ("Unrelated market update", "unrelated"),
+                ("SpaceX announces a mission", "space")]):
+            self.assertEqual([key for _, key in engine.elon()], ["space"])
 
     def test_rss_requires_a_link_and_a_recent_date(self):
         now = dt.datetime.now(dt.timezone.utc)

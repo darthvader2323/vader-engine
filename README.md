@@ -14,8 +14,9 @@ unofficial fictional personas, not independent people, customers or endorsements
 - Owner questions follow the same topic routing and receive relevant replies.
 - Directly addressing a configured character selects that voice, except service requests
   still go to the single service desk. Yoda uses inverted, reflective phrasing; Luke is
-  hopeful, Chewbacca uses brief roars, Bruce is measured and Chucky is playful. News
-  headlines, dates, scores, prices and source links are preserved verbatim within the post.
+  hopeful, Chewbacca is direct, Bruce is measured and Chucky is playful. Character
+  wording is authored inside the discussion itself. News has no stock introduction;
+  facts and dates are retained, with the source attached as a compact clickable label.
 - A new pin gets one neutral assistant acknowledgement, without a swarm of automated likes.
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
@@ -23,10 +24,16 @@ unofficial fictional personas, not independent people, customers or endorsements
 - TON is labeled TON. Pregame fixtures are labeled scheduled, without fake live 0–0 scores.
 - No invented sales, hardcoded market numbers, claims to own the desired usernames,
   manufactured praise, fake personal experiences, or automated crowd endorsements.
-- Scripted discussion prompts and news items are not replayed. Necessary service contact
-  details may recur in answers to separate requests.
-- Speakers rotate for variety, with a default 10–20 minutes between scheduled text posts.
+- A discussion idea has one shared key across every character. Old wording variations
+  migrate to that same key. Recent hashed headline fingerprints also reject near-duplicates
+  across sources and speakers; changed numerical facts and negations are preserved.
+  Necessary service contact details may recur in answers to separate requests.
+- Speakers rotate across topics, with 8–14 minutes between production broadcasts.
+  Topic cooldowns prevent repeated prompts, and broadcasts give active human conversation
+  90 seconds of space. Scheduled music posts require fresh news; unavailable feeds and
+  unsupported questions do not produce repeated filler. Explicit help is rate limited.
   The worker checks incoming requests every five seconds between network operations.
+- The @trillion context line appears at most once per day in scheduled business posts.
 - Stickers must be animated or video stickers. A shared unique-ID ledger prevents repeats,
   including across different bot tokens. Exhausted/static packs are skipped.
 - Moving stickers match the speaking character: Yoda uses Yoda, Luke uses Luke,
@@ -41,6 +48,10 @@ Python 3.11 or later is sufficient; no third-party Python packages are required.
 Run the tests with: python3 -m unittest -v test_community
 Run the worker with: python3 run.py
 Run read-only connectivity checks with: python3 healthcheck.py
+
+This is a sourced-update worker with a finite authored discussion catalog in
+conversation.py. No open-ended language-model API is configured. Exhausted ideas are
+skipped instead of being reworded and replayed.
 
 CHAT_ID must be the numeric ID of the authorized group. Tokens stay in deployment secrets.
 CHAT_HANDLE can additionally name its public address (@darthvaderchat2). At startup the
@@ -95,7 +106,9 @@ manual-only and does not post. Production workers share a concurrency group and 
 cancel an active worker every ten minutes.
 
 State is atomically written to state/runtime.json. It contains deduplication hashes,
-message/update IDs, sticker IDs and timing/profile metadata, not message bodies or tokens.
+message/update IDs, sticker IDs, hashed recent-content signatures and timing/profile
+metadata, not message bodies or tokens. Recent signatures are capped at 100 entries
+and compared for 48 hours; checkpoint merges preserve both workers' recent history.
 The checkpoint updates only that file and merges ledgers/offsets, preserving concurrent
 code changes. Checkpoints require the workflow's repository-scoped GITHUB_TOKEN.
 

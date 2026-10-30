@@ -17,6 +17,8 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
+from conversation import (SIMILARITY_KINDS, compact_sources, discussion_items,
+                          signature, similar)
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -112,33 +114,6 @@ STAR_WARS_BY_PERSONA = {
         "Luke saw Anakin where others saw only Vader. Was that hope the strongest force in the ending? Make your case.",
     ],
 }
-VOICE_LEADS = {
-    "yoda": ["Much to consider, there is.", "Look closely at this, we should.",
-             "The details, important they are.", "A question for the room, this raises."],
-    "lukeskywalker": ["Here’s what caught my eye.", "There’s a bigger story to watch here.",
-                       "I’d start with these details.", "This gives us something to talk about."],
-    "chewbacca": ["Rrrraaagh! Here’s the update.", "Rrroww! Take a look at this.",
-                  "Wrrraaagh! What’s your take?", "Rrraawh! Something for the room."],
-    "brucewayne": ["Start with the details.", "The numbers deserve a closer look.",
-                   "One development to watch.", "Here’s the report behind the discussion."],
-    "chucky": ["Well, that got interesting.", "Now there’s a conversation starter.",
-               "Oh, this one should get the room talking.", "Alright, who’s got a take on this?"],
-    "darthvader": ["Consider this development.", "The situation has changed.",
-                   "Direct your attention here.", "There is much to discuss."],
-}
-
-def character_voice(who, text, kind):
-    if not kind or kind in ("service", "pin", "general"):
-        return text
-    if kind == "starwars" and who in STAR_WARS_BY_PERSONA:
-        return text
-    if text.startswith("I cannot confirm a fresh update"):
-        return text
-    leads = VOICE_LEADS.get(who)
-    if not leads:
-        return text
-    return leads[int(digest(text)[:8], 16) % len(leads)] + "\n\n" + text
-
 def load(name, default):
     try:
         return json.loads((S / name).read_text())
@@ -149,6 +124,7 @@ def initial_state():
     return {"version": 1, "used": {}, "replies": {}, "stickers": {},
             "pins": {}, "profiles": {}, "offsets": {}, "last_spoke": {},
             "last_topic_at": {}, "telegram_retry_until": {}, "profile_retry_until": {},
+            "recent_content": {},
             "next_beat": 0, "cursor": 0, "updated_at": 0}
 
 STATE = initial_state()
@@ -156,7 +132,7 @@ _saved = load("runtime.json", {})
 if isinstance(_saved, dict):
     STATE.update(_saved)
 for _key in ("used", "replies", "stickers", "pins", "profiles", "offsets",
-             "last_spoke", "last_topic_at", "telegram_retry_until", "profile_retry_until"):
+             "last_spoke", "last_topic_at", "telegram_retry_until", "profile_retry_until", "recent_content"):
     if not isinstance(STATE.get(_key), dict):
         STATE[_key] = {}
 LEGACY_STICKERS = set(load("stk_used.json", []))
@@ -174,6 +150,54 @@ def persist():
 
 def digest(text):
     return hashlib.sha256(re.sub(r"\s+", " ", text).strip().casefold().encode()).hexdigest()
+
+def migrate_discussion_history():
+    """Recognize old variations as the same idea during a release handover."""
+    rows = list(zip(STAR_WARS, ["redemption", "presence", "wisdom", "redemption",
+        "loyalty", "redemption", "presence", "presence", "redemption", "presence", "wisdom", "loyalty"]))
+    old_topics = {
+        "yoda": ["redemption", "redemption", "loyalty", "wisdom"],
+        "lukeskywalker": ["redemption", "redemption", "redemption", "loyalty"],
+        "chewbacca": ["loyalty", "presence", "redemption", "loyalty"],
+        "brucewayne": ["redemption", "presence", "wisdom"],
+        "chucky": ["presence", "presence", "loyalty"],
+        "darthvader": ["redemption", "presence", "redemption"],
+    }
+    for who, ideas in old_topics.items():
+        rows.extend(zip(STAR_WARS_BY_PERSONA[who], ideas))
+    for text, idea in rows:
+        stamp = STATE["used"].get(digest(text))
+        if stamp is not None:
+            STATE["used"].setdefault(digest("discussion:starwars:" + idea), stamp)
+    for text, idea in zip(RAP, ["delivery", "delivery", "catalog", "catalog",
+                              "ranking", "delivery", "ranking", "catalog"]):
+        stamp = STATE["used"].get(digest(text))
+        if stamp is not None:
+            STATE["used"].setdefault(digest("discussion:rap:" + idea), stamp)
+
+def repeated_content(text, key, kind):
+    if digest(key or text) in STATE["used"] or digest(text) in STATE["used"]:
+        return True
+    if kind not in SIMILARITY_KINDS:
+        return False
+    candidate = signature(text)
+    now = time.time()
+    for record in STATE["recent_content"].values():
+        if (isinstance(record, dict) and now - record.get("at", 0) < 48 * 3600
+                and similar(candidate, record.get("signature", {}))):
+            return True
+    return False
+
+def remember_content(key, text, kind):
+    if kind not in SIMILARITY_KINDS:
+        return
+    now = time.time()
+    history = STATE["recent_content"]
+    history[key] = {"at": now, "signature": signature(text), "kind": kind}
+    keep = sorted((name for name, record in history.items()
+                   if isinstance(record, dict) and now - record.get("at", 0) < 48 * 3600),
+                  key=lambda name: history[name]["at"], reverse=True)[:100]
+    STATE["recent_content"] = {name: history[name] for name in keep}
 
 def log(message):
     for token in TOK.values():
@@ -345,39 +369,58 @@ def send(who, text, reply=None, content_key=None, kind=None):
     if who not in TOK or not text:
         return 0
     key = digest(content_key or text)
-    reply_key = ((content_key + ":" if content_key else "") + str(reply)) if reply is not None else None
+    reply_key = (("pin:" if kind == "pin" or content_key == "pin" else "") + str(reply)) if reply is not None else None
     if reply_key and reply_key in STATE["replies"]:
         return 0
     if not reply_key and key in STATE["used"]:
         return 0
+    if kind in SIMILARITY_KINDS | {"crypto", "sports"} and repeated_content(text, content_key, kind):
+        return 0
     # Claim before sending: a process interruption or unknown API result must not
     # cause a wave of repeated replies on restart.
+    claim_used = not reply_key or kind in SIMILARITY_KINDS | {"crypto", "sports"}
+    previous_used = STATE["used"].get(key)
+    previous_recent = STATE["recent_content"].get(key)
     if reply_key:
         STATE["replies"][reply_key] = time.time()
-    else:
+    if claim_used:
         STATE["used"][key] = time.time()
+    remember_content(key, text, kind)
     persist()
     # Telegram account status and the profile disclose automation; avoid a
     # repetitive identity banner in every message body.
-    params = {"chat_id": CHAT, "text": character_voice(who, text, kind),
+    body, entities = compact_sources(text, kind)
+    params = {"chat_id": CHAT, "text": body,
               "link_preview_options": {"is_disabled": True}}
+    if entities:
+        params["entities"] = entities
     if reply_key:
         params["reply_parameters"] = {"message_id": int(reply),
                                       "allow_sending_without_reply": False}
     result = tg(TOK[who], "sendMessage", params)
-    if result.get("ok"):
-        STATE["used"][digest(text)] = time.time()
+    if result.get("ok") or result.get("uncertain"):
+        if result.get("ok"):
+            STATE["used"][digest(text)] = time.time()
         STATE["last_spoke"][who] = time.time()
+        if kind and kind not in ("service", "pin", "general"):
+            STATE["last_topic_at"][kind] = time.time()
         persist()
-        log("SENT %s%s" % (who, " reply" if reply_key else " scheduled"))
-        return result["result"]["message_id"]
-    if result.get("uncertain"):
+        if result.get("ok"):
+            log("SENT %s%s" % (who, " reply" if reply_key else " scheduled"))
+            return result["result"]["message_id"]
         log("DELIVERY UNKNOWN %s; no automatic duplicate send" % who)
         return -1
     if reply_key:
         STATE["replies"].pop(reply_key, None)
+    if claim_used:
+        if previous_used is None:
+            STATE["used"].pop(key, None)
+        else:
+            STATE["used"][key] = previous_used
+    if previous_recent is None:
+        STATE["recent_content"].pop(key, None)
     else:
-        STATE["used"].pop(key, None)
+        STATE["recent_content"][key] = previous_recent
     persist()
     if not result.get("cached_rate_limit"):
         log("SEND FAILED %s code=%s" % (who, result.get("error_code", "unknown")))
@@ -420,6 +463,11 @@ def rss(url, days=3):
         if age < -300 or age > days * 86400:
             continue
         source = item.findtext("source", urllib.parse.urlparse(url).hostname or "")
+        # Preserve the previous headline key when handing over from older releases.
+        if digest("headline:" + title) in STATE["used"]:
+            continue
+        if source and title.endswith(" - " + source):
+            title = title[:-(len(source) + 3)]
         text = "%s\n%s · %s\n%s" % (title, source, stamp(published.timestamp()), link)
         output.append((text, "headline:" + title))
     return output
@@ -433,13 +481,18 @@ def world():
     return rss("https://feeds.bbci.co.uk/news/world/rss.xml")
 
 def elon():
-    return gnews('"Elon Musk" OR SpaceX OR xAI OR Tesla')
+    return [(text, key) for text, key in gnews('"Elon Musk" OR SpaceX OR xAI OR Tesla')
+            if re.search(r"\b(elon musk|spacex|xai|tesla|grok|starlink)\b", text.splitlines()[0], re.I)]
 
 def deals():
-    return gnews('company acquisition merger "$" million billion', 7)
+    return [(text, key) for text, key in gnews('company acquisition merger "$" million billion', 7)
+            if re.search(r"\b(acquires?|acquired|acquisition of|buys?|bought|takeover|merges? with|sells?|sold|stake|buyout)\b",
+                         text.splitlines()[0], re.I)
+            and re.search(r"\b(million|billion)\b|\$[\d.,]+\s?[MB]\b", text.splitlines()[0], re.I)]
 
 def youngboy():
-    return gnews('"NBA YoungBoy" OR "YoungBoy Never Broke Again"', 7)
+    return [(text, key) for text, key in gnews('"NBA YoungBoy" OR "YoungBoy Never Broke Again"', 7)
+            if re.search(r"\b(nba youngboy|youngboy never broke again|youngboy|yb)\b", text.splitlines()[0], re.I)]
 
 def crypto():
     url = ("https://api.coingecko.com/api/v3/simple/price?"
@@ -560,15 +613,57 @@ def topic(text):
             return name
     return "general"
 
-def content_for(kind, speaker=None):
+def content_for(kind, speaker=None, scheduled=False):
     providers = {"world": world, "elon": elon, "deals": deals, "rap": youngboy,
                  "crypto": crypto, "sports": sports, "fragment": fragment}
     if kind == "starwars":
-        return [(text, text) for text in STAR_WARS_BY_PERSONA.get(speaker, STAR_WARS)]
+        return discussion_items(kind, speaker)
     if kind == "rap":
         news = youngboy()
-        return news + [(text, text) for text in RAP]
+        return news if scheduled else news + discussion_items(kind, speaker)
     return providers[kind]() if kind in providers else []
+
+def available_content(kind, speaker, scheduled=False, question=None):
+    migrate_discussion_history()
+    if question is not None and kind in ("starwars", "rap"):
+        choices = discussion_items(kind, speaker)
+        selected = None
+        if kind == "starwars":
+            for idea, pattern in [
+                ("music", r"imperial march|music|soundtrack|theme song"),
+                ("cloud_city_reveal", r"cloud city|reveal"),
+                ("leia_leadership", r"leia|leadership"),
+                ("r2_solutions", r"r2|droid|repair"),
+                ("opening_scale", r"opening|star destroyer"),
+                ("lightsaber_colour", r"colou?r|red blade|blue blade"),
+                ("duel_pacing", r"duel|fight|choreograph"),
+                ("redemption", r"redemption|anakin|father|emperor"),
+                ("loyalty", r"loyal|han|companion|team"),
+                ("wisdom", r"wisdom|patience|size"),
+                ("presence", r"entrance|armor|armour|helmet|cape|presence"),
+            ]:
+                if re.search(pattern, question, re.I):
+                    selected = idea
+                    break
+            if not selected and re.search(r"best|greatest|favou?rite|your pick", question, re.I):
+                selected = {"yoda": "wisdom", "chewbacca": "loyalty",
+                            "lukeskywalker": "redemption"}.get(speaker, "presence")
+        else:
+            if re.search(r"best|greatest|favou?rite|goat|your pick", question, re.I):
+                selected = "ranking"
+            elif re.search(r"catalog|older|newer|introduce", question, re.I):
+                selected = "catalog"
+            elif re.search(r"delivery|melody|voice|sing", question, re.I):
+                selected = "delivery"
+            else:
+                choices = youngboy()
+        if selected:
+            choices = [(text, key) for text, key in choices if key.endswith(":" + selected)]
+        elif kind == "starwars":
+            choices = []
+    else:
+        choices = content_for(kind, speaker, scheduled=scheduled)
+    return [(text, key) for text, key in choices if not repeated_content(text, key, kind)]
 
 DESKS = {
     "service": ["brucewayne"], "crypto": ["yoda", "dexter"],
@@ -619,29 +714,39 @@ def answer_humans(limit=10):
         relevant = (str((message.get("chat") or {}).get("id")) == CHAT
                     and not sender.get("is_bot") and mid is not None)
         fresh = time.time() - message.get("date", time.time()) <= 1800
+        if relevant and fresh and text:
+            STATE["last_topic_at"]["human_activity"] = time.time()
         asks = is_service(text) or "?" in text or text.startswith("/") or bool(
             re.search(r"\b(who|what|why|when|where|how|tell|send|show|explain)\b", text, re.I))
         if relevant and fresh and text and asks and str(mid) not in STATE["replies"]:
             kind = topic(text)
             speaker = speaker_for(text, kind)
+            content_key = None
             if kind == "service":
                 reply = "For services, message %s privately with your request. %s" % (HANDLE, SITE)
             elif kind == "general":
-                reply = ("I am an automated character assistant. Ask about Star Wars, NBA YoungBoy, "
-                         "crypto, sports, world news, Elon Musk or business deals.")
+                if (text.casefold() not in ("/help", "/start")
+                        or time.time() - STATE["last_topic_at"].get("help", 0) < 6 * 3600):
+                    STATE["offsets"][reader] = update_id + 1
+                    persist()
+                    continue
+                reply = "Ask about Star Wars, NBA YoungBoy, crypto, sports, world news, Elon Musk or business deals. Services: @darthvader."
             else:
-                choices = content_for(kind, speaker)
-                reply = next((entry[0] for entry in choices
-                              if digest(entry[1]) not in STATE["used"]
-                              and digest(entry[0]) not in STATE["used"]), None)
-                if not reply:
-                    reply = ("I cannot confirm a fresh update on that topic right now. "
-                             "I will not substitute an old example for current information.")
-            sent = send(speaker, reply, reply=mid, kind=kind)
+                choices = available_content(kind, speaker, question=text)
+                if not choices:
+                    # Acknowledge the update without posting a repeated fallback or
+                    # answering an unrelated question with another stock prompt.
+                    STATE["offsets"][reader] = update_id + 1
+                    persist()
+                    continue
+                reply, content_key = choices[0]
+            sent = send(speaker, reply, reply=mid, content_key=content_key, kind=kind)
             if sent == 0:
                 # Keep this update and the rest of the batch pending on a known failure.
                 break
             answered += 1
+            if kind == "general":
+                STATE["last_topic_at"]["help"] = time.time()
         STATE["offsets"][reader] = update_id + 1
         persist()
     return answered
@@ -655,7 +760,7 @@ def react_to_pin():
     mid = pinned.get("message_id")
     if not mid or str(mid) in STATE["pins"]:
         return 0
-    sent = send(reader, "Pinned message acknowledged by the automated assistant.", reply=mid, content_key="pin")
+    sent = send(reader, "Pinned message acknowledged by the automated assistant.", reply=mid, content_key="pin", kind="pin")
     if sent:
         STATE["pins"][str(mid)] = time.time()
         persist()
@@ -712,25 +817,30 @@ def sticker(who):
     return 0
 
 def beat():
-    rotation = ["starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment", "starwars"]
+    if time.time() - STATE["last_topic_at"].get("human_activity", 0) < 90:
+        return 0
+    rotation = ["starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment"]
+    cooldowns = {"starwars": 5400, "crypto": 3600, "sports": 1800, "world": 3600,
+                 "elon": 3600, "deals": 7200, "rap": 7200, "fragment": 3600}
     cursor = int(STATE.get("cursor", 0))
     for attempt in range(len(rotation)):
         kind = rotation[(cursor + attempt) % len(rotation)]
-        if kind == "crypto" and time.time() - STATE["last_topic_at"].get(kind, 0) < 3600:
+        if time.time() - STATE["last_topic_at"].get(kind, 0) < cooldowns[kind]:
             continue
-        speaker = choose_speaker(DESKS.get(kind))
-        choices = [(text, key) for text, key in content_for(kind, speaker)
-                   if digest(key) not in STATE["used"] and digest(text) not in STATE["used"]]
+        speaker = choose_speaker()
+        choices = available_content(kind, speaker, scheduled=True)
         if not choices:
             continue
         text, key = random.choice(choices)
-        if kind == "deals":
-            text += ("\n@trillion on Instagram covers major business deals. "
-                     "The group owner identifies @darthvader as its creator.")
+        mention_trillion = kind == "deals" and time.time() - STATE["last_topic_at"].get("trillion_context", 0) >= 24 * 3600
+        if mention_trillion:
+            text += "\nRelated business coverage: @trillion on Instagram."
         sent = send(speaker, text, content_key=key, kind=kind)
         STATE["cursor"] = (cursor + attempt + 1) % len(rotation)
         if sent:
             STATE["last_topic_at"][kind] = time.time()
+            if mention_trillion:
+                STATE["last_topic_at"]["trillion_context"] = time.time()
             persist()
             if sent > 0 and random.random() < 0.4:
                 sticker(speaker)

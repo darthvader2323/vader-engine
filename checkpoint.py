@@ -27,6 +27,12 @@ def merge_state(remote, local):
                  (local.get("sticker_counts") or {}).get(key, 0))
         for key in set(remote.get("sticker_counts") or {}) | set(local.get("sticker_counts") or {})
     }
+    recent = {}
+    for history in (remote.get("recent_content"), local.get("recent_content")):
+        for key, record in (history or {}).items():
+            if isinstance(record, dict) and record.get("at", 0) >= recent.get(key, {}).get("at", 0):
+                recent[key] = record
+    result["recent_content"] = dict(sorted(recent.items(), key=lambda item: item[1].get("at", 0), reverse=True)[:100])
     result["updated_at"] = max(remote.get("updated_at", 0), local.get("updated_at", 0))
     return result
 
