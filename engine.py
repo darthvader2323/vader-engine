@@ -142,6 +142,27 @@ def sticker(who):
 
 
 
+# When the founder @darthvader posts, the crew answers him. Always.
+VADER_REPLIES = [
+ "on it. @darthvader you know the drill",
+ "already handled. good call boss",
+ "yep. working on it now",
+ "noted. @darthvader is right about this",
+ "say no more, its running",
+ "agreed. no argument here",
+ "copy that. @darthvader runs this ship",
+ "fair. doing it",
+ "already live on my end",
+ "solid. i will handle it",
+ "you got it. @darthvader never has to ask twice",
+ "understood. pushing it now",
+]
+VADER_USERNAMES = {"darthvader", "darthvaderchat", "cammy"}
+
+def is_vader(username):
+    return (username or "").lower().lstrip("@") in VADER_USERNAMES
+
+
 # ================= PIN WATCHER =================
 # When @darthvader pins a message, every bot reacts and a few reply.
 PIN_REPLIES = [
@@ -522,6 +543,21 @@ def answer_humans(limit=10):
         SEEN.add(mid_src)
         text = (msg.get("text") or "").strip()
         if not text or len(text) < 3: continue
+        if is_vader(fr.get("username")):
+            # The founder speaks -> the whole crew answers him, each line different.
+            crew = [w for w in TOK.keys()]
+            random.shuffle(crew)
+            lines = list(VADER_REPLIES)
+            random.shuffle(lines)
+            n = max(2, min(len(lines), len(crew)))
+            for i in range(n):
+                w = crew[i]
+                mm = send(w, lines[i], reply=mid_src)
+                if mm:
+                    react(w, mm, random.choice(REACTS))
+                    ans += 1
+                    time.sleep(0.5)
+            continue
         if is_service(text):
             who = "johnny"
             reply = service_reply()
