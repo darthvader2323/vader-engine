@@ -666,38 +666,40 @@ def sticker(who):
     token = TOK.get(who)
     if not token:
         return 0
-    groups = {}
-    for character, pack in PACKS.items():
-        cache_key = "stickers:%s:%s" % (who, pack)
-        cached = CACHE.get(cache_key)
-        if not cached or cached[0] < time.time():
-            result = tg(token, "getStickerSet", {"name": pack})
-            if not result.get("ok"):
-                if result.get("error_code") == 429:
-                    return 0
-                continue
-            stickers = (result.get("result") or {}).get("stickers", [])
-            CACHE[cache_key] = (time.time() + 3600, stickers)
-        else:
-            stickers = cached[1]
-        fresh = []
-        for item in stickers:
-            fid = item.get("file_id")
-            uid = item.get("file_unique_id")
-            if not fid or not uid or not (item.get("is_animated") or item.get("is_video")):
-                continue
-            if fid in LEGACY_STICKERS or "fid:" + fid in STATE["stickers"] or "uid:" + uid in STATE["stickers"]:
-                continue
-            fresh.append(item)
-        if fresh:
-            groups[character] = fresh
-    if not groups:
-        log("NO UNUSED MOVING STICKERS; static/repeated stickers skipped")
+    persona = ROSTER.get(who, {}).get("persona", who)
+    character = {"darthvader": "vader", "chewbacca": "chew",
+                 "lukeskywalker": "luke", "brucewayne": "batman",
+                 "nbayoungboy": "youngboy"}.get(persona, persona)
+    # A speaker may only use that character's pack. Legacy roster "pack" values
+    # include broad Star Wars collections and are not safe identity matches.
+    pack = PACKS.get(character)
+    if not pack:
+        log("NO MATCHING MOVING STICKER PACK %s; skipped" % who)
+        return 0
+    cache_key = "stickers:%s:%s" % (who, pack)
+    cached = CACHE.get(cache_key)
+    if not cached or cached[0] < time.time():
+        result = tg(token, "getStickerSet", {"name": pack})
+        if not result.get("ok"):
+            return 0
+        stickers = (result.get("result") or {}).get("stickers", [])
+        CACHE[cache_key] = (time.time() + 3600, stickers)
+    else:
+        stickers = cached[1]
+    fresh = []
+    for item in stickers:
+        fid = item.get("file_id")
+        uid = item.get("file_unique_id")
+        if not fid or not uid or not (item.get("is_animated") or item.get("is_video")):
+            continue
+        if fid in LEGACY_STICKERS or "fid:" + fid in STATE["stickers"] or "uid:" + uid in STATE["stickers"]:
+            continue
+        fresh.append(item)
+    if not fresh:
+        log("NO UNUSED MATCHING MOVING STICKER %s; skipped" % who)
         return 0
     counts = STATE.setdefault("sticker_counts", {})
-    character = min(groups, key=lambda name: (counts.get(name, 0) / (4 if name == "vader" else 1),
-                                              random.random()))
-    item = random.choice(groups[character])
+    item = random.choice(fresh)
     result = tg(token, "sendSticker", {"chat_id": CHAT, "sticker": item["file_id"]})
     if result.get("ok") or result.get("uncertain"):
         STATE["stickers"]["uid:" + item["file_unique_id"]] = time.time()

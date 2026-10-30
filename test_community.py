@@ -75,7 +75,7 @@ class CommunityTests(unittest.TestCase):
     def test_failed_sticker_request_does_not_cache_a_pack_as_empty(self):
         responses = [{"ok": False, "error_code": 429}, {"ok": True, "result": {"stickers": [
             {"file_id": "moving", "file_unique_id": "unique", "is_video": True}]}}, {"ok": True}]
-        with patch.object(engine, "PACKS", {"vader": "one-pack"}), \
+        with patch.object(engine, "PACKS", {"yoda": "one-pack"}), \
              patch.object(engine, "tg", side_effect=responses):
             self.assertEqual(engine.sticker("yoda"), 0)
             self.assertEqual(engine.sticker("yoda"), 1)
@@ -297,17 +297,20 @@ class CommunityTests(unittest.TestCase):
                 outgoing.append(params["sticker"])
                 return {"ok": True}
             return {"ok": False}
-        with patch.object(engine, "PACKS", {"vader": "one-pack"}), patch.object(engine, "tg", side_effect=api):
+        with patch.object(engine, "PACKS", {"yoda": "yoda-pack", "chucky": "chucky-pack"}), \
+             patch.object(engine, "tg", side_effect=api):
             self.assertEqual(engine.sticker("yoda"), 1)
             self.assertEqual(engine.sticker("chucky"), 0)
         self.assertEqual(outgoing, ["yoda-token-moving"])
         self.assertIn("uid:shared-moving", engine.STATE["stickers"])
 
-    def test_vader_has_the_largest_share_when_moving_assets_are_available(self):
+    def test_speaker_only_sends_its_own_character_even_with_other_assets_available(self):
         outgoing = []
+        looked_up = []
         def api(token, method, params=None):
             if method == "getStickerSet":
                 pack = params["name"]
+                looked_up.append(pack)
                 return {"ok": True, "result": {"stickers": [
                     {"file_id": "%s-%s" % (pack, i), "file_unique_id": "%s-%s" % (pack, i),
                      "is_video": True} for i in range(20)]}}
@@ -317,9 +320,36 @@ class CommunityTests(unittest.TestCase):
              patch.object(engine, "tg", side_effect=api):
             for _ in range(10):
                 engine.sticker("yoda")
-        self.assertGreater(sum(item.startswith("vader") for item in outgoing),
-                           sum(item.startswith("yoda") for item in outgoing))
+        self.assertEqual(looked_up, ["yoda"])
+        self.assertEqual(len(outgoing), 10)
+        self.assertTrue(all(item.startswith("yoda-") for item in outgoing))
         self.assertEqual(len(outgoing), len(set(outgoing)))
+
+    def test_exhausted_matching_pack_does_not_fall_back_to_another_character(self):
+        engine.STATE["stickers"]["uid:already-used"] = time.time()
+        with patch.object(engine, "PACKS", {"yoda": "yoda-pack", "vader": "vader-pack"}), \
+             patch.object(engine, "tg", return_value={"ok": True, "result": {"stickers": [
+                 {"file_id": "yoda-file", "file_unique_id": "already-used", "is_video": True}]}}) as api:
+            self.assertEqual(engine.sticker("yoda"), 0)
+        api.assert_called_once_with("yoda-token", "getStickerSet", {"name": "yoda-pack"})
+
+    def test_missing_matching_pack_never_uses_a_legacy_unrelated_pack(self):
+        with patch.object(engine, "PACKS", {"han": "han-pack", "vader": "vader-pack"}), \
+             patch.object(engine, "tg") as api:
+            self.assertEqual(engine.sticker("brucewayne"), 0)
+        api.assert_not_called()
+
+    def test_display_name_aliases_route_to_the_correct_character_pack(self):
+        cases = [("chewbacca", "chew"), ("lukeskywalker", "luke"),
+                 ("darthvader", "vader"), ("brucewayne", "batman"),
+                 ("chucky", "chucky"), ("nbayoungboy", "youngboy")]
+        for who, character in cases:
+            with self.subTest(who=who), \
+                 patch.object(engine, "TOK", {who: "character-token"}), \
+                 patch.object(engine, "PACKS", {character: character + "-pack"}), \
+                 patch.object(engine, "tg", return_value={"ok": True, "result": {"stickers": []}}) as api:
+                self.assertEqual(engine.sticker(who), 0)
+                api.assert_called_once_with("character-token", "getStickerSet", {"name": character + "-pack"})
 
     def test_pin_ack_is_once_even_if_the_original_message_was_answered(self):
         calls = []

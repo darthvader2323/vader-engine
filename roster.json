@@ -336,5 +336,17 @@
     ],
     "desired_username": "@batman",
     "automated": true
+  },
+  {
+    "name": "nbayoungboy",
+    "display": "NBA YoungBoy Fan",
+    "persona": "nbayoungboy",
+    "pack": "youngboy",
+    "env": "TG_YOUNGBOY",
+    "desks": [
+      "rap"
+    ],
+    "desired_username": "@nbayoungboy",
+    "automated": true
   }
 ]

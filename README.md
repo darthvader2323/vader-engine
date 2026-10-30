@@ -29,8 +29,11 @@ unofficial fictional personas, not independent people, customers or endorsements
   The worker checks incoming requests every five seconds between network operations.
 - Stickers must be animated or video stickers. A shared unique-ID ledger prevents repeats,
   including across different bot tokens. Exhausted/static packs are skipped.
-- Darth Vader has four times the selection weight of each other pack when unused moving
-  stickers are available. This cannot create moving assets missing from a pack.
+- Moving stickers match the speaking character: Yoda uses Yoda, Luke uses Luke,
+  Chewbacca uses Chewbacca and Chucky uses Chucky. Bruce Wayne uses a Batman pack
+  only when one is configured. A missing or exhausted matching pack is skipped;
+  another character is never substituted. This supersedes the earlier mixed-pack
+  Darth Vader weighting.
 
 ## Running
 
@@ -63,6 +66,10 @@ STICKER_PACKS_JSON can supply a character-to-pack-name map.
 CHUCKY_STICKER_PACK and YOUNGBOY_STICKER_PACK configure those additional packs.
 Only packs actually containing unused animated/video assets can produce moving stickers.
 The worker never substitutes a static image or resets the used-sticker ledger.
+Pack keys follow the character identity, with vader, chew and luke as aliases for
+Darth Vader, Chewbacca and Luke Skywalker; brucewayne maps to batman and the
+unofficial NBA YoungBoy fan persona maps to youngboy. Broad legacy roster pack
+assignments such as crew or han are not used as identity fallbacks.
 
 Telegram rate-limit deadlines are saved by bot identity and restored on restart.
 Failed sticker lookups are not cached as empty packs. Profile setup remembers each
