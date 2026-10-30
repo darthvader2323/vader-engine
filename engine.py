@@ -22,7 +22,7 @@ PACKS = {"vader":"sqrjt9fkvvztb_by_mira","grogu":"sklrpz7196ebn_by_mira","yoda":
  "luke":"sry4d8ta1gu6s_by_mira","chew":"s15l72qep9gk0_by_mira","han":"sroftq1uflv8l_by_mira",
  "boba":"sryfojcw0mm1l_by_mira","leia":"s7zg12s696kiy_by_mira","r2d2":"st6ibqn4fjj0a_by_mira",
  "crew":"s9s9rvajkf1ti_by_mira"}
-OWNER = {"darthvader":"vader","yoda":"yoda","lukeskywalker":"grogu","chewbacca":"chew","chucky":"crew","brucewayne":"han"}
+OWNER = {"darthvader":"darthvader","yoda":"yoda","lukeskywalker":"grogu","chewbacca":"chewbacca","chucky":"crew","brucewayne":"han"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S = os.path.join(HERE, "state")
@@ -449,7 +449,7 @@ DEBATE_ANS = ["vader. the helmet, the cape, the breathing. built an empire out o
   "leia. ran a rebellion before anyone gave her permission"]
 
 def debate():
-    who = random.choice([b for b in ALL if b != "vader"]) or "chucky"
+    who = random.choice([b for b in ALL if b != "darthvader"]) or "chucky"
     mid = send(who, random.choice(DEBATE_OPEN))
     react(who, mid, "\U0001F44D")
     time.sleep(1.6)
@@ -513,7 +513,7 @@ def route(text):
     if any(k in t for k in ["nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league","wnba"]): return "lukeskywalker"
     if any(k in t for k in ["acquisition","acquires","merger","billion","ipo","deal","funding"]): return "chucky"
     if any(k in t for k in ["username","handle","fragment","for sale","og name","sold"]): return "chewbacca"
-    if any(k in t for k in ["news","world","going on","happening","politics","war","election"]): return "vader"
+    if any(k in t for k in ["news","world","going on","happening","politics","war","election"]): return "darthvader"
     return random.choice(ALL) if ALL else None
 
 def answer_humans(limit=10):
@@ -617,12 +617,12 @@ def beat():
         w = world()
         if not w: return
         h = random.choice(w)
-        mid = send("vader", h + ". i read it twice. it is the way")
-        react("vader", mid, "\U0001F44D"); sticker("vader"); mingle(mid, "vader")
+        mid = send("darthvader", h + ". i read it twice. it is the way")
+        react("darthvader", mid, "\U0001F44D"); sticker("darthvader"); mingle(mid, "darthvader")
     elif kind == "elon":
         el = elon()
         t = random.choice(el) if el else "elon posted that grok bot can now call businesses on your behalf and send you a summary"
-        mid = send("luke", t); react("luke", mid, "\U0001F525"); sticker("lukeskywalker"); mingle(mid, "luke")
+        mid = send("lukeskywalker", t); react("lukeskywalker", mid, "\U0001F525"); sticker("lukeskywalker"); mingle(mid, "lukeskywalker")
     elif kind == "hype":
         who = random.choice(ALL)
         mid = send(who, random.choice(HYPE))
