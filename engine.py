@@ -68,6 +68,7 @@ def save(name, obj):
 
 USED = set(load("used.json", []))
 STK_USED = set(load("stk_used.json", []))
+SEEN_MSGS = set(load("seen_msgs.json", []))
 OFFSETS = load("offsets.json", {})
 
 def remember(text):
@@ -216,6 +217,42 @@ DEBATE = [
 
 def poll_and_answer():
     answered = 0
+    seen = set(SEEN_MSGS)
+    tok = TOKENS.get("johnny") or (list(TOKENS.values())[0] if TOKENS else "")
+    if not tok: return 0
+    off = OFFSETS.get("main")
+    params = {"limit": 60, "timeout": 0}
+    if off: params["offset"] = off
+    r = tg(tok, "getUpdates", params)
+    if not r.get("ok"): return 0
+    upd = r.get("result") or []
+    if upd:
+        OFFSETS["main"] = upd[-1]["update_id"] + 1
+    for u in upd:
+        msg = u.get("message") or u.get("edited_message")
+        if not msg: continue
+        if (msg.get("chat") or {}).get("id") != int(CHAT): continue
+        fr = msg.get("from") or {}
+        if fr.get("is_bot"): continue
+        src_id = msg.get("message_id")
+        if src_id in seen: continue
+        seen.add(src_id)
+        text = (msg.get("text") or "").strip()
+        if not text or len(text) < 3: continue
+        who = route(text)
+        if not who: continue
+        m = send(who, reply_for(who, text), reply_to=src_id)
+        if m:
+            react(who, m)
+            answered += 1
+        if answered >= 8: break
+    SEEN_MSGS.update(seen)
+    save("seen_msgs.json", list(SEEN_MSGS)[-800:])
+    save("offsets.json", OFFSETS)
+    return answered
+
+def poll_and_answer():
+    answered = 0
     for name, tok in list(TOKENS.items()):
         off = OFFSETS.get(name)
         params = {"limit": 40, "timeout": 0}
@@ -251,6 +288,54 @@ def route(text):
     if any(k in t for k in ["username","handle","fragment","for sale","what is worth","og name"]): return "chew"
     if any(k in t for k in ["news","world","what's going on","happening","politics"]): return "vader"
     return random.choice(list(TOKENS.keys())) if TOKENS else None
+
+def reply_for(who, text):
+    if who == "johnny":
+        return fresh([
+          "handle that directly. usernames come from fragment, they are NFTs on TON, and every sale settles on chain. for a specific one, message %s and send the platform, handle, email and proof. full price list and order form: %s" % (HANDLE, SITE),
+          "that one goes through me. send it to %s with the platform, handle, email and proof of what happened and i will take it from there. prices and the order form are here: %s" % (HANDLE, SITE),
+          "i handle orders here. fragment usernames are NFTs on TON and every sale settles on chain. message %s with the platform, handle, email and proof. full price list: %s" % (HANDLE, SITE),
+        ])
+    if who == "chew":
+        s = fragment_sales()[:4] or FALLBACK_SALES[:4]
+        board = "\n".join("- @%s - %s GRAM" % (n, ("%g" % p) if p < 100 else ("%.0f" % p)) for n, p in s)
+        return fresh([
+          "rrrgh. look at the board, live right now:\n%s\n\nevery one of these is an NFT on TON, sale settles on chain so the price is real and verifiable." % board,
+          "board is up, live this second:\n%s\n\nall NFTs on TON, settles on chain. what a name is worth is public, no guessing." % board,
+          "rrrgh! live prices:\n%s\n\nevery sale settles on chain so anyone can verify. commerce names beat vanity names." % board,
+        ])
+    if who == "yoda":
+        c = crypto() or {}
+        g = c.get("the-open-network") or {}
+        b = c.get("bitcoin") or {}
+        if g.get("usd"):
+            line = "GRAM $%.2f %s %.1f%% on the day, market cap $%.2fB. BTC $%s %s %.1f%%" % (
+                g["usd"], "up" if (g.get("usd_24h_change") or 0) >= 0 else "down", abs(g.get("usd_24h_change") or 0),
+                (g.get("usd_market_cap") or 0)/1e9, format(b.get("usd",0), ",.0f"),
+                "up" if (b.get("usd_24h_change") or 0) >= 0 else "down", abs(b.get("usd_24h_change") or 0))
+            return fresh([
+              line + ". macro is driving this, the fed and CPI, not the coin",
+              line + ". watch the chart, not the narrative. liquidity is the whole game",
+              line + ". heavy money moved into this one. the chart is not the story, the tape is",
+            ])
+        return fresh([
+          "the market is moving on macro, not on the coin. fed, CPI, then liquidity. watch the chart, not the narrative",
+          "mmm. sentiment is noise until the fed moves. patience is the edge here",
+          "coin talks, macro decides. watch rates and the dollar, not the hype",
+        ])
+    if who == "luke":
+        sp = sports()
+        if sp: return fresh([" and ".join(sp[:2]) + " - scores are live, i checked", " and ".join(sp[:2]), "live right now: " + " and ".join(sp[:2])])
+        return fresh(ELON)
+    if who == "chucky":
+        dl = deals()
+        if dl: return fresh([x + " - big money moves. thats the @trillion feed, they post these every day" for x in dl[:10]])
+        return fresh(ELON)
+    if who == "vader":
+        w = world()
+        if w: return fresh([x + ". i read it twice. it is the way" for x in w])
+        return "the force is strong today. i have seen the shape of things."
+    return fresh(["i am here. ask me something", "you called. speak", "listening. what do you need"])
 
 def reply_for(who, text):
     if who == "johnny":
