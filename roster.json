@@ -1,0 +1,248 @@
+[
+ {
+  "name": "brucewayne",
+  "persona": "brucewayne",
+  "pack": "han",
+  "env": "TG_JOHNNY",
+  "desks": [
+   "service",
+   "street"
+  ]
+ },
+ {
+  "name": "yoda",
+  "persona": "yoda",
+  "pack": "yoda",
+  "env": "TG_YODA",
+  "desks": [
+   "crypto"
+  ]
+ },
+ {
+  "name": "lukeskywalker",
+  "persona": "lukeskywalker",
+  "pack": "grogu",
+  "env": "TG_LUKE",
+  "desks": [
+   "sports",
+   "elon"
+  ]
+ },
+ {
+  "name": "chewbacca",
+  "persona": "chewbacca",
+  "pack": "chew",
+  "env": "TG_CHEW",
+  "desks": [
+   "fragment"
+  ]
+ },
+ {
+  "name": "chucky",
+  "persona": "chucky",
+  "pack": "crew",
+  "env": "TG_CHUCKY",
+  "desks": [
+   "deals"
+  ]
+ },
+ {
+  "name": "darthvader",
+  "persona": "darthvader",
+  "pack": "vader",
+  "env": "TG_VADER",
+  "desks": [
+   "world",
+   "founder"
+  ]
+ },
+ {
+  "name": "killer",
+  "persona": "killer",
+  "pack": "crew",
+  "env": "TG_KILLER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "assassin",
+  "persona": "assassin",
+  "pack": "crew",
+  "env": "TG_ASSASSIN",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "hitman",
+  "persona": "hitman",
+  "pack": "crew",
+  "env": "TG_HITMAN",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "gangsta",
+  "persona": "gangsta",
+  "pack": "crew",
+  "env": "TG_GANGSTA",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "tonysoprano",
+  "persona": "tonysoprano",
+  "pack": "crew",
+  "env": "TG_TONYSOPRANO",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "peterparker",
+  "persona": "peterparker",
+  "pack": "crew",
+  "env": "TG_PETERPARKER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "jacksparrow",
+  "persona": "jacksparrow",
+  "pack": "crew",
+  "env": "TG_JACKSPARROW",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "dexter",
+  "persona": "dexter",
+  "pack": "crew",
+  "env": "TG_DEXTER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "johnwick",
+  "persona": "johnwick",
+  "pack": "crew",
+  "env": "TG_JOHNWICK",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "murder",
+  "persona": "murder",
+  "pack": "crew",
+  "env": "TG_MURDER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "ghost",
+  "persona": "ghost",
+  "pack": "crew",
+  "env": "TG_GHOST",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "devil",
+  "persona": "devil",
+  "pack": "crew",
+  "env": "TG_DEVIL",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "demon",
+  "persona": "demon",
+  "pack": "crew",
+  "env": "TG_DEMON",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "hacker",
+  "persona": "hacker",
+  "pack": "crew",
+  "env": "TG_HACKER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "michaelmyers",
+  "persona": "michaelmyers",
+  "pack": "crew",
+  "env": "TG_MICHAELMYERS",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "misaamane",
+  "persona": "misaamane",
+  "pack": "crew",
+  "env": "TG_MISAAMANE",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "harleyquinn",
+  "persona": "harleyquinn",
+  "pack": "crew",
+  "env": "TG_HARLEYQUINN",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "slaughter",
+  "persona": "slaughter",
+  "pack": "crew",
+  "env": "TG_SLAUGHTER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "exclusive",
+  "persona": "exclusive",
+  "pack": "crew",
+  "env": "TG_EXCLUSIVE",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "freddykrueger",
+  "persona": "freddykrueger",
+  "pack": "crew",
+  "env": "TG_FREDDYKRUEGER",
+  "desks": [
+   "general"
+  ]
+ },
+ {
+  "name": "porn",
+  "persona": "porn",
+  "pack": "crew",
+  "env": "TG_PORN",
+  "desks": [
+   "general"
+  ]
+ }
+]

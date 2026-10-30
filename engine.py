@@ -7,22 +7,26 @@ SITE = "https://vader-social-ppulq7yo.agent.mira.tg"
 HANDLE = "@darthvader"
 TRILLION = "@trillion"
 
-TOK = {
- "brucewayne":   os.environ.get("TG_JOHNNY",""),
- "yoda":         os.environ.get("TG_YODA",""),
- "lukeskywalker":os.environ.get("TG_LUKE",""),
- "chewbacca":    os.environ.get("TG_CHEW",""),
- "chucky":       os.environ.get("TG_CHUCKY",""),
- "darthvader":   os.environ.get("TG_VADER",""),
-}
+# ================= ROSTER (data-driven) =================
+# Adding a bot = 1 line in roster.json + 1 GitHub secret. Nothing else to edit.
+ROSTER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "roster.json")
+try:
+    with open(ROSTER_PATH) as f:
+        _ROSTER = json.load(f)
+except Exception:
+    _ROSTER = []
+# keep only bots that actually have a token
+_ROSTER = [b for b in _ROSTER if os.environ.get(b.get("env",""),"")]
+TOK = {b["name"]: os.environ.get(b["env"],"") for b in _ROSTER}
+TOK = {k:v for k,v in TOK.items() if v}
+ROSTER = {b["name"]: b for b in _ROSTER}
 ALL = list(TOK.keys())
 PEOPLE = [p for p in ALL if p != "darthvader"]
-
+OWNER = {b["name"]: b.get("pack","crew") for b in _ROSTER}
 PACKS = {"vader":"sqrjt9fkvvztb_by_mira","grogu":"sklrpz7196ebn_by_mira","yoda":"sikulkj1ywb7r_by_mira",
  "luke":"sry4d8ta1gu6s_by_mira","chew":"s15l72qep9gk0_by_mira","han":"sroftq1uflv8l_by_mira",
  "boba":"sryfojcw0mm1l_by_mira","leia":"s7zg12s696kiy_by_mira","r2d2":"st6ibqn4fjj0a_by_mira",
  "crew":"s9s9rvajkf1ti_by_mira"}
-OWNER = {"darthvader":"vader","yoda":"yoda","lukeskywalker":"grogu","chewbacca":"chew","chucky":"crew","brucewayne":"han"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S = os.path.join(HERE, "state")
@@ -406,6 +410,35 @@ def v_vader():
 
 VOICES = {"brucewayne":v_johnny,"yoda":v_yoda,"chewbacca":v_chew,"lukeskywalker":v_luke,"chucky":v_chucky,"darthvader":v_vader}
 
+# ================= VOICE REGISTRY =================
+# Every bot gets a distinct voice. Existing personas keep their hand-written
+# voice; every new bot in roster.json gets a generated one built from its
+# character name, so no two bots ever talk alike.
+def _mk_voice(name, persona):
+    p = persona.lower()
+    def v():
+        return pick([
+            "%s here. thoughts?" % p,
+            "ask me anything, i am %s." % p,
+            "%s checking in. what is the word" % p,
+            "solid question. %s in the building" % p,
+            "give me a second. %s thinking about it" % p,
+            "ha. that lands. %s approves" % p,
+            "noted. %s is on it" % p,
+            "you already know the answer, %s said it first" % p,
+            "that is a %s take and i respect it" % p,
+            "been sitting on that one. %s got you" % p,
+        ])
+    return v
+
+_CUST = {"brucewayne":"v_johnny","yoda":"v_yoda","chewbacca":"v_chew",
+         "lukeskywalker":"v_luke","chucky":"v_chucky","darthvader":"v_vader"}
+VOICES = {}
+for _b in _ROSTER:
+    _n = _b["name"]
+    _fn = globals().get(_CUST.get(_n, ""))
+    VOICES[_n] = _fn if _fn else _mk_voice(_n, _b.get("persona", _n))
+
 # ================= REPLIES / ACKS =================
 ACKS = ["fair point, that tracks","that is a good read","agreed, no argument from me",
  "ha, that is the one","you are right about that","not wrong","that tracks with what i am seeing",
@@ -486,12 +519,21 @@ HYPE = [
 
 
 # ================= SERVICE ROUTING =================
-SERVICE_KW = ["price","pricing","cost","charge","how much","order","buy","rate card","pay",
-              "unban","banned","account recovery","recover","appeal","instagram","tiktok",
-              "username","handle","fragment","verification","verify","blue tick","support"]
+SERVICE_KW = ["price list","pricing","rate card","how much does it cost","how much for",
+              "i want to buy","can i buy","how do i order","place an order","order now",
+              "unban","banned","account recovery","recover my","appeal","blue tick","verification",
+              "i need help with my account","send me the price","check my case"]
+# These are ORDER intent only. Topic words like "price" or "username" alone must
+# NOT hijack a crypto/fragment question - those go to their own desk.
+SERVICE_STRONG = ["price list","rate card","how much","order","buy","unban","banned",
+                  "account recovery","appeal","blue tick","verification","support"]
 
 def is_service(text):
     t = text.lower()
+    if any(k in t for k in ["btc","bitcoin","eth","gram","crypto","coin","market cap","solana","mcap","ton ",
+                            "nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league",
+                            "elon","musk","grok","spacex","tesla","xai","fragment","acquisition","ipo","merger"]):
+        return False
     return any(k in t for k in SERVICE_KW)
 
 def service_reply():
@@ -507,13 +549,13 @@ def service_reply():
 # ================= HUMAN ANSWERING =================
 def route(text):
     t = text.lower()
-    if is_service(t): return "brucewayne"
-    if any(k in t for k in ["btc","bitcoin","eth","ton","gram","crypto","market cap","coin","solana","mcap"]): return "yoda"
+    if any(k in t for k in ["btc","bitcoin","eth","ton ","gram","crypto","market cap","coin","solana","mcap"]): return "yoda"
     if any(k in t for k in ["elon","musk","grok","spacex","tesla","xai"]): return "lukeskywalker"
     if any(k in t for k in ["nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league","wnba"]): return "lukeskywalker"
+    if any(k in t for k in ["username","handle","fragment","for sale","og name","sold","ton nft"]): return "chewbacca"
     if any(k in t for k in ["acquisition","acquires","merger","billion","ipo","deal","funding"]): return "chucky"
-    if any(k in t for k in ["username","handle","fragment","for sale","og name","sold"]): return "chewbacca"
     if any(k in t for k in ["news","world","going on","happening","politics","war","election"]): return "darthvader"
+    if is_service(t): return "brucewayne"
     return random.choice(ALL) if ALL else None
 
 def answer_humans(limit=10):
