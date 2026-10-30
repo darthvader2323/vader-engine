@@ -1,0 +1,66 @@
+{
+  "vader_01.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 1.75,
+    "bytes": 13290,
+    "unique_frames": 35,
+    "sha256": "887e89f2ae47db442aa527220b6b04291ead1f53fd03a824b2b660264348afd3"
+  },
+  "vader_02.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 1.45,
+    "bytes": 30507,
+    "unique_frames": 29,
+    "sha256": "233a8b81b22d9700734e73beccaaf7fd3a8be9bd69b44de1e9e6fe6b8cc37284"
+  },
+  "vader_03.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 2.8,
+    "bytes": 71875,
+    "unique_frames": 56,
+    "sha256": "f8cc4e64369941738a29a17819c397fc316b67dbe46d15ba9647228b305599f3"
+  },
+  "chewbacca_01.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.8,
+    "bytes": 80446,
+    "unique_frames": 56,
+    "sha256": "406ba68a3553da289a5a02d560dc9caba192195d5ddedb1390461f5998617f97"
+  },
+  "yoda_01.webm": {
+    "width": 512,
+    "height": 258,
+    "seconds": 2.8,
+    "bytes": 81495,
+    "unique_frames": 56,
+    "sha256": "40a21b0eef692a80b9024fcc0e31e718bd19a1713220245eb53df0adff6ec930"
+  },
+  "luke_01.webm": {
+    "width": 512,
+    "height": 286,
+    "seconds": 1.4,
+    "bytes": 58434,
+    "unique_frames": 26,
+    "sha256": "9de1d3ad842b6f2d821fb7d95236961f6e95b069729324524325723e7675ab36"
+  },
+  "chucky_01.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 0.95,
+    "bytes": 66607,
+    "unique_frames": 19,
+    "sha256": "d1d981d497ae99f11ae8bd2a46531bbabffbc46b09469126f51a8bf4a6ee8e57"
+  },
+  "youngboy_01.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 1.0,
+    "bytes": 26317,
+    "unique_frames": 20,
+    "sha256": "b1218d704bfc29adcdb2b80411cd0faae389a0ddcdbab4f0051a27fa16becda5"
+  }
+}
