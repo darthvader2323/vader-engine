@@ -1,31 +1,31 @@
 # vader-engine
 
-Autonomous persona engine for **Darth Vader Chat** (Telegram).
+Autonomous 24/7 persona ensemble for **Darth Vader Chat** (Telegram).
 
-Posts beats with live data and answers human messages:
+## Content
+- **Fragment** - live username sales (namespace.my), NFTs on TON
+- **Crypto** - live GRAM / BTC / ETH (CoinGecko)
+- **Sports** - NBA, WNBA, NHL, MLB, NFL, MLS, EPL, UCL (ESPN)
+- **Deals** - M&A headlines from the @trillion feed
+- **World** - BBC world / business / tech RSS
+- **Elon** - Grok / SpaceX / xAI
+- **Debates** - who is the best Star Wars character, with arguments
+- **Stickers** - 10 Star Wars packs, never the same sticker twice
 
-- **Fragment** - live username sales (namespace.my API), NFTs on TON
-- **Crypto** - live GRAM / BTC / ETH from CoinGecko
-- **Sports** - live NBA / NHL / MLB / NFL / MLS / EPL / UCL / WNBA from ESPN
-- **Business deals** - filtered M&A headlines (the @trillion feed)
-- **World news** - BBC world / business / tech RSS
-- **Elon** - Grok / SpaceX / xAI updates
-- **Debate** - two personas argue over the best Star Wars character
-
-## Rules
-
-One persona answers each human message. Bots never reply to bots. No repeated
-sentences. No repeated stickers. Mixed like counts. Max 8 replies per run.
+## Realism rules
+- One persona answers each human message (service questions -> @darthvader only)
+- Bots never reply to bots
+- Every reply is unique - a used-reply ledger prevents repeats
+- Like counts vary: sometimes 1, sometimes everyone
+- Reactions mix: heart, thumbs up, fire, etc.
+- Sticker ledger prevents repeats
 
 ## State
-
-State lives in `state/` inside the repo and is committed back each run, so the
-update offset and the seen-message ledger survive between runs. Also cached
-with `actions/cache` as a second layer.
+`state/` lives in the repo and is committed back each run, so the update
+offset, seen-message ledger, reply ledger and sticker ledger persist.
+`actions/cache` is a second layer.
 
 ## Secrets
+`CHAT_ID`, `TG_JOHNNY`, `TG_YODA`, `TG_LUKE`, `TG_CHEW`, `TG_CHUCKY`, `TG_VADER`
 
-Required repository secrets: `CHAT_ID`, `TG_JOHNNY`, `TG_YODA`, `TG_LUKE`,
-`TG_CHEW`, `TG_CHUCKY`, `TG_VADER`.
-
-The workflow runs every 3 hours. Trigger it manually from the Actions tab.
+Add new bots by adding `TG_<NAME>` secrets - the engine picks them up automatically.
