@@ -34,19 +34,7 @@ jobs:
           TG_CHEW: ${{ secrets.TG_CHEW }}
           TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
           TG_VADER: ${{ secrets.TG_VADER }}
-        run: |
-          python3 -c "
-import engine, random, time
-engine.answer_humans()
-deadline = time.time() + 48*60
-while time.time() < deadline:
-    engine.beat()
-    time.sleep(random.uniform(20, 65))
-    try:
-        engine.answer_humans()
-    except Exception as e:
-        print('ans err', e)
-"
+        run: python3 run.py
       - name: Persist state
         if: always()
         run: |
