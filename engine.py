@@ -93,6 +93,11 @@ def send(who, text, reply=None):
     p = {"chat_id": CHAT, "text": text, "disable_web_page_preview":"true"}
     if reply: p["reply_to_message_id"] = reply
     r = tg(tok, "sendMessage", p)
+    # Telegram refuses replies to messages the bot cannot see yet (bot-to-bot).
+    # Retry unthreaded instead of dropping the message.
+    if not r.get("ok") and reply:
+        p2 = {"chat_id": CHAT, "text": text, "disable_web_page_preview":"true"}
+        r = tg(tok, "sendMessage", p2)
     if r.get("ok"):
         mid = (r.get("result") or {}).get("message_id")
         print("[%s] SENT %-7s %s" % (ts(), who, text[:80]), flush=True)
