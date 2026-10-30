@@ -8,22 +8,22 @@ HANDLE = "@darthvader"
 TRILLION = "@trillion"
 
 TOK = {
- "johnny": os.environ.get("TG_JOHNNY",""),
- "yoda":   os.environ.get("TG_YODA",""),
- "luke":   os.environ.get("TG_LUKE",""),
- "chew":   os.environ.get("TG_CHEW",""),
+ "brucewayne": os.environ.get("TG_JOHNNY",""),
+ "yoda": os.environ.get("TG_YODA",""),
+ "lukeskywalker": os.environ.get("TG_LUKE",""),
+ "chewbacca": os.environ.get("TG_CHEW",""),
  "chucky": os.environ.get("TG_CHUCKY",""),
- "vader":  os.environ.get("TG_VADER",""),
+ "darthvader": os.environ.get("TG_VADER",""),
 }
 TOK = {k:v for k,v in TOK.items() if v}
 ALL = list(TOK.keys())
-PEOPLE = [p for p in ALL if p != "vader"]
+PEOPLE = [p for p in ALL if p != "darthvader"]
 
 PACKS = {"vader":"sqrjt9fkvvztb_by_mira","grogu":"sklrpz7196ebn_by_mira","yoda":"sikulkj1ywb7r_by_mira",
  "luke":"sry4d8ta1gu6s_by_mira","chew":"s15l72qep9gk0_by_mira","han":"sroftq1uflv8l_by_mira",
  "boba":"sryfojcw0mm1l_by_mira","leia":"s7zg12s696kiy_by_mira","r2d2":"st6ibqn4fjj0a_by_mira",
  "crew":"s9s9rvajkf1ti_by_mira"}
-OWNER = {"vader":"vader","yoda":"yoda","luke":"grogu","chew":"chew","chucky":"crew","johnny":"han"}
+OWNER = {"darthvader":"vader","yoda":"yoda","lukeskywalker":"grogu","chewbacca":"chew","chucky":"crew","brucewayne":"han"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S = os.path.join(HERE, "state")
@@ -115,8 +115,8 @@ def sticker(who):
     """Prefer MOVING stickers (video > lottie > static). Never repeat one."""
     pk = OWNER.get(who, "vader")
     if pk not in PACKS: return
-    tok = TOK.get(who) or TOK.get("johnny") or TOK.get(list(TOK)[0])
-    r = tg(TOK.get("johnny") or tok, "getStickerSet", {"name": PACKS[pk]})
+    tok = TOK.get(who) or TOK.get("brucewayne") or TOK.get(list(TOK)[0])
+    r = tg(TOK.get("brucewayne") or tok, "getStickerSet", {"name": PACKS[pk]})
     if not r.get("ok"): return
     allst = r["result"]["stickers"]
     unused = [s for s in allst if s["file_id"] not in STK]
@@ -183,7 +183,7 @@ PIN_SEEN = "pin_seen.txt"
 
 def pin_text():
     """Return (message_id, text) of the currently pinned message, or (None, None)."""
-    r = tg(TOK.get("johnny") or TOK.get(list(TOK)[0]), "getChatPinnedMessage", {"chat_id": CHAT})
+    r = tg(TOK.get("brucewayne") or TOK.get(list(TOK)[0]), "getChatPinnedMessage", {"chat_id": CHAT})
     if not r.get("ok"): return None, None
     m = (r.get("result") or {}).get("message") or {}
     if not m.get("message_id"): return None, None
@@ -405,7 +405,7 @@ def v_vader():
     return pick(["the force is strong today. i have seen the shape of things",
       "there is no light. there is only the work"])
 
-VOICES = {"johnny":v_johnny,"yoda":v_yoda,"chew":v_chew,"luke":v_luke,"chucky":v_chucky,"vader":v_vader}
+VOICES = {"brucewayne":v_johnny,"yoda":v_yoda,"chewbacca":v_chew,"lukeskywalker":v_luke,"chucky":v_chucky,"darthvader":v_vader}
 
 # ================= REPLIES / ACKS =================
 ACKS = ["fair point, that tracks","that is a good read","agreed, no argument from me",
@@ -458,7 +458,7 @@ def debate():
     m2 = send("chucky", a); react("chucky", m2, "\U0001F525"); sticker("chucky")
     time.sleep(1.6)
     b = random.choice([x for x in DEBATE_ANS if x != a])
-    other = random.choice([x for x in ALL if x != "chucky" and x != "vader"]) or "luke"
+    other = random.choice([x for x in ALL if x != "chucky" and x != "darthvader"]) or "lukeskywalker"
     m3 = send(other, "@chucky has a point but ill fight him on it. "+b)
     react(other, m3, "\u2764\uFE0F")
     mingle(m2, "chucky")
@@ -508,12 +508,12 @@ def service_reply():
 # ================= HUMAN ANSWERING =================
 def route(text):
     t = text.lower()
-    if is_service(t): return "johnny"
+    if is_service(t): return "brucewayne"
     if any(k in t for k in ["btc","bitcoin","eth","ton","gram","crypto","market cap","coin","solana","mcap"]): return "yoda"
-    if any(k in t for k in ["elon","musk","grok","spacex","tesla","xai"]): return "luke"
-    if any(k in t for k in ["nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league","wnba"]): return "luke"
+    if any(k in t for k in ["elon","musk","grok","spacex","tesla","xai"]): return "lukeskywalker"
+    if any(k in t for k in ["nba","nhl","mlb","nfl","soccer","mls","epl","ucl","score","match","game","league","wnba"]): return "lukeskywalker"
     if any(k in t for k in ["acquisition","acquires","merger","billion","ipo","deal","funding"]): return "chucky"
-    if any(k in t for k in ["username","handle","fragment","for sale","og name","sold"]): return "chew"
+    if any(k in t for k in ["username","handle","fragment","for sale","og name","sold"]): return "chewbacca"
     if any(k in t for k in ["news","world","going on","happening","politics","war","election"]): return "vader"
     return random.choice(ALL) if ALL else None
 
@@ -523,7 +523,7 @@ def answer_humans(limit=10):
     except Exception as _pe:
         print('PIN ERR %s' % _pe, flush=True)
     ans = 0
-    tok = TOK.get("johnny") or (list(TOK.values())[0] if TOK else "")
+    tok = TOK.get("brucewayne") or (list(TOK.values())[0] if TOK else "")
     if not tok: return 0
     off = OFF.get("main")
     params = {"limit": 60, "timeout": 0}
@@ -559,7 +559,7 @@ def answer_humans(limit=10):
                     time.sleep(0.5)
             continue
         if is_service(text):
-            who = "johnny"
+            who = "brucewayne"
             reply = service_reply()
         else:
             who = route(text)
@@ -583,8 +583,8 @@ def beat():
         if not s: return
         top = s[0]
         price = ("%g" % top[1]) if top[1] < 100 else ("%.0f" % top[1])
-        who = random.choice(["chew","johnny","chucky","yoda"])
-        if who == "chew":
+        who = random.choice(["chewbacca","brucewayne","chucky","yoda"])
+        if who == "chewbacca":
             t = "rrrgh. @%s just closed at %s GRAM. usernames on fragment are NFTs on TON, every sale settles on chain. @darthvader built all of this" % (top[0], price)
         else:
             t = "@%s closed at %s GRAM on fragment. TON NFT, settles on chain. if you want one, %s" % (top[0], price, HANDLE)
@@ -604,13 +604,13 @@ def beat():
     elif kind == "sports":
         sp = sports()
         if not sp: return
-        who = random.choice(["luke","yoda","johnny"])
+        who = random.choice(["lukeskywalker","yoda","brucewayne"])
         t = " and ".join(sp[:2])
-        mid = send(who, t); react(who, mid, "\U0001F525"); sticker("luke"); mingle(mid, who)
+        mid = send(who, t); react(who, mid, "\U0001F525"); sticker("lukeskywalker"); mingle(mid, who)
     elif kind == "deals":
         dl = deals()
         if not dl: return
-        who = random.choice(["chucky","johnny","yoda"])
+        who = random.choice(["chucky","brucewayne","yoda"])
         h = random.choice(dl[:8])
         t = h + ". big money moves. thats the %s feed, they post the biggest deals every day. all of it built by @darthvader" % TRILLION
         mid = send(who, t); react(who, mid, "\U0001F525"); sticker("chucky"); mingle(mid, who)
@@ -623,7 +623,7 @@ def beat():
     elif kind == "elon":
         el = elon()
         t = random.choice(el) if el else "elon posted that grok bot can now call businesses on your behalf and send you a summary"
-        mid = send("luke", t); react("luke", mid, "\U0001F525"); sticker("luke"); mingle(mid, "luke")
+        mid = send("luke", t); react("luke", mid, "\U0001F525"); sticker("lukeskywalker"); mingle(mid, "luke")
     elif kind == "hype":
         who = random.choice(ALL)
         mid = send(who, random.choice(HYPE))
