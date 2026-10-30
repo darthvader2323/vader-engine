@@ -87,14 +87,15 @@ def load(name, default):
 def initial_state():
     return {"version": 1, "used": {}, "replies": {}, "stickers": {},
             "pins": {}, "profiles": {}, "offsets": {}, "last_spoke": {},
-            "last_topic_at": {}, "next_beat": 0, "cursor": 0, "updated_at": 0}
+            "last_topic_at": {}, "telegram_retry_until": {}, "profile_retry_until": {},
+            "next_beat": 0, "cursor": 0, "updated_at": 0}
 
 STATE = initial_state()
 _saved = load("runtime.json", {})
 if isinstance(_saved, dict):
     STATE.update(_saved)
 for _key in ("used", "replies", "stickers", "pins", "profiles", "offsets",
-             "last_spoke", "last_topic_at"):
+             "last_spoke", "last_topic_at", "telegram_retry_until", "profile_retry_until"):
     if not isinstance(STATE.get(_key), dict):
         STATE[_key] = {}
 LEGACY_STICKERS = set(load("stk_used.json", []))
@@ -144,11 +145,30 @@ TOK = configured_tokens(ROSTER_LIST, os.environ, _extra_tokens)
 ALL = list(TOK)
 BOT_USERS = {}
 
+def restore_backoff():
+    for name, until in STATE.get("telegram_retry_until", {}).items():
+        if name in TOK:
+            BACKOFF[TOK[name]] = max(BACKOFF.get(TOK[name], 0), until)
+
+restore_backoff()
+
+def remember_rate_limit(token, method, result):
+    if result.get("error_code") != 429:
+        return
+    retry = max(1, int((result.get("parameters") or {}).get("retry_after") or 60))
+    until = time.time() + retry
+    BACKOFF[token] = until
+    name = next((name for name, value in TOK.items() if value == token), "unknown")
+    STATE["telegram_retry_until"][name] = until
+    persist()
+    log("API RATE LIMIT bot=%s method=%s retry_after=%ss description=%s" %
+        (name, method, retry, str(result.get("description", ""))[:250]))
+
 def tg(token, method, params=None):
     if not token:
         return {"ok": False, "error_code": 401}
     if BACKOFF.get(token, 0) > time.time():
-        return {"ok": False, "error_code": 429}
+        return {"ok": False, "error_code": 429, "cached_rate_limit": True}
     request = urllib.request.Request(
         "https://api.telegram.org/bot%s/%s" % (token, method),
         data=json.dumps(params or {}).encode(),
@@ -164,8 +184,7 @@ def tg(token, method, params=None):
     except (OSError, ValueError):
         # A timed-out send may already have arrived. Do not blindly send it again.
         return {"ok": False, "uncertain": True}
-    if result.get("error_code") == 429:
-        BACKOFF[token] = time.time() + (result.get("parameters", {}).get("retry_after") or 60)
+    remember_rate_limit(token, method, result)
     return result
 
 def get_url(url, ttl=300):
@@ -245,7 +264,8 @@ def send(who, text, reply=None, content_key=None):
     else:
         STATE["used"].pop(key, None)
     persist()
-    log("SEND FAILED %s code=%s" % (who, result.get("error_code", "unknown")))
+    if not result.get("cached_rate_limit"):
+        log("SEND FAILED %s code=%s" % (who, result.get("error_code", "unknown")))
     return 0
 
 def _date(value):
@@ -433,94 +453,6 @@ def content_for(kind):
         return news + [(text, text) for text in RAP]
     return providers[kind]() if kind in providers else []
 
-GENERAL_VOICES = {
- "brucewayne": [
-  "right, i run this desk. ask properly and i will answer properly",
-  "that is my corner. give me the ask",
-  "i handle the service side. what do you need done",
-  "morning. i am on it, what is the job",
-  "you are in the right place. talk to me",
-  "give me the details and i will sort it",
- ],
- "yoda": [
-  "hmm. interesting question you ask",
-  "the force of the matter is simple. tell me more",
-  "much to think about, yes. go on",
-  "hmm yes. that path you choose, tell me",
- ],
- "lukeskywalker": [
-  "sure thing. what are we working on",
-  "yeah of course. lay it out for me",
-  "happy to help. what do you need",
-  "no problem. what is the goal here",
- ],
- "chewbacca": [
-  "raaaawggh! rooo",
-  "rroooaaawr. yes, talk",
-  "rrrraaaawh. here, listen",
-  "rrgghh. what you want",
- ],
- "chucky": [
-  "ohhh i like where this is going. keep talking",
-  "hehe. say that again for me",
-  "sweetie, tell me more",
-  "ohhh you are trouble. i like it",
- ],
- "darthvader": [
-  "state your request. it will be handled",
-  "your answer is near. be precise",
-  "i have heard you. proceed",
-  "speak plainly and it will be done",
- ],
-}
-
-GENERAL_REPLIES = [
- "here. what is it", "i am here. hit me", "listening. what do you need",
- "go ahead, ask away", "that is the right question to ask", "okay. give me the details",
- "i am on it. talk to me", "say more, i am following", "good question, let me think about that",
- "noted. that is worth digging into", "you have my attention",
- "ask away, i will give you the honest version", "sure, lay it out", "that lands. what else",
- "i am here for it", "talk to me. what is on your mind", "okay, i hear you. keep going",
- "that is the kind of thing i can help with", "right. so what is the actual question",
- "give me the short version and i will take it from there",
- "understood. what is the outcome you want", "noted, boss. continue",
- "i am watching. keep talking", "that is enough for me to work with",
- "fine. i am listening properly now", "go on then",
- "that is a real one. let me handle it", "you want the short answer or the long one",
- "okay, that is on my list", "speak, i will answer properly", "noted. no fluff from me",
- "i hear you. what is the deadline", "that is workable. talk to me", "i am here, no rush",
- "ask me properly and i will answer properly", "that is a clean question. answering now",
- "okay. understood the ask", "that is straight enough for me", "i am with you. continue",
- "right. say the rest", "good, that is clear enough", "noted and logged",
- "i am here, no nonsense", "go ahead", "that is workable, i can do something with it",
- "yeah, i am listening", "okay, that landed. what next", "i will take that one",
- "right. give me the details and i will handle it",
-]
-
-CONFIRM_REPLIES = [
- "i cannot confirm a fresh update on that right now, and i will not guess",
- "nothing solid on that this second. i do not want to fake it",
- "that is moving fast, i will not post something I cannot stand behind",
- "no clean read on it yet. hold that thought",
- "i would rather say nothing than say something wrong about that",
- "still checking that one. i will get back to it",
- "i do not have that confirmed, sorry",
- "that is a gap on my end right now, not a real answer",
- "nothing verified yet on that",
- "i will not fake it. nothing confirmed on that one",
-]
-
-
-def pick_general(who):
-    """General chatter that differs per persona and never repeats."""
-    pool = GENERAL_VOICES.get(who) or GENERAL_REPLIES
-    fresh = [t for t in pool if digest(t) not in STATE["used"]]
-    if not fresh:
-        fresh = [t for t in GENERAL_REPLIES if digest(t) not in STATE["used"]]
-    if not fresh:
-        fresh = list(GENERAL_REPLIES)
-    return random.choice(fresh)
-
 DESKS = {
     "service": ["brucewayne"], "crypto": ["yoda", "dexter"],
     "fragment": ["chewbacca"], "sports": ["lukeskywalker", "johnwick"],
@@ -542,8 +474,9 @@ def answer_humans(limit=10):
         params["offset"] = offset
     result = tg(TOK[reader], "getUpdates", params)
     if not result.get("ok"):
-        log("POLL FAILED code=%s; check for another worker or an existing webhook" %
-            result.get("error_code", "network"))
+        if not result.get("cached_rate_limit"):
+            log("POLL FAILED code=%s description=%s" %
+                (result.get("error_code", "network"), result.get("description", "")))
         return 0
     answered = 0
     for update in result.get("result", []):
@@ -559,25 +492,22 @@ def answer_humans(limit=10):
         fresh = time.time() - message.get("date", time.time()) <= 1800
         asks = is_service(text) or "?" in text or text.startswith("/") or bool(
             re.search(r"\b(who|what|why|when|where|how|tell|send|show|explain)\b", text, re.I))
-        if not asks and re.match(r"^(gm|gn|hello|hi|hey|yo|sup|morning|good morning|"
-                                 r"good evening|how you doing|hows it going|whats up|"
-                                 r"what's up|anyone|anybody|good night|lol|lmao|nice|"
-                                 r"cool|wow|damn|lets go|let's go|how about it)\b", text, re.I):
-            asks = True
         if relevant and fresh and text and asks and str(mid) not in STATE["replies"]:
             kind = topic(text)
             speaker = choose_speaker(DESKS.get(kind))
             if kind == "service":
                 reply = "For services, message %s privately with your request. %s" % (HANDLE, SITE)
             elif kind == "general":
-                reply = pick_general(speaker)
+                reply = ("I am an automated character bot. Ask about Star Wars, NBA YoungBoy, "
+                         "crypto, sports, world news, Elon Musk or business deals.")
             else:
                 choices = content_for(kind)
                 reply = next((entry[0] for entry in choices
                               if digest(entry[1]) not in STATE["used"]
                               and digest(entry[0]) not in STATE["used"]), None)
                 if not reply:
-                    reply = random.choice(CONFIRM_REPLIES)
+                    reply = ("I cannot confirm a fresh update on that topic right now. "
+                             "I will not substitute an old example for current information.")
             sent = send(speaker, reply, reply=mid)
             if sent == 0:
                 # Keep this update and the rest of the batch pending on a known failure.
@@ -596,13 +526,7 @@ def react_to_pin():
     mid = pinned.get("message_id")
     if not mid or str(mid) in STATE["pins"]:
         return 0
-    pin_lines = [
-        "pinned. read it twice", "noted. this is the one",
-        "acknowledged. the founder spoke", "saved. that is the announcement",
-        "got it. reading it again", "understood. this is the standard",
-        "logged. no notes", "that is the post. everything else is commentary",
-    ]
-    sent = send(reader, random.choice(pin_lines), reply=mid, content_key="pin")
+    sent = send(reader, "Pinned message acknowledged by the automated assistant.", reply=mid, content_key="pin")
     if sent:
         STATE["pins"][str(mid)] = time.time()
         persist()
@@ -619,7 +543,11 @@ def sticker(who):
         cached = CACHE.get(cache_key)
         if not cached or cached[0] < time.time():
             result = tg(token, "getStickerSet", {"name": pack})
-            stickers = (result.get("result") or {}).get("stickers", []) if result.get("ok") else []
+            if not result.get("ok"):
+                if result.get("error_code") == 429:
+                    return 0
+                continue
+            stickers = (result.get("result") or {}).get("stickers", [])
             CACHE[cache_key] = (time.time() + 3600, stickers)
         else:
             stickers = cached[1]
@@ -627,16 +555,15 @@ def sticker(who):
         for item in stickers:
             fid = item.get("file_id")
             uid = item.get("file_unique_id")
-            if not fid or not uid:
+            if not fid or not uid or not (item.get("is_animated") or item.get("is_video")):
                 continue
             if fid in LEGACY_STICKERS or "fid:" + fid in STATE["stickers"] or "uid:" + uid in STATE["stickers"]:
                 continue
             fresh.append(item)
         if fresh:
-            moving = [i for i in fresh if i.get("is_animated") or i.get("is_video")]
-            groups[character] = moving if moving else fresh
+            groups[character] = fresh
     if not groups:
-        log("NO UNUSED STICKERS in any pack")
+        log("NO UNUSED MOVING STICKERS; static/repeated stickers skipped")
         return 0
     counts = STATE.setdefault("sticker_counts", {})
     character = min(groups, key=lambda name: (counts.get(name, 0) / (4 if name == "vader" else 1),
@@ -697,6 +624,13 @@ def set_photo(name, token):
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             return bool(json.load(response).get("ok"))
+    except urllib.error.HTTPError as error:
+        try:
+            result = json.loads(error.read())
+        except (ValueError, OSError):
+            result = {"error_code": error.code}
+        remember_rate_limit(token, "setMyProfilePhoto", result)
+        return False
     except (OSError, ValueError):
         return False
 
@@ -704,6 +638,8 @@ def bootstrap_all():
     if os.environ.get("TG_BOOTSTRAP", "1") != "1":
         return
     for name, token in list(TOK.items()):
+        if STATE["profile_retry_until"].get(name, 0) > time.time():
+            continue
         identity = tg(token, "getMe")
         user = identity.get("result") or {}
         if not identity.get("ok") or not user.get("is_bot"):
@@ -718,19 +654,32 @@ def bootstrap_all():
         display = ROSTER[name].get("display", name)
         bio = ("Automated, unofficial character bot for Darth Vader Chat. "
                "Scripted fan opinions and sourced updates. Services: @darthvader.")
-        outcomes = [
-            tg(token, "setMyName", {"name": display + " · Bot"}).get("ok"),
-            tg(token, "setMyDescription", {"description": bio}).get("ok"),
-            tg(token, "setMyShortDescription",
-               {"short_description": "Automated character bot · Darth Vader Chat · Services: @darthvader"}).get("ok"),
-            set_photo(name, token),
+        steps = [
+            ("name", "setMyName", {"name": display + " · Bot"}),
+            ("description", "setMyDescription", {"description": bio}),
+            ("short", "setMyShortDescription", {"short_description":
+                "Automated character bot · Darth Vader Chat · Services: @darthvader"}),
         ]
-        if all(outcomes):
+        for suffix, method, params in steps:
+            key = name + ":" + suffix
+            if STATE["profiles"].get(key) != fingerprint:
+                if tg(token, method, params).get("ok"):
+                    STATE["profiles"][key] = fingerprint
+                    persist()
+        photo_key = name + ":photo"
+        if STATE["profiles"].get(photo_key) != fingerprint and BACKOFF.get(token, 0) <= time.time():
+            if set_photo(name, token):
+                STATE["profiles"][photo_key] = fingerprint
+                persist()
+        if all(STATE["profiles"].get(name + ":" + suffix) == fingerprint
+               for suffix in ("name", "description", "short", "photo")):
             STATE["profiles"][name] = fingerprint
             persist()
             log("PROFILE READY %s (disclosed bot)" % name)
         else:
-            log("PROFILE SETUP INCOMPLETE %s; will retry next run" % name)
+            STATE["profile_retry_until"][name] = max(time.time() + 3600, BACKOFF.get(token, 0))
+            persist()
+            log("PROFILE SETUP INCOMPLETE %s; successful steps saved; retry after cooldown" % name)
 
 def main():
     if not TOK:
@@ -752,6 +701,7 @@ def main():
     next_pin = 0
     log("ENGINE READY: %d configured character bots; disclosed activity; chat=%s" % (len(TOK), CHAT))
     try:
+        sticker(choose_speaker())
         while not STOP.is_set() and time.monotonic() < deadline:
             answer_humans()
             now = time.time()
@@ -761,9 +711,6 @@ def main():
             if now >= STATE.get("next_beat", 0):
                 beat()
                 STATE["next_beat"] = time.time() + random.uniform(gap_min, gap_max)
-                persist()
-            elif STATE.get("next_beat", 0) - time.time() > gap_max * 2:
-                STATE["next_beat"] = 0
                 persist()
             if os.environ.get("VADER_ONCE") == "1":
                 break

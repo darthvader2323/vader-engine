@@ -52,6 +52,11 @@ CHUCKY_STICKER_PACK and YOUNGBOY_STICKER_PACK configure those additional packs.
 Only packs actually containing unused animated/video assets can produce moving stickers.
 The worker never substitutes a static image or resets the used-sticker ledger.
 
+Telegram rate-limit deadlines are saved by bot identity and restored on restart.
+Failed sticker lookups are not cached as empty packs. Profile setup remembers each
+successful field separately and delays incomplete setup for at least an hour, so a
+failed avatar update cannot cause repeated name and description writes.
+
 ## Fragment feed contract
 
 FRAGMENT_SALES_FEED_URL defaults to the previously configured namespace.my endpoint.

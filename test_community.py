@@ -1,6 +1,8 @@
 """User-visible routing, delivery, data-quality and sticker behavior."""
 import datetime as dt
 import email.utils
+import io
+import json
 from pathlib import Path
 import tempfile
 import time
@@ -55,6 +57,44 @@ class CommunityTests(unittest.TestCase):
             "TG_VADER": " same-token ", "TG_JOHNNY": "same-token", "TG_YODA": "yoda-token",
         }, {})
         self.assertEqual(tokens, {"brucewayne": "same-token", "yoda": "yoda-token"})
+
+    def test_rate_limit_is_remembered_after_restart_without_storing_tokens(self):
+        response = io.BytesIO(json.dumps({"ok": False, "error_code": 429,
+            "description": "Too Many Requests: retry after 120", "parameters": {"retry_after": 120}}).encode())
+        with patch.object(engine.urllib.request, "urlopen", return_value=response) as request:
+            engine.tg("desk-token", "getMe")
+            engine.BACKOFF.clear()
+            engine.restore_backoff()
+            engine.tg("desk-token", "getUpdates")
+        self.assertEqual(request.call_count, 1)
+        saved = (engine.S / "runtime.json").read_text()
+        self.assertNotIn("desk-token", saved)
+        self.assertGreater(engine.STATE["telegram_retry_until"]["brucewayne"], time.time())
+
+    def test_failed_sticker_request_does_not_cache_a_pack_as_empty(self):
+        responses = [{"ok": False, "error_code": 429}, {"ok": True, "result": {"stickers": [
+            {"file_id": "moving", "file_unique_id": "unique", "is_video": True}]}}, {"ok": True}]
+        with patch.object(engine, "PACKS", {"vader": "one-pack"}), \
+             patch.object(engine, "tg", side_effect=responses):
+            self.assertEqual(engine.sticker("yoda"), 0)
+            self.assertEqual(engine.sticker("yoda"), 1)
+
+    def test_failed_avatar_does_not_repeat_successful_profile_writes(self):
+        calls = []
+        def api(token, method, params=None):
+            calls.append(method)
+            return {"ok": True, "result": {"id": 123, "is_bot": True, "username": "examplebot"}}
+        now = time.time()
+        with patch.object(engine, "TOK", {"brucewayne": "desk-token"}), \
+             patch.object(engine, "tg", side_effect=api), \
+             patch.object(engine, "set_photo", side_effect=[False, True]) as photo:
+            with patch.object(engine.time, "time", return_value=now):
+                engine.bootstrap_all()
+            with patch.object(engine.time, "time", return_value=now + 3601):
+                engine.bootstrap_all()
+        self.assertEqual(calls.count("setMyName"), 1)
+        self.assertEqual(calls.count("setMyDescription"), 1)
+        self.assertEqual(photo.call_count, 2)
 
     def test_replayed_service_question_gets_one_designated_answer(self):
         outgoing = []
@@ -195,7 +235,7 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertIn("Reported username sale", records[0][0])
 
-    def test_stickers_prefer_moving_assets_and_fall_back_to_static(self):
+    def test_only_moving_stickers_and_cross_bot_unique_ids(self):
         outgoing = []
         def api(token, method, params=None):
             if method == "getStickerSet":
@@ -208,24 +248,10 @@ class CommunityTests(unittest.TestCase):
             return {"ok": False}
         with patch.object(engine, "PACKS", {"vader": "one-pack"}), patch.object(engine, "tg", side_effect=api):
             self.assertEqual(engine.sticker("yoda"), 1)
-            # moving asset already used -> falls back to the static sticker instead of staying silent
-            self.assertEqual(engine.sticker("chucky"), 1)
-        self.assertEqual(outgoing, ["yoda-token-moving", "chucky-token-static"])
+            self.assertEqual(engine.sticker("chucky"), 0)
+        self.assertEqual(outgoing, ["yoda-token-moving"])
         self.assertIn("uid:shared-moving", engine.STATE["stickers"])
 
-    def test_static_only_pack_still_sends(self):
-        outgoing = []
-        def api(token, method, params=None):
-            if method == "getStickerSet":
-                return {"ok": True, "result": {"stickers": [
-                    {"file_id": token + "-only-static", "file_unique_id": "only-static", "is_animated": False}]}}
-            if method == "sendSticker":
-                outgoing.append(params["sticker"])
-                return {"ok": True}
-            return {"ok": False}
-        with patch.object(engine, "PACKS", {"vader": "one-pack"}), patch.object(engine, "tg", side_effect=api):
-            self.assertEqual(engine.sticker("yoda"), 1)
-        self.assertEqual(outgoing, ["yoda-token-only-static"])
     def test_vader_has_the_largest_share_when_moving_assets_are_available(self):
         outgoing = []
         def api(token, method, params=None):
