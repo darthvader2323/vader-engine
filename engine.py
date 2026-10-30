@@ -8,14 +8,13 @@ HANDLE = "@darthvader"
 TRILLION = "@trillion"
 
 TOK = {
- "brucewayne": os.environ.get("TG_JOHNNY",""),
- "yoda": os.environ.get("TG_YODA",""),
- "lukeskywalker": os.environ.get("TG_LUKE",""),
- "chewbacca": os.environ.get("TG_CHEW",""),
- "chucky": os.environ.get("TG_CHUCKY",""),
- "darthvader": os.environ.get("TG_VADER",""),
+ "brucewayne":   os.environ.get("TG_JOHNNY",""),
+ "yoda":         os.environ.get("TG_YODA",""),
+ "lukeskywalker":os.environ.get("TG_LUKE",""),
+ "chewbacca":    os.environ.get("TG_CHEW",""),
+ "chucky":       os.environ.get("TG_CHUCKY",""),
+ "darthvader":   os.environ.get("TG_VADER",""),
 }
-TOK = {k:v for k,v in TOK.items() if v}
 ALL = list(TOK.keys())
 PEOPLE = [p for p in ALL if p != "darthvader"]
 
