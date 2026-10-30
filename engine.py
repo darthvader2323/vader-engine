@@ -38,11 +38,11 @@ LEAGUES = [
     ("basketball/wnba", "WNBA"),
 ]
 PACKS = {
-    "vader": "sqrjt9fkvvztb_by_mira", "grogu": "sklrpz7196ebn_by_mira",
-    "yoda": "sikulkj1ywb7r_by_mira", "luke": "sry4d8ta1gu6s_by_mira",
-    "chew": "s15l72qep9gk0_by_mira", "han": "sroftq1uflv8l_by_mira",
-    "boba": "sryfojcw0mm1l_by_mira", "leia": "s7zg12s696kiy_by_mira",
-    "r2d2": "st6ibqn4fjj0a_by_mira", "crew": "s9s9rvajkf1ti_by_mira",
+    "vader": "ComeToTheDarkSide", "grogu": "BabyYoda",
+    "yoda": "JediMasterYoda", "luke": "sry4d8ta1gu6s_by_mira",
+    "chew": "ChewbaccaWookiee", "han": "sroftq1uflv8l_by_mira",
+    "boba": "sryfojcw0mm1l_by_mira", "leia": "PrincessLeiaOrgana",
+    "r2d2": "st6ibqn4fjj0a_by_mira", "crew": "StarWarsSagaByDarthAdmiraL",
 }
 for _character, _env in [("chucky", "CHUCKY_STICKER_PACK"),
                          ("youngboy", "YOUNGBOY_STICKER_PACK")]:
@@ -128,12 +128,19 @@ except ValueError:
     _extra_tokens = {}
 if not isinstance(_extra_tokens, dict):
     _extra_tokens = {}
-TOK = {}
-for _row in ROSTER_LIST:
-    _env = _row.get("env", "")
-    _token = os.environ.get(_env) or _extra_tokens.get(_env) or _extra_tokens.get(_row["name"])
-    if isinstance(_token, str) and _token.strip() and _token not in TOK.values():
-        TOK[_row["name"]] = _token.strip()
+def configured_tokens(rows, environ, extras):
+    """Keep the service identity when legacy secrets alias the same bot."""
+    result = {}
+    for row in sorted(rows, key=lambda item: "service" not in item.get("desks", [])):
+        env = row.get("env", "")
+        token = environ.get(env) or extras.get(env) or extras.get(row["name"])
+        if isinstance(token, str) and token.strip():
+            token = token.strip()
+            if token not in result.values():
+                result[row["name"]] = token
+    return result
+
+TOK = configured_tokens(ROSTER_LIST, os.environ, _extra_tokens)
 ALL = list(TOK)
 BOT_USERS = {}
 
@@ -468,61 +475,32 @@ GENERAL_VOICES = {
 }
 
 GENERAL_REPLIES = [
- "here. what is it",
- "i am here. hit me",
- "listening. what do you need",
- "go ahead, ask away",
- "that is the right question to ask",
- "okay. give me the details",
- "i am on it. talk to me",
- "say more, i am following",
- "good question, let me think about that",
- "noted. that is worth digging into",
- "you have my attention",
- "ask away, i will give you the honest version",
- "sure, lay it out",
- "that lands. what else",
- "i am here for it",
- "talk to me. what is on your mind",
- "okay, i hear you. keep going",
- "that is the kind of thing i can help with",
- "right. so what is the actual question",
+ "here. what is it", "i am here. hit me", "listening. what do you need",
+ "go ahead, ask away", "that is the right question to ask", "okay. give me the details",
+ "i am on it. talk to me", "say more, i am following", "good question, let me think about that",
+ "noted. that is worth digging into", "you have my attention",
+ "ask away, i will give you the honest version", "sure, lay it out", "that lands. what else",
+ "i am here for it", "talk to me. what is on your mind", "okay, i hear you. keep going",
+ "that is the kind of thing i can help with", "right. so what is the actual question",
  "give me the short version and i will take it from there",
- "understood. what is the outcome you want",
- "noted, boss. continue",
- "i am watching. keep talking",
- "that is enough for me to work with",
- "fine. i am listening properly now",
- "go on then",
- "that is a real one. let me handle it",
- "you want the short answer or the long one",
- "okay, that is on my list",
- "speak, i will answer properly",
- "noted. no fluff from me",
- "i hear you. what is the deadline",
- "that is workable. talk to me",
- "i am here, no rush",
- "ask me properly and i will answer properly",
- "that is a clean question. answering now",
- "okay. understood the ask",
- "that is straight enough for me",
- "i am with you. continue",
- "right. say the rest",
- "good, that is clear enough",
- "noted and logged",
- "i am here, no nonsense",
- "go ahead",
- "that is workable, i can do something with it",
- "yeah, i am listening",
- "okay, that landed. what next",
- "i will take that one",
+ "understood. what is the outcome you want", "noted, boss. continue",
+ "i am watching. keep talking", "that is enough for me to work with",
+ "fine. i am listening properly now", "go on then",
+ "that is a real one. let me handle it", "you want the short answer or the long one",
+ "okay, that is on my list", "speak, i will answer properly", "noted. no fluff from me",
+ "i hear you. what is the deadline", "that is workable. talk to me", "i am here, no rush",
+ "ask me properly and i will answer properly", "that is a clean question. answering now",
+ "okay. understood the ask", "that is straight enough for me", "i am with you. continue",
+ "right. say the rest", "good, that is clear enough", "noted and logged",
+ "i am here, no nonsense", "go ahead", "that is workable, i can do something with it",
+ "yeah, i am listening", "okay, that landed. what next", "i will take that one",
  "right. give me the details and i will handle it",
 ]
 
 CONFIRM_REPLIES = [
  "i cannot confirm a fresh update on that right now, and i will not guess",
  "nothing solid on that this second. i do not want to fake it",
- "that is moving fast, i will not post something i cannot stand behind",
+ "that is moving fast, i will not post something I cannot stand behind",
  "no clean read on it yet. hold that thought",
  "i would rather say nothing than say something wrong about that",
  "still checking that one. i will get back to it",
@@ -542,7 +520,6 @@ def pick_general(who):
     if not fresh:
         fresh = list(GENERAL_REPLIES)
     return random.choice(fresh)
-
 
 DESKS = {
     "service": ["brucewayne"], "crypto": ["yoda", "dexter"],
@@ -620,14 +597,10 @@ def react_to_pin():
     if not mid or str(mid) in STATE["pins"]:
         return 0
     pin_lines = [
-        "pinned. read it twice",
-        "noted. this is the one",
-        "acknowledged. the founder spoke",
-        "saved. that is the announcement",
-        "got it. reading it again",
-        "understood. this is the standard",
-        "logged. no notes",
-        "that is the post. everything else is commentary",
+        "pinned. read it twice", "noted. this is the one",
+        "acknowledged. the founder spoke", "saved. that is the announcement",
+        "got it. reading it again", "understood. this is the standard",
+        "logged. no notes", "that is the post. everything else is commentary",
     ]
     sent = send(reader, random.choice(pin_lines), reply=mid, content_key="pin")
     if sent:

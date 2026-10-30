@@ -195,7 +195,7 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertIn("Reported username sale", records[0][0])
 
-    def test_only_moving_stickers_and_cross_bot_unique_ids(self):
+    def test_stickers_prefer_moving_assets_and_fall_back_to_static(self):
         outgoing = []
         def api(token, method, params=None):
             if method == "getStickerSet":
@@ -208,10 +208,24 @@ class CommunityTests(unittest.TestCase):
             return {"ok": False}
         with patch.object(engine, "PACKS", {"vader": "one-pack"}), patch.object(engine, "tg", side_effect=api):
             self.assertEqual(engine.sticker("yoda"), 1)
-            self.assertEqual(engine.sticker("chucky"), 0)
-        self.assertEqual(outgoing, ["yoda-token-moving"])
+            # moving asset already used -> falls back to the static sticker instead of staying silent
+            self.assertEqual(engine.sticker("chucky"), 1)
+        self.assertEqual(outgoing, ["yoda-token-moving", "chucky-token-static"])
         self.assertIn("uid:shared-moving", engine.STATE["stickers"])
 
+    def test_static_only_pack_still_sends(self):
+        outgoing = []
+        def api(token, method, params=None):
+            if method == "getStickerSet":
+                return {"ok": True, "result": {"stickers": [
+                    {"file_id": token + "-only-static", "file_unique_id": "only-static", "is_animated": False}]}}
+            if method == "sendSticker":
+                outgoing.append(params["sticker"])
+                return {"ok": True}
+            return {"ok": False}
+        with patch.object(engine, "PACKS", {"vader": "one-pack"}), patch.object(engine, "tg", side_effect=api):
+            self.assertEqual(engine.sticker("yoda"), 1)
+        self.assertEqual(outgoing, ["yoda-token-only-static"])
     def test_vader_has_the_largest_share_when_moving_assets_are_available(self):
         outgoing = []
         def api(token, method, params=None):
