@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '69103bf1bd36f3feaf2efb00eff52a33aaf0c675' || github.ref }}
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '480d254187e04a05ec2046b9176427045fc44bda' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 69103bf1bd36f3feaf2efb00eff52a33aaf0c675
+          ref: 480d254187e04a05ec2046b9176427045fc44bda
           persist-credentials: false
       - name: Load the current runtime ledger
         run: |
@@ -77,8 +77,8 @@ jobs:
           FRAGMENT_SALES_FEED_URL: ${{ vars.FRAGMENT_SALES_FEED_URL || 'https://namespace.my/api/sales?limit=30' }}
           VADER_TIMEZONE: America/Chicago
           RUN_MINUTES: ${{ inputs.minutes || '48' }}
-          GAP_MIN: '240'
-          GAP_MAX: '420'
+          GAP_MIN: '480'
+          GAP_MAX: '840'
           RUN_MODE: ${{ inputs.mode }}
         run: |
           git rev-parse --short HEAD
