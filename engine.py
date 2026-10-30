@@ -76,7 +76,7 @@ def remember(text):
 def fresh(pool):
     pool = list(pool)
     if not pool: return None
-    cands = [p for p in pool [p for p in pool if p[:120] not in USED]
+    cands = [p for p in pool if p[:120] not in USED]
     if not cands: cands = pool
     pick = random.choice(cands); remember(pick); return pick
 
