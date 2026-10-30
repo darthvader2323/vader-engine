@@ -5,7 +5,7 @@ on:
     paths: ['*.py', 'roster.json', '.github/workflows/**']
   pull_request:
   schedule:
-    - cron: '7,27,47 * * * *'
+    - cron: '3,13,23,33,43,53 * * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -13,6 +13,11 @@ on:
         type: choice
         options: [run, probe, validate]
         default: run
+      minutes:
+        description: Worker duration; 2 minutes is for a deployment smoke check
+        type: choice
+        options: ['48', '2']
+        default: '48'
 
 permissions:
   contents: read
@@ -65,9 +70,9 @@ jobs:
           YOUNGBOY_STICKER_PACK: ${{ vars.YOUNGBOY_STICKER_PACK }}
           FRAGMENT_SALES_FEED_URL: ${{ vars.FRAGMENT_SALES_FEED_URL || 'https://namespace.my/api/sales?limit=30' }}
           VADER_TIMEZONE: America/Chicago
-          RUN_MINUTES: '48'
-          GAP_MIN: '600'
-          GAP_MAX: '1200'
+          RUN_MINUTES: ${{ inputs.minutes || '48' }}
+          GAP_MIN: '240'
+          GAP_MAX: '420'
           RUN_MODE: ${{ inputs.mode }}
         run: |
           git rev-parse --short HEAD
