@@ -225,7 +225,7 @@ def send(who, text, reply=None, content_key=None):
         STATE["used"][key] = time.time()
     persist()
     display = ROSTER.get(who, {}).get("display", who)
-    params = {"chat_id": CHAT, "text": "[%s bot]\n%s" % (display, text),
+    params = {"chat_id": CHAT, "text": text,
               "link_preview_options": {"is_disabled": True}}
     if reply_key:
         params["reply_parameters"] = {"message_id": int(reply),

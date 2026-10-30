@@ -64,7 +64,8 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(len(outgoing), 1)
         self.assertEqual(outgoing[0][0], "desk-token")
         self.assertIn("@darthvader", outgoing[0][1]["text"])
-        self.assertTrue(outgoing[0][1]["text"].startswith("[Bruce Wayne bot]"))
+        self.assertTrue(outgoing[0][1]["text"].startswith("For services,"))
+        self.assertNotIn("[Bruce Wayne bot]", outgoing[0][1]["text"])
         self.assertIn("privately", outgoing[0][1]["text"])
         self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
 
