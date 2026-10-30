@@ -1,31 +1,53 @@
-name: Vader Room Engine
+name: Vader Character Community
+
 on:
+  push:
+    paths: ['*.py', 'roster.json', '.github/workflows/**']
+  pull_request:
   schedule:
-    - cron: '3,13,23,33,43,53 * * * *'
+    - cron: '7,27,47 * * * *'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Validate only, inspect connectivity, or run the community
+        type: choice
+        options: [run, probe, validate]
+        default: run
+
 permissions:
-  contents: write
-concurrency:
-  group: vader-engine
-  cancel-in-progress: true
+  contents: read
+
 jobs:
-  engine:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore state
-        uses: actions/cache@v4
+      - run: python3 -m unittest -v test_community
+      - run: python3 -m py_compile engine.py run.py avatars.py checkpoint.py healthcheck.py
+
+  community:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'validate'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: write
+    concurrency:
+      group: vader-engine
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
         with:
-          path: state
-          key: vader-state-${{ github.run_id }}
-          restore-keys: vader-state-
-      - name: Upload profile photos
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check connectivity or run the community
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
@@ -34,23 +56,27 @@ jobs:
           TG_CHEW: ${{ secrets.TG_CHEW }}
           TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
           TG_VADER: ${{ secrets.TG_VADER }}
-        run: python3 avatars.py
-      - name: Run living room
-        env:
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-          TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
-          TG_YODA: ${{ secrets.TG_YODA }}
-          TG_LUKE: ${{ secrets.TG_LUKE }}
-          TG_CHEW: ${{ secrets.TG_CHEW }}
-          TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
-          TG_VADER: ${{ secrets.TG_VADER }}
+          BOT_TOKENS_JSON: ${{ secrets.BOT_TOKENS_JSON }}
           TG_BOOTSTRAP: ${{ vars.TG_BOOTSTRAP || '1' }}
-        run: python3 run.py
-      - name: Persist state
-        if: always()
+          STICKER_PACKS_JSON: ${{ vars.STICKER_PACKS_JSON }}
+          CHUCKY_STICKER_PACK: ${{ vars.CHUCKY_STICKER_PACK }}
+          YOUNGBOY_STICKER_PACK: ${{ vars.YOUNGBOY_STICKER_PACK }}
+          FRAGMENT_SALES_FEED_URL: ${{ vars.FRAGMENT_SALES_FEED_URL || 'https://namespace.my/api/sales?limit=30' }}
+          VADER_TIMEZONE: America/Chicago
+          RUN_MINUTES: '48'
+          GAP_MIN: '600'
+          GAP_MAX: '1200'
+          RUN_MODE: ${{ inputs.mode }}
         run: |
-          git config user.name "vader-engine"
-          git config user.email "engine@users.noreply.github.com"
-          git add state || true
-          git diff --staged --quiet || git commit -m "state checkpoint" || true
-          git push || true
+          git rev-parse --short HEAD
+          if [ "$RUN_MODE" = "probe" ]; then
+            python3 healthcheck.py
+          else
+            python3 run.py
+          fi
+      - name: Preserve the runtime ledger
+        if: always() && inputs.mode != 'probe'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          STATE_BRANCH: main
+        run: python3 checkpoint.py
