@@ -1,0 +1,57 @@
+name: Correct Existing Message Prefixes
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Remove the identity prefix from three verified posts
+        env:
+          TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
+          TG_YODA: ${{ secrets.TG_YODA }}
+          TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+          targets = json.loads("[{\"character\":\"Bruce Wayne\",\"message_id\":1243,\"text\":\"Pinned message acknowledged by the automated assistant.\"},{\"character\":\"Yoda\",\"message_id\":1247,\"text\":\"Yoda's character case: wisdom matters more than size. Does that put him ahead of Vader for you?\"},{\"character\":\"Chucky\",\"message_id\":1323,\"text\":\"Congratulations!! 🥹 #JaniaMeshell welcomes her son with #DejounteMurray. 🩵👶🏽 (✍🏾: #TSRStaffLG) - Instagram\\nInstagram · Oct 30, 04:25 PM CDT\\nhttps://news.google.com/rss/articles/CBMiVkFVX3lxTFBVYmxMLTNKazdqZ1lsSm8tYkRVX0JILWI5WjNjeTBTeUs0TmJzZnRJcmpLazVEeEp5VVlNb2ZpeVI2Vy0yTko1ZjhkcFY0Y1QxXzdSZWlR?oc=5\"}]")
+          tokens = {"Bruce Wayne": os.environ["TG_JOHNNY"], "Yoda": os.environ["TG_YODA"], "Chucky": os.environ["TG_CHUCKY"]}
+          def api(token, method, params):
+              req = urllib.request.Request("https://api.telegram.org/bot%s/%s" % (token, method), data=json.dumps(params).encode(), headers={"Content-Type": "application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as response: return json.load(response)
+              except urllib.error.HTTPError as error:
+                  try: return json.loads(error.read())
+                  except (ValueError, OSError): return {"ok": False, "error_code": error.code}
+              except (OSError, ValueError): return {"ok": False, "uncertain": True}
+          group = api(tokens["Bruce Wayne"], "getChat", {"chat_id": "@darthvaderchat2"})
+          chat = group.get("result") or {}
+          if not group.get("ok") or chat.get("username", "").lower() != "darthvaderchat2" or chat.get("title") != "Darth Vader Chat" or chat.get("type") not in ("group", "supergroup"):
+              raise SystemExit("Authorized group could not be verified; no messages changed")
+          fixed = 0
+          for item in targets:
+              token = tokens[item["character"]]
+              identity = api(token, "getMe", {})
+              if identity.get("error_code") == 429:
+                  print("COOLDOWN", item["character"], "retry_after", (identity.get("parameters") or {}).get("retry_after"), flush=True)
+                  continue
+              if identity.get("error_code") in (401, 403) or (identity.get("ok") and not (identity.get("result") or {}).get("is_bot")):
+                  print("CREDENTIAL UNAVAILABLE", item["character"], flush=True)
+                  continue
+              result = api(token, "editMessageText", {"chat_id": chat["id"], "message_id": item["message_id"], "text": item["text"], "link_preview_options": {"is_disabled": True}})
+              description = str(result.get("description", "")).replace(token, "[redacted]")
+              if result.get("ok") or "message is not modified" in description.lower():
+                  fixed += 1
+                  print("FORMAT CORRECTED", item["character"], "message_id", item["message_id"], flush=True)
+              elif result.get("uncertain"):
+                  print("EDIT OUTCOME UNKNOWN", item["character"], "verify in Telegram; not retried", flush=True)
+              else:
+                  print("EDIT FAILED", item["character"], result.get("error_code"), description, flush=True)
+              time.sleep(1)
+          print("Corrected %d of %d verified posts" % (fixed, len(targets)), flush=True)
+          if fixed != len(targets): raise SystemExit(1)
+          PY
