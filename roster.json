@@ -348,5 +348,17 @@
     ],
     "desired_username": "@nbayoungboy",
     "automated": true
+  },
+  {
+    "name": "elonmusk",
+    "display": "Elon Musk Fan",
+    "persona": "elonmusk",
+    "pack": "elonmusk",
+    "env": "TG_ELONMUSK",
+    "desks": [
+      "elon"
+    ],
+    "desired_username": "@elonmusk",
+    "automated": true
   }
 ]
