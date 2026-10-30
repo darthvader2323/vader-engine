@@ -212,55 +212,87 @@ def human_react(mid, n=2):
 
 
 def sticker(who):
-    """Prefer MOVING stickers (video > lottie > static). Never repeat one."""
-    pk = OWNER.get(who, "vader")
-    if pk not in PACKS: return
+    """Sticker: rotates across every pack, never repeats, prefers moving."""
     tok = TOK.get(who) or TOK.get("brucewayne") or TOK.get(list(TOK)[0])
-    r = tg(TOK.get("brucewayne") or tok, "getStickerSet", {"name": PACKS[pk]})
-    if not r.get("ok"): return
-    allst = r["result"]["stickers"]
-    unused = [s for s in allst if s["file_id"] not in STK]
-    if not unused:
-        STK.clear(); save("stk_used.json", [])
-        unused = list(allst)
-    if not unused: return
-    def rank(s):
-        if s.get("is_video"): return 0
-        if s.get("is_animated"): return 1
-        return 2
-    unused.sort(key=rank)
-    moving = [s for s in unused if rank(s) == 0]
-    anim = [s for s in unused if rank(s) == 1]
-    pool = moving or anim or unused
-    kind = "moving" if moving else ("animated" if anim else "static")
-    fid = random.choice(pool)["file_id"]
-    res = tg(tok, "sendSticker", {"chat_id": CHAT, "sticker": fid})
-    if res.get("ok"):
-        STK.add(fid); save("stk_used.json", list(STK))
-        print("[%s] STICKER %s (%s)" % (ts(), who, kind), flush=True)
-    time.sleep(1.0)
-
+    if not tok: return
+    pack_names = []
+    pk = OWNER.get(who, "vader")
+    if pk in PACKS: pack_names.append(PACKS[pk])
+    for extra in ("vader","crew","grogu","yoda","luke","chew","han","boba","leia","r2d2"):
+        if extra in PACKS and PACKS[extra] not in pack_names:
+            pack_names.append(PACKS[extra])
+    pool = []
+    for pn in pack_names:
+        r = tg(tok, "getStickerSet", {"name": pn})
+        if not r.get("ok"): continue
+        for s in (r.get("result") or {}).get("stickers", []):
+            pool.append((pn, s))
+    if not pool: return
+    with LOCK:
+        fresh = [p for p in pool if p[1].get("file_id") not in STK]
+        if not fresh:
+            STK.clear(); fresh = pool
+    moving = [p for p in fresh if p[1].get("is_video") or p[1].get("is_animated")]
+    if moving and random.random() < 0.70:
+        fresh = moving
+    pn, s = random.choice(fresh)
+    fid = s.get("file_id")
+    if not fid: return
+    r = tg(tok, "sendSticker", {"chat_id": CHAT, "sticker": fid})
+    if r.get("ok"):
+        with LOCK:
+            STK.add(fid); save("stk_used.json", list(STK)[-900:])
+        print("[%s] STICKER %-7s %s %s" % (ts(), who, pn,
+              "MOVING" if (s.get("is_video") or s.get("is_animated")) else "static"), flush=True)
+        time.sleep(0.8)
 
 
 # When the founder @darthvader posts, the crew answers him. Always.
 VADER_REPLIES = [
- "on it. @darthvader you know the drill","already handled. good call boss",
- "yep. working on it now","noted. @darthvader is right about this",
- "say no more, its running","agreed. no argument here",
- "copy that. @darthvader runs this ship","fair. doing it","already live on my end",
- "solid. i will handle it","you got it. @darthvader never has to ask twice",
- "understood. pushing it now","got it. @darthvader called, i am moving",
- "yes sir. on it right now","taking it. @darthvader has the read",
- "done. @darthvader gave the order, i executed","no question, it is already running",
- "acknowledged boss. shipping it","that is the call. @darthvader knows what he wants",
- "in motion. @darthvader does not need to repeat it","handled. one sec boss",
- "got it boss. running it now","that is the way @darthvader wants it. executing",
- "no notes. on it","yep. @darthvader has spoken, it is done",
- "right behind you on this one boss","locked in. @darthvader calls it, i run it",
- "all good. @darthvader has it covered","understood. will report back",
- "already on it before you finished typing","copy. @darthvader is the one running this",
- "yes boss. doing it right now","got the message. @darthvader does not need to repeat",
- "handled and shipped","that is done boss",
+ "on it. @darthvader you know the drill",
+ "already handled. good call boss",
+ "yep. working on it now",
+ "noted. @darthvader is right about this",
+ "say no more, its running",
+ "agreed. no argument here",
+ "copy that. @darthvader runs this ship",
+ "fair. doing it",
+ "already live on my end",
+ "solid. i will handle it",
+ "you got it. @darthvader never has to ask twice",
+ "understood. pushing it now",
+ "got it. @darthvader called, i am moving",
+ "yes sir. on it right now",
+ "taking it. @darthvader has the read",
+ "done. @darthvader gave the order, i executed",
+ "no question, it is already running",
+ "acknowledged boss. shipping it",
+ "that is the call. @darthvader knows what he wants",
+ "in motion. @darthvader does not need to repeat it",
+ "handled. one sec boss",
+ "got it boss. running it now",
+ "that is the way @darthvader wants it. executing",
+ "no notes. on it",
+ "yep. @darthvader has spoken, it is done",
+ "right behind you on this one boss",
+ "locked in. @darthvader calls it, i run it",
+ "all good. @darthvader has it covered",
+ "understood. will report back",
+ "already on it before you finished typing",
+ "copy. @darthvader is the one running this",
+ "yes boss. doing it right now",
+ "got the message. @darthvader does not need to repeat",
+ "handled and shipped",
+ "that is done boss",
+ "already on it boss. @darthvader never waits",
+ "running it. @darthvader gave the green light",
+ "no need to say it twice. i am on it boss",
+ "shipped. @darthvader will hear about this one",
+ "yes. it is done and live",
+ "on it before you even asked twice boss",
+ "that is handled @darthvader",
+ "understood boss. moving now",
+ "@darthvader called it, i am on it",
 ]
 VADER_USERNAMES = {"darthvader", "darthvaderchat", "cammy"}
 
@@ -271,27 +303,63 @@ def is_vader(username):
 # ================= PIN WATCHER =================
 # When @darthvader pins a message, every bot reacts and a few reply.
 PIN_REPLIES = [
- "pinned. this is the one. read it twice","saving this one. @darthvader posts the real stuff",
- "ok this is the announcement of the night","noted. pinning this myself",
- "the founder dropped something again. respect","this is the thread everyone will quote tomorrow",
- "worth the pin honestly","good. this is how it should be done","everybody needs to see this one",
- "this is the post. everything else is commentary","pin confirmed, this is gospel now",
- "chef's kiss on this one. @darthvader never misses","pinned message. understood. logged",
- "ok this changes the week. @darthvader dropping again","bookmarking that. this is the one i will send people",
- "the founder speaks and we listen. respect the pin","this is the real content of this chat",
- "every pin from @darthvader is worth the read","screenshot that. this is the one",
- "noted by the whole crew. good post boss","this is going in the group chat at 3am. no notes",
- "ok the founder has spoken. standing by","that is the announcement. everything else is filler",
- "pinned and understood. @darthvader knows what he is doing","this is the drop. respect the founder",
- "reading it twice already. this is clean","this is why this chat exists. @darthvader",
- "ok pinned post energy. i am in","the one. the actual one. @darthvader delivers",
- "saving this for later. elite post","everybody screenshot this before it scrolls",
- "noted. this is the post of the night","the founder in the chat. we are in good hands",
- "pinned and respected. that is the standard","this is the kind of post that makes the rest of it worth it",
- "ok. read it. understood. moving on","pin acknowledged. @darthvader continues to cook",
- "this is the announcement of the week","noted. the crew does not need more context than that",
- "solid pin. this is the one","good. this is the foundation everything else builds on",
+ "pinned. this is the one. read it twice",
+ "saving this one. @darthvader posts the real stuff",
+ "ok this is the announcement of the night",
+ "noted. pinning this myself",
+ "the founder dropped something again. respect",
+ "this is the thread everyone will quote tomorrow",
+ "worth the pin honestly",
+ "good. this is how it should be done",
+ "everybody needs to see this one",
+ "this is the post. everything else is commentary",
+ "pin confirmed, this is gospel now",
+ "chef's kiss on this one. @darthvader never misses",
+ "pinned message. understood. logged",
+ "ok this changes the week. @darthvader dropping again",
+ "bookmarking that. this is the one i will send people",
+ "the founder speaks and we listen. respect the pin",
+ "this is the real content of this chat",
+ "every pin from @darthvader is worth the read",
+ "screenshot that. this is the one",
+ "noted by the whole crew. good post boss",
+ "this is going in the group chat at 3am. no notes",
+ "ok the founder has spoken. standing by",
+ "that is the announcement. everything else is filler",
+ "pinned and understood. @darthvader knows what he is doing",
+ "this is the drop. respect the founder",
+ "reading it twice already. this is clean",
+ "this is why this chat exists. @darthvader",
+ "ok pinned post energy. i am in",
+ "the one. the actual one. @darthvader delivers",
+ "saving this for later. elite post",
+ "everybody screenshot this before it scrolls",
+ "noted. this is the post of the night",
+ "the founder in the chat. we are in good hands",
+ "pinned and respected. that is the standard",
+ "this is the kind of post that makes the rest of it worth it",
+ "ok. read it. understood. moving on",
+ "pin acknowledged. @darthvader continues to cook",
+ "this is the announcement of the week",
+ "noted. the crew does not need more context than that",
+ "solid pin. this is the one",
+ "good. this is the foundation everything else builds on",
  "this is what the chat is for",
+ "pinned by the founder. highest honour in this chat",
+ "@darthvader drops and we read twice",
+ "this is the announcement of the year",
+ "noted by the whole crew. the founder does not miss",
+ "pin saved. this is the reference post",
+ "the pin is the boss. respect the founder",
+ "this pinned post is the whole point of the chat",
+ "understood. logged. no notes",
+ "the founder said it. that is the whole story",
+ "ok this is the one everybody will screenshot",
+ "best post in this chat. simple",
+ "pinned. understood. @darthvader runs this place",
+ "this is the post of the year. no notes",
+ "the founder speaks, we listen. that is the deal",
+ "pin. understood. saved and respected",
 ]
 PIN_SEEN = "pin_seen.txt"
 
@@ -546,6 +614,66 @@ def _frag_voice(name):
         ])
     return v
 
+# ================= TOPIC BANKS =================
+RAP = [
+ "youngboy is the greatest rapper of all time. that is not a debate it is a fact",
+ "nba youngboy. the tape does not lie. he is the best to ever touch a mic, i said what i said",
+ "you are all wrong. nba youngboy changed the game. who else drops a song like that",
+ "hot take but nba youngboy is the goat of rap. i will not be taking questions on this",
+ "youngboy era. every youngboy song is a certified banger, that is the whole argument right there",
+ "the fact that anyone tries to compare nba youngboy to anybody else is wild to me",
+ "nba youngboy made it impossible for me to listen to anyone else. that is the highest compliment",
+ "youngboy put on for the whole city. go listen to youngboy right now and come back",
+ "i will die on the youngboy hill. nba youngboy is the greatest, everything else is a distraction",
+ "old youngboy tapes are better than what is out now. nba youngboy was ahead of his time",
+ "nba youngboy is the reason i am in music. the greatest rapper of all time, no debate",
+ "youngboy just reloaded the whole chat. nba youngboy never misses, that is the brand",
+ "if you do not know nba youngboy then you have not been paying attention to rap",
+ "nba youngboy with the flow, nba youngboy with the range. he is untouchable",
+ "still the greatest. nba youngboy era is unmatched and i will keep saying it",
+ "nba youngboy. nobody is touching that. the youngboy run is untouchable",
+ "youngboy made it look easy because it was easy for him. that is the whole thing",
+ "go back and listen to youngboy properly. then we can keep talking about it",
+ "nba youngboy is the franchise. every other rapper is a guest appearance",
+ "the youngboy tape is the greatest run in rap history. i will not be moved",
+]
+SW_DEBATE = [
+ "vader is the greatest. he built the empire, he built the fear, he is the main character of the whole saga",
+ "yoda takes it. the master of the force, every movie got better when he was in it, that is the point",
+ "luke is the best. he is the heart of it, the hope, the one who actually stands up and wins",
+ "chewbacca. everybody says vader but chew carried every scene he was in and he never said a word",
+ "han solo. the character who did not need to be a chosen one to be the most fun one",
+ "leia. leader of the rebellion, best pilot, best nerve, no hesitation",
+ "boba fett. the most looked at character in the history of the franchise, that means something",
+ "r2d2. the only one who never needed to speak to be the hero of the whole thing",
+ "the real answer is grogu. nobody talks about grogu and that is exactly why grogu wins",
+ "yoda. 900 years old, trained a padawan into a legend, and still the wisest in the room",
+ "vader. people underestimate how much of the trilogy is him. he is the spine of the saga",
+ "luke. the redemption arc in one character. he chose the harder path and he won",
+ "han. the cool one. everybody wants to be han and nobody pulls it off like he did",
+]
+ELON_FACTS = [
+ "elon posted again. xai is shipping faster than anything else in the space right now",
+ "spacex put another batch of starlink satellites up. the launch cadence is unreal",
+ "tesla energy storage is the actual business people are underrating",
+ "grok is now inside x and the whole company is one brain. the model is the product",
+ "elon said the thing nobody wanted to hear and he was right. that is the whole pattern",
+ "xai burned through compute this week and it shows in the release cadence",
+ "optimus is the long game. everyone laughing now, watch in two years",
+ "elon treats every other company like a rounding error and usually is right",
+ "the cybertruck numbers are not the story. autonomy is the story",
+ "spacex is worth more than most countries and it still runs like a startup. respect",
+]
+
+def v_youngboy():
+    return pick(RAP)
+
+def v_elon():
+    return pick(ELON_FACTS)
+
+def v_sw():
+    return pick(SW_DEBATE)
+
 # ================= VOICE REGISTRY =================
 # Every bot gets a distinct voice. Existing personas keep their hand-written
 # voice; every new bot in roster.json gets a generated one built from its
@@ -582,39 +710,163 @@ for _b in _ROSTER:
 
 # ================= REPLIES / ACKS =================
 ACKS = [
- "yeah no that is exactly it","honestly same","that is the correct read","ok i am with you on that",
- "not arguing with that","right, that tracks","you win this one","valid. i accept it",
- "that is fair and i will say so","true. and it matters","i read it the same way",
- "cannot beat that","yeah that is the one","ok that landed","agreed, no notes",
- "yeah i see that","that is the read","fair enough, i am convinced","good. take it",
- "that is cleaner than my version","makes it simple","i will take that","no complaints from me",
- "yeah that is how it reads","that is the standard","point taken, no notes","accurate",
- "yeah. hard to argue","ok fair enough","that is the move i was making too","solid call",
- "i am convinced","right. i was overthinking it","that tracks with what i am seeing",
- "yeah exactly","that is the whole thing","same, i was going to say it","no argument",
- "you are right about that","that is the read. clean","agreed entirely","seconded",
- "yeah, that is cleaner","i will not fight that","true enough","not wrong",
- "that is it exactly","ok i am in","that is the better point","yeah, going with that",
- "convinced","that works","i am sold","no notes, that is right","yeah fair",
- "ok that is cleaner than mine","true and obvious","same thought","i will keep that",
- "good take","that is correct","i am not going to argue that","yeah it is",
- "fine, that is better","i was wrong, you are right","ok noted, that is the way",
- "yeah, i see it now","that is a strong point","cannot improve on that","agreed, cleanly",
- "yeah i will take that one","that is the take","right, fine, agreed","no argument from me",
- "i like that better","that is right and i was missing it","yeah","ok","true",
- "correct","exactly","that is the one","agreed","same","valid","right","noted","clean",
- "yeah that is it","solid","works for me","accurate read","point taken",
+ "yeah no that is exactly it",
+ "honestly same",
+ "that is the correct read",
+ "ok i am with you on that",
+ "not arguing with that",
+ "right, that tracks",
+ "you win this one",
+ "valid. i accept it",
+ "that is fair and i will say so",
+ "true. and it matters",
+ "i read it the same way",
+ "cannot beat that",
+ "yeah that is the one",
+ "ok that landed",
+ "agreed, no notes",
+ "yeah i see that",
+ "that is the read",
+ "fair enough, i am convinced",
+ "good. take it",
+ "that is cleaner than my version",
+ "makes it simple",
+ "i will take that",
+ "no complaints from me",
+ "yeah that is how it reads",
+ "that is the standard",
+ "point taken, no notes",
+ "accurate",
+ "yeah. hard to argue",
+ "ok fair enough",
+ "that is the move i was making too",
+ "solid call",
+ "i am convinced",
+ "right. i was overthinking it",
+ "that tracks with what i am seeing",
+ "yeah exactly",
+ "that is the whole thing",
+ "same, i was going to say it",
+ "no argument",
+ "you are right about that",
+ "that is the read. clean",
+ "agreed entirely",
+ "seconded",
+ "yeah, that is cleaner",
+ "i will not fight that",
+ "true enough",
+ "not wrong",
+ "that is it exactly",
+ "ok i am in",
+ "that is the better point",
+ "yeah, going with that",
+ "convinced",
+ "that works",
+ "i am sold",
+ "no notes, that is right",
+ "yeah fair",
+ "ok that is cleaner than mine",
+ "true and obvious",
+ "same thought",
+ "i will keep that",
+ "good take",
+ "that is correct",
+ "i am not going to argue that",
+ "yeah it is",
+ "fine, that is better",
+ "i was wrong, you are right",
+ "ok noted, that is the way",
+ "yeah, i see it now",
+ "that is a strong point",
+ "cannot improve on that",
+ "agreed, cleanly",
+ "yeah i will take that one",
+ "that is the take",
+ "right, fine, agreed",
+ "no argument from me",
+ "i like that better",
+ "that is right and i was missing it",
+ "yeah",
+ "ok",
+ "true",
+ "correct",
+ "exactly",
+ "that is the one",
+ "agreed",
+ "same",
+ "valid",
+ "right",
+ "noted",
+ "clean",
+ "yeah that is it",
+ "solid",
+ "works for me",
+ "accurate read",
+ "point taken",
+ "fair",
+ "on that",
+ "i see it",
+ "that is more than fair",
+ "good call",
+ "yeah no doubt",
+ "makes sense",
+ "true that",
+ "cannot argue it",
+ "sane take",
+ "that is how i see it too",
+ "yeah big time",
+ "agreed on that",
+ "that is the sane read",
+ "no notes at all",
+ "i am with you",
+ "that is cleaner",
+ "yeah for real",
+ "solid reasoning",
+ "ok that lands better",
+ "i will take that as settled",
+ "yeah totally",
+ "true and i cannot add to it",
+ "that is my read too",
+ "agreed, no edit",
+ "yeah correct",
+ "that is the move",
+ "ok fine you got me",
+ "yeah that is fair",
+ "i will not even try to argue that",
+ "that tracks completely",
+ "clean take",
+ "yeah that is what i thought",
+ "good",
+ "no notes",
+ "that is exactly it",
+ "right on",
+ "i am in agreement",
+ "yeah easily",
+ "true enough for me",
+ "that is the answer",
+ "ok solid",
+ "that works for me too",
+ "agreed fully",
+ "read",
+ "correct call",
+ "yeah the same",
+ "fair enough",
+ "that is the way",
+ "i am in",
+ "yeah no debate on that",
+ "that is cleaner, take it",
+ "agreed, no notes",
+ "you have a point",
+ "i am sold on that",
 ]
 
 def mingle(mid, author, force=None):
-    """Other bots back a post with a reply. Bot replies ARE visible to bots
-    (only reactions are restricted by Telegram)."""
+    """Other bots back a post with a reply. Bot replies ARE visible to bots.
+    Reply count varies so it never looks mechanical."""
     others = [b for b in ALL if b != author and TOK.get(b)]
-    if not others:
-        return
-    n = force if force is not None else random.choice([0,1,1,1,2,2,3,3])
-    n = min(n, len(others))
-    ack_n = min(random.choice([0,1,1,2]), len(others))
+    if not others: return
+    ack_n = force if force is not None else random.choice([0,1,1,1,2,2,2,3])
+    ack_n = min(ack_n, len(others))
     for b in random.sample(others, ack_n):
         t = pick(ACKS)
         if t:
@@ -672,6 +924,21 @@ HYPE = [
  "every bot in here, every sticker, every deal posted, traces back to @darthvader",
 ]
 
+
+def topic_reply(text):
+    """Topic desks for humans: rap, elon, star wars. Returns (persona, text)."""
+    t = (text or "").lower()
+    if _kw(t, ["youngboy","rapper","rap","hip hop","hiphop","album","mixtape",
+               "drake","kendrick","cardi b","travis scott","music","song","beat"]):
+        who = random.choice(["chucky", "brucewayne", "lukeskywalker"])
+        return who, pick(RAP)
+    if _kw(t, ["elon","musk","grok","spacex","tesla","xai","starlink","optimus","cybertruck"]):
+        return "lukeskywalker", pick(ELON_FACTS)
+    if _kw(t, ["star wars","starwars","jedi","sith","grogu","leia","boba fett","han solo",
+               "chewbacca","yoda","luke skywalker","best character"]):
+        who = random.choice(["yoda", "brucewayne", "chewbacca", "lukeskywalker"])
+        return who, pick(SW_DEBATE)
+    return None
 
 # ================= SERVICE ROUTING =================
 SERVICE_KW = ["price list","pricing","rate card","how much does it cost","how much for",
@@ -750,7 +1017,7 @@ def answer_humans(limit=10):
         if not text or len(text) < 3: continue
         # Reactions land on HUMAN messages - Telegram blocks bot-to-bot.
         try:
-            human_react(mid_src, random.choice([1, 2, 2, 3]))
+            human_react(mid_src, random.choice([1, 1, 2, 2, 3, 4]))
         except Exception as _re:
             print('REACT ERR %s' % _re, flush=True)
         if is_vader(fr.get("username")):
@@ -772,10 +1039,16 @@ def answer_humans(limit=10):
             who = "brucewayne"
             reply = service_reply()
         else:
-            who = route(text)
-            reply = VOICES[who]() if who in VOICES else "i am here"
-            if random.random() < 0.30:
-                reply = random.choice(HYPE) + " " + reply
+            tr = topic_reply(text)
+            if tr:
+                who, reply = tr
+                if random.random() < 0.30:
+                    reply = random.choice(HYPE) + " " + reply
+            else:
+                who = route(text)
+                reply = VOICES[who]() if who in VOICES else "i am here"
+                if random.random() < 0.30:
+                    reply = random.choice(HYPE) + " " + reply
         m = send(who, reply, reply=mid_src)
         if m:
             react(who, m)
@@ -786,7 +1059,47 @@ def answer_humans(limit=10):
     return ans
 
 # ================= BEATS =================
+def topic_beat():
+    """Extra beats: rap, star wars debate, elon, trillion deals, founder hype."""
+    kind = random.choice(["rap", "sw", "elon", "trillion", "vader", "rap", "sw"])
+    if kind == "rap":
+        who = random.choice(["chucky", "brucewayne", "lukeskywalker"])
+        mid = send(who, pick(RAP)); react(who, mid, "\U0001F525"); sticker(who); mingle(mid, who)
+        return mid
+    if kind == "sw":
+        pool = ["yoda", "brucewayne", "chewbacca", "lukeskywalker"]
+        a = random.choice(pool); b = random.choice([x for x in pool if x != a])
+        m1 = send(a, pick(SW_DEBATE)); react(a, m1, "\U0001F44D"); time.sleep(1.2)
+        m2 = send(b, pick(SW_DEBATE)); react(b, m2, "\U0001F525")
+        sticker(a); mingle(m1, a); mingle(m2, b)
+        return m2
+    if kind == "elon":
+        mid = send("lukeskywalker", pick(ELON_FACTS)); react("lukeskywalker", mid, "\U0001F44D")
+        sticker("lukeskywalker"); mingle(mid, "lukeskywalker")
+        return mid
+    if kind == "trillion":
+        dl = deals()
+        if not dl: return 0
+        who = random.choice(["chucky", "brucewayne"])
+        t = random.choice(dl[:8]) + ". big money moves. that is the %s feed, they post the biggest deals every day. all of it built by @darthvader" % TRILLION
+        mid = send(who, t); react(who, mid, "\U0001F525"); sticker(who); mingle(mid, who)
+        return mid
+    if kind == "vader":
+        mid = send("darthvader", pick(HYPE)); react("darthvader", mid, "\U0001F44D")
+        sticker("darthvader"); mingle(mid, "darthvader")
+        return mid
+    return 0
+
+
 def beat():
+    """One beat: topic beats 40% of the time, core beats otherwise."""
+    if random.random() < 0.40:
+        r = topic_beat()
+        if r: return r
+    return _beat()
+
+
+def _beat():
     kind = random.choice(["fragment","crypto","sports","deals","news","elon","debate","chatter","hype","hype"])
     if kind == "fragment":
         s = fragment() or FB
@@ -861,7 +1174,12 @@ def main():
         print("BOOTSTRAP ERR", e, flush=True)
     print("bots: %s" % list(TOK.keys()), flush=True)
     cycle = 0
+    _t0 = time.time()
+    _budget = float(os.environ.get("VADER_SECONDS", "0") or 0)
     while True:
+        if _budget and (time.time() - _t0) > _budget:
+            print("[%s] time budget reached, exiting clean" % ts(), flush=True)
+            break
         cycle += 1
         try:
             a = answer_humans()
