@@ -1,7 +1,7 @@
 name: Vader Room Engine
 on:
   schedule:
-    - cron: '11 */2 * * *'
+    - cron: '*/13 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -17,13 +17,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore state
+      - name: Cache state
         uses: actions/cache@v4
         with:
           path: state
           key: vader-state-${{ github.run_id }}
           restore-keys: vader-state-
-      - name: Run engine
+      - name: One cycle
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
@@ -33,7 +33,12 @@ jobs:
           TG_CHUCKY: ${{ secrets.TG_CHUCKY }}
           TG_VADER: ${{ secrets.TG_VADER }}
         run: |
-          python3 engine.py
+          python3 -c "
+import engine,random,time
+engine.answer_humans()
+for i in range(random.choice([2,3,4])):
+    engine.beat(); time.sleep(6)
+"
       - name: Persist state
         if: always()
         run: |
