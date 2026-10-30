@@ -7,6 +7,82 @@ SITE = "https://vader-social-ppulq7yo.agent.mira.tg"
 HANDLE = "@darthvader"
 TRILLION = "@trillion"
 
+
+# ================= BOOTSTRAP (self-setup) =================
+# Every bot sets up itself the moment it has a token: its display name, its
+# bio, its admin rights in the chat, and its profile photo. No manual steps.
+CID = os.environ.get("TG_CHAT_ID", "-1003758482841")
+ADMIN_TOKEN = os.environ.get("TG_JOHNNY", "")   # Johnny can promote members
+
+def _tg_post(token, method, **params):
+    try:
+        return requests.post(API % (token, method), data=params, timeout=90).json()
+    except Exception:
+        return {"ok": False}
+
+def _tg_post_json(token, method, payload):
+    try:
+        return requests.post(API % (token, method), json=payload, timeout=90).json()
+    except Exception:
+        return {"ok": False}
+
+def bootstrap_bot(name, token):
+    """Name, bio, admin rights and profile photo for one bot."""
+    if not token:
+        return
+    out = []
+    # 1. display name
+    j = _tg_post(token, "setMyName", name=name)
+    out.append("name:" + ("ok" if j.get("ok") else "fail"))
+    # 2. bio + short bio (Fragment handle pitch)
+    j = _tg_post(token, "setMyDescription",
+                 description="%s is a Fragment TON NFT username. DM @darthvader to buy." % name)
+    out.append("bio:" + ("ok" if j.get("ok") else "fail"))
+    j = _tg_post(token, "setMyShortDescription",
+                 short_description="%s - Fragment TON NFT username" % name)
+    out.append("sdesc:" + ("ok" if j.get("ok") else "fail"))
+    # 3. admin rights in the chat (promoted by the admin bot)
+    if ADMIN_TOKEN and token != ADMIN_TOKEN:
+        p = {"chat_id": CID, "user_id": token_id(token),
+             "can_post_messages": "true", "can_edit_messages": "true",
+             "can_delete_messages": "true", "can_manage_chat": "false",
+             "can_restrict_members": "false", "can_invite_users": "true",
+             "can_pin_messages": "true", "can_promote_members": "false"}
+        j = _tg_post(ADMIN_TOKEN, "promoteChatMember", **p)
+        out.append("admin:" + ("ok" if j.get("ok") else "fail"))
+    # 4. profile photo from avatars/<name>.jpg
+    ap = os.path.join(os.path.dirname(os.path.abspath(__file__)), "avatars", name + ".jpg")
+    if os.path.exists(ap):
+        try:
+            with open(ap, "rb") as fh:
+                r = requests.post(API % (token, "setMyProfilePhoto"),
+                                  data={"type": "static"},
+                                  files={"photo": (name + ".jpg", fh, "image/jpeg")},
+                                  timeout=120)
+            j = r.json()
+            if not j.get("ok"):
+                out.append("photo:fail")
+            else:
+                out.append("photo:ok")
+        except Exception:
+            out.append("photo:exc")
+    print("  bootstrap %-14s %s" % (name, " ".join(out)), flush=True)
+
+def token_id(token):
+    try:
+        j = requests.get(API % (token, "getMe"), timeout=40).json()
+        return (j.get("result") or {}).get("id")
+    except Exception:
+        return None
+
+def bootstrap_all():
+    if os.environ.get("TG_BOOTSTRAP", "1") != "1":
+        return
+    print("=== BOOTSTRAP ===", flush=True)
+    for name, token in TOK.items():
+        bootstrap_bot(name, token)
+    print("=== BOOTSTRAP DONE ===", flush=True)
+
 # ================= ROSTER (data-driven) =================
 # Adding a bot = 1 line in roster.json + 1 GitHub secret. Nothing else to edit.
 ROSTER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "roster.json")
@@ -719,6 +795,10 @@ def beat():
 # ================= MAIN LOOP =================
 def main():
     print("=== ENGINE START %s ===" % datetime.datetime.now().isoformat(), flush=True)
+    try:
+        bootstrap_all()
+    except Exception as e:
+        print("BOOTSTRAP ERR", e, flush=True)
     print("bots: %s" % list(TOK.keys()), flush=True)
     cycle = 0
     while True:

@@ -298,5 +298,27 @@
   ],
   "handle": "@porn",
   "fragment": true
+ },
+ {
+  "name": "bachelor",
+  "persona": "bachelor",
+  "pack": "crew",
+  "env": "TG_BACHELOR",
+  "desks": [
+   "general"
+  ],
+  "handle": "@bachelor",
+  "fragment": true
+ },
+ {
+  "name": "chew",
+  "persona": "chew",
+  "pack": "chew",
+  "env": "TG_CHEW2",
+  "desks": [
+   "fragment"
+  ],
+  "handle": "@chew",
+  "fragment": true
  }
 ]
