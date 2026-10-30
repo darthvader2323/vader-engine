@@ -1,14 +1,16 @@
 {
-  "cursor": 7,
+  "cursor": 0,
   "last_spoke": {
-    "brucewayne": 1793395952.2417302
+    "brucewayne": 1793395952.2417302,
+    "yoda": 1793396318.0464323
   },
   "last_topic_at": {
     "deals": 1793395274.2772746,
-    "rap": 1793395964.9090106
+    "rap": 1793395964.9090106,
+    "starwars": 1793396318.0469606
   },
   "league_cursor": 1,
-  "next_beat": 1793396220.5783024,
+  "next_beat": 1793396627.5758746,
   "offsets": {},
   "pins": {
     "883": 1793395952.242374
@@ -19,18 +21,21 @@
     "pin:883": 1793395951.5988274
   },
   "sticker_counts": {
-    "grogu": 1
+    "grogu": 2
   },
   "stickers": {
     "fid:CAACAgIAAxUAAWrlB7HR73gdRk5ivSuME0AKfS13AAKCAgACVp29Ctoil7Tbmco2PQQ": 1793395950.503756,
-    "uid:AgADggIAAladvQo": 1793395950.5037537
+    "fid:CAACAgIAAxUAAWrlDkwSlqGIBfjbUg-74BFqalS1AAKRAgACVp29ChPetSBAuAsiPQQ": 1793396306.1608667,
+    "uid:AgADggIAAladvQo": 1793395950.5037537,
+    "uid:AgADkQIAAladvQo": 1793396306.1608632
   },
   "telegram_retry_until": {},
-  "updated_at": 1793396064.3327987,
+  "updated_at": 1793396318.0473683,
   "used": {
     "0a37a31e57646234967a2ac308eeb7607a0797a92a2491e3a419c3a40bf183bf": 1793395261.9918742,
     "6da85d8d60976a86396f178f8168631d51239a246087cb041bb6d310e9cea81c": 1793395952.241711,
-    "94ed3e44341da66f2e6c72c3d6451a108df582e74847887cab7e79b33a457d06": 1793395952.5943727
+    "94ed3e44341da66f2e6c72c3d6451a108df582e74847887cab7e79b33a457d06": 1793395952.5943727,
+    "9fb68db8517b0b2245f8b07e065fc37a9d2f53158a914130b4780547d144a212": 1793396318.046412
   },
   "version": 1
 }
