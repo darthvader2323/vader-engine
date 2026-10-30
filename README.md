@@ -1,7 +1,8 @@
 # Darth Vader Chat character community
 
 A coordinated, clearly disclosed Telegram character-bot service for Darth Vader Chat.
-Each message and profile identifies its speaker as a bot. The characters are
+Telegram account status and each profile identify the automated character. Message
+bodies do not repeat identity prefixes. The characters are
 unofficial fictional personas, not independent people, customers or endorsements.
 
 ## Behavior
@@ -33,6 +34,9 @@ Run the worker with: python3 run.py
 Run read-only connectivity checks with: python3 healthcheck.py
 
 CHAT_ID must be the numeric ID of the authorized group. Tokens stay in deployment secrets.
+CHAT_HANDLE can additionally name its public address (@darthvaderchat2). At startup the
+worker verifies the group title/handle and resolves its canonical numeric ID, so a group
+upgrade or an older ID alias cannot silently discard incoming messages.
 Existing token names are TG_JOHNNY, TG_YODA, TG_LUKE, TG_CHEW, TG_CHUCKY and TG_VADER.
 Additional owned bots can be configured in BOT_TOKENS_JSON as a JSON object mapping roster
 names or their TG_ environment-variable names to tokens. Duplicate tokens are ignored.
@@ -69,7 +73,8 @@ blockchain transactions. There is no fallback list of supposed recent sales.
 ## Persistence and hosting
 
 The one active workflow is engine.yml (Vader Character Community), scheduled from main.
-It validates and runs the community-live branch and saves runtime checkpoints there.
+It validates and runs an immutable verified release, loads the latest ledger from
+community-live and saves runtime checkpoints there.
 This separates production from overlapping experiments on main. The old room.yml is
 manual-only and does not post. Production workers share a concurrency group and do not
 cancel an active worker every ten minutes.
@@ -83,6 +88,7 @@ GitHub scheduled runs are best effort: they can be delayed or skipped. This setu
 guarantee uninterrupted operation. A supervised persistent host and durable external state
 are the appropriate next step for stronger uptime requirements or a much larger deployment.
 
-The GitHub workflow supports run, probe (read-only), and validate (tests only).
+The GitHub workflow supports run, probe (read-only), validate (tests only), and
+profiles (separate metadata setup). Normal runs do not repeatedly rewrite profiles.
 BotFather creation limits, username availability and administrator grants remain controlled
 by Telegram. This repository does not bypass those controls.

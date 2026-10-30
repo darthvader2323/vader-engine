@@ -3,6 +3,7 @@ import datetime as dt
 import email.utils
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import time
@@ -104,9 +105,17 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(len(outgoing), 1)
         self.assertEqual(outgoing[0][0], "desk-token")
         self.assertIn("@darthvader", outgoing[0][1]["text"])
-        self.assertTrue(outgoing[0][1]["text"].startswith("[Bruce Wayne bot]"))
+        self.assertTrue(outgoing[0][1]["text"].startswith("For services,"))
+        self.assertNotIn("[Bruce Wayne bot]", outgoing[0][1]["text"])
         self.assertIn("privately", outgoing[0][1]["text"])
         self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
+
+    def test_public_group_alias_resolves_to_incoming_update_id(self):
+        with patch.dict(os.environ, {"CHAT_HANDLE": "@darthvaderchat2"}), \
+             patch.object(engine, "tg", return_value={"ok": True, "result": {
+                 "id": -1003758482841, "title": "Darth Vader Chat", "username": "darthvaderchat2"}}):
+            engine.resolve_chat()
+        self.assertEqual(engine.CHAT, "-1003758482841")
 
     def test_owner_music_question_gets_a_relevant_answer_not_praise(self):
         outgoing = []
@@ -123,6 +132,7 @@ class CommunityTests(unittest.TestCase):
     def test_service_intent_takes_priority_over_fragment_topic(self):
         self.assertEqual(engine.topic("I want to buy a username on Fragment"), "service")
         self.assertEqual(engine.topic("How much for TikTok verification?"), "service")
+        self.assertEqual(engine.topic("Who should clients contact for services?"), "service")
         self.assertEqual(engine.topic("What is the BTC price?"), "crypto")
         self.assertFalse(engine.is_service("How much did the company pay in the acquisition?"))
 

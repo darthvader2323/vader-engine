@@ -187,6 +187,23 @@ def tg(token, method, params=None):
     remember_rate_limit(token, method, result)
     return result
 
+def resolve_chat():
+    """Resolve the public group to the ID actually used by incoming updates."""
+    global CHAT
+    reference = os.environ.get("CHAT_HANDLE", "").strip() or CHAT
+    reader = TOK.get("brucewayne") or next(iter(TOK.values()), None)
+    result = tg(reader, "getChat", {"chat_id": reference})
+    chat = result.get("result") or {}
+    if not result.get("ok") or chat.get("title") != "Darth Vader Chat":
+        raise SystemExit("Cannot verify access to the authorized Darth Vader Chat")
+    if reference.startswith("@") and chat.get("username", "").casefold() != reference[1:].casefold():
+        raise SystemExit("Public group username did not match the authorized destination")
+    resolved = str(chat.get("id", ""))
+    if not re.fullmatch(r"-\d+", resolved):
+        raise SystemExit("Authorized destination did not resolve to a group ID")
+    CHAT = resolved
+    log("GROUP VERIFIED: Darth Vader Chat; canonical ID resolved")
+
 def get_url(url, ttl=300):
     now = time.time()
     cached = CACHE.get(url)
@@ -243,8 +260,9 @@ def send(who, text, reply=None, content_key=None):
     else:
         STATE["used"][key] = time.time()
     persist()
-    display = ROSTER.get(who, {}).get("display", who)
-    params = {"chat_id": CHAT, "text": "[%s bot]\n%s" % (display, text),
+    # Telegram account status and the profile disclose automation; avoid a
+    # repetitive identity banner in every message body.
+    params = {"chat_id": CHAT, "text": text,
               "link_preview_options": {"is_disabled": True}}
     if reply_key:
         params["reply_parameters"] = {"message_id": int(reply),
@@ -424,7 +442,9 @@ def is_service(text):
         r"verification service|verify my|blue tick|price list|rate card|"
         r"place an order|order status|your services)\b", text)
         or re.search(r"\b(buy|purchase|order)\b.{0,35}\b(username|handle|verification|service)\b", text)
-        or re.search(r"\b(how much|pricing|cost)\b.{0,35}\b(verification|unban|recovery|service)\b", text))
+        or re.search(r"\b(how much|pricing|cost)\b.{0,35}\b(verification|unban|recovery|service)\b", text)
+        or re.search(r"\b(who|what|how|where|contact|need|want|offer)\b.{0,60}\bservices?\b", text)
+        or re.search(r"\bservices?\b.{0,60}\b(contact|provide|offer|available|pricing|cost)\b", text))
 
 def topic(text):
     text = text.casefold()
@@ -498,7 +518,7 @@ def answer_humans(limit=10):
             if kind == "service":
                 reply = "For services, message %s privately with your request. %s" % (HANDLE, SITE)
             elif kind == "general":
-                reply = ("I am an automated character bot. Ask about Star Wars, NBA YoungBoy, "
+                reply = ("I am an automated character assistant. Ask about Star Wars, NBA YoungBoy, "
                          "crypto, sports, world news, Elon Musk or business deals.")
             else:
                 choices = content_for(kind)
@@ -686,6 +706,7 @@ def main():
         raise SystemExit("No configured bot tokens.")
     if not CHAT or not re.fullmatch(r"-\d+", CHAT):
         raise SystemExit("CHAT_ID must be the numeric ID of the authorized Telegram group.")
+    resolve_chat()
     STOP.clear()
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: STOP.set())
