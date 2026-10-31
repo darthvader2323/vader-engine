@@ -73,6 +73,19 @@ class ReactionTests(unittest.TestCase):
                      "Big grooming advice from someone with three hairs."):
             self.assertEqual(reactions.comment_mood(text, "starwars", "roleplay:hairbrush_transfer:1"), "playful")
 
+    def test_new_authored_jokes_keep_playful_tone_in_both_styles(self):
+        from conversation import ROLEPLAY_THREADS
+        from writing_styles import render_style
+        selected = {key: turns for key, turns in ROLEPLAY_THREADS
+                    if key in {"wookiee_alarm", "yoda_waiting_room"}}
+        self.assertEqual(len(selected), 2)
+        for key, turns in selected.items():
+            for index, (speaker, text) in enumerate(turns):
+                content_key = f"roleplay:{key}:{index}"
+                for style in ("analytical", "plain"):
+                    rendered = render_style(text, "starwars", content_key, speaker, style)
+                    self.assertEqual(reactions.comment_mood(rendered, "starwars", content_key), "playful")
+
     def test_unknown_pack_slot_or_wrong_character_is_not_guessed(self):
         pack = engine.PACKS["yoda"]
         self.assertFalse(reactions.sticker_moods("chew", pack, 0))

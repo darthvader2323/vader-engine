@@ -33,7 +33,8 @@ def comment_mood(text, kind=None, content_key=None):
     if loss or re.search(r"[😢😭💔]", line):
         return "sad"
     if content_key and any(content_key.startswith("roleplay:" + key + ":") for key in
-                           ("dramatic_whisper", "hairbrush_transfer", "patience_contest", "ranking_spreadsheet")):
+                           ("dramatic_whisper", "hairbrush_transfer", "patience_contest", "ranking_spreadsheet",
+                            "wookiee_alarm", "yoda_waiting_room")):
         return "playful"
     for mood, pattern in (
         ("frustrated", r"\b(frustrated|frustrating|annoyed|annoying|fed up)\b"),
