@@ -142,5 +142,85 @@
     "bytes": 193368,
     "unique_frames": 48,
     "sha256": "e5695e3ca4b0790db37b4703f97d87871a83d7cd4d4f64ab13bf0bc3348fbe08"
+  },
+  "yoda_04.webm": {
+    "width": 512,
+    "height": 256,
+    "seconds": 2.8,
+    "bytes": 81230,
+    "unique_frames": 54,
+    "sha256": "34014ed271440ba1560673b5758ac2e9cbd4807b67c6a67741d7f7cc5e2b1307"
+  },
+  "yoda_05.webm": {
+    "width": 512,
+    "height": 262,
+    "seconds": 2.8,
+    "bytes": 45459,
+    "unique_frames": 56,
+    "sha256": "f7a8f1014a874f58d4fecd3239df577eb2827fc3fc3f4aa82118bfb8ee7290de"
+  },
+  "yoda_06.webm": {
+    "width": 512,
+    "height": 254,
+    "seconds": 2.8,
+    "bytes": 132302,
+    "unique_frames": 56,
+    "sha256": "5dc28650b0c98d166693bf2923292691532f2d518fcc4bf381292fc31fc5ea39"
+  },
+  "chewbacca_04.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 1.95,
+    "bytes": 40873,
+    "unique_frames": 39,
+    "sha256": "b4ae27a7abbff2788afc8f9424bab3f1a082341b990aba907502ebb1b0cc8312"
+  },
+  "chewbacca_05.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 1.4,
+    "bytes": 44415,
+    "unique_frames": 28,
+    "sha256": "087e205759cc7694ce493e312abc8c51e15357fd992dac1aa7c6c3614019b673"
+  },
+  "chewbacca_06.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 1.65,
+    "bytes": 44853,
+    "unique_frames": 33,
+    "sha256": "974369e94b5fd4ded5780902006dff41b8ebbab76c3c93085c7b8a24d3cc8a76"
+  },
+  "luke_04.webm": {
+    "width": 512,
+    "height": 214,
+    "seconds": 1.1,
+    "bytes": 30428,
+    "unique_frames": 21,
+    "sha256": "a0d1de00d65af246e6a48481c81e815b281f6234c1ecf47df921223fd6db3742"
+  },
+  "luke_05.webm": {
+    "width": 512,
+    "height": 222,
+    "seconds": 2.8,
+    "bytes": 70353,
+    "unique_frames": 56,
+    "sha256": "723b81b446aab92fedcc0f61a534668c05124602fccaf33e37e12c154f35a595"
+  },
+  "chucky_04.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.2,
+    "bytes": 95560,
+    "unique_frames": 44,
+    "sha256": "9cfa3aa646746d420870d1b8f2bf546f5ea2ea18bea16efffa4d13e382b37f1a"
+  },
+  "chucky_05.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.0,
+    "bytes": 93693,
+    "unique_frames": 40,
+    "sha256": "a19339ca95680f6571b85931ff1a88cf7d3a455e0384f2f9f2ed1fea71b32ceb"
   }
 }
