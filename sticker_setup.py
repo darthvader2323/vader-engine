@@ -114,15 +114,15 @@ def main():
     identity = call("getMe")
     if not identity.get("is_bot") or not re.fullmatch(r"[A-Za-z0-9_]+", identity.get("username", "")):
         raise SystemExit("Existing credential is not a bot")
-    chat = call("getChat", {"chat_id": os.environ.get("CHAT_HANDLE", "@vadersocial")})
-    if chat.get("title") != "Darth Vader Chat" or chat.get("username", "").casefold() != "vadersocial":
+    chat = call("getChat", {"chat_id": os.environ.get("CHAT_HANDLE", "@darthvaderchat2")})
+    if chat.get("title") != "Darth Vader Chat" or chat.get("username", "").casefold() != "darthvaderchat2":
         raise SystemExit("Public group did not match the authorized destination")
     admins = call("getChatAdministrators", {"chat_id": chat["id"]})
     owners = [a["user"]["id"] for a in admins if a.get("status") == "creator"
               and a.get("user", {}).get("username", "").casefold() == "darthvader"]
     if len(owners) != 1:
         raise SystemExit("Could not uniquely verify @darthvader as the group creator")
-    print("Verified @darthvader as creator of @vadersocial", flush=True)
+    print("Verified @darthvader as creator of @darthvaderchat2", flush=True)
     print("Public group numeric ID:", chat["id"], flush=True)
     packs = {}
     for character, items in groups.items():

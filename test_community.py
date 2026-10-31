@@ -216,9 +216,9 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
 
     def test_public_group_alias_resolves_to_incoming_update_id(self):
-        with patch.dict(os.environ, {"CHAT_HANDLE": "@vadersocial"}), \
+        with patch.dict(os.environ, {"CHAT_HANDLE": "@darthvaderchat2"}), \
              patch.object(engine, "tg", return_value={"ok": True, "result": {
-                 "id": -1003758482841, "title": "Darth Vader Chat", "username": "vadersocial"}}):
+                 "id": -1003758482841, "title": "Darth Vader Chat", "username": "darthvaderchat2"}}):
             engine.resolve_chat()
         self.assertEqual(engine.CHAT, "-1003758482841")
 
