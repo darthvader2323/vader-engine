@@ -7,6 +7,47 @@ NEWS_KINDS = {"world", "elon", "deals", "rap", "crypto", "sports", "fragment"}
 SIMILARITY_KINDS = {"world", "elon", "deals", "rap", "starwars", "fragment"}
 STOP_WORDS = set("a an and are as at be been by for from has have in is it of on or that the this to was were will with".split())
 
+# Short, authored fan-persona exchanges. Each has a different argument in the
+# second turn, not a stock agreement or an endorsement of the group owner.
+ROLEPLAY_THREADS = [
+    ("presence_or_wisdom", (
+        ("brucewayne", "For screen presence, Vader gets my vote. He can make a doorway feel like the whole scene."),
+        ("yoda", "Notice an entrance, everyone does. Change a person's mind, a good teacher can. My vote, there it goes."))),
+    ("last_choice", (
+        ("lukeskywalker", "Vader's last choice is why I keep coming back to his story. Luke leaves room for him to choose differently."),
+        ("chucky", "That ending works because the mask finally stops being the most interesting thing about him."))),
+    ("crew_first", (
+        ("chewbacca", "Rrroww. Best character? I'm judging who you would actually trust to come back for the crew."),
+        ("brucewayne", "By that measure, Chewie has a strong case. Being reliable changes what everyone else can risk."))),
+    ("cape_and_helmet", (
+        ("chucky", "Vader's cape deserves its own credit. It does a ridiculous amount of dramatic work."),
+        ("brucewayne", "The helmet does the opposite: it hides his expression. You end up watching his posture instead."))),
+    ("quiet_before_duel", (
+        ("lukeskywalker", "I like the quiet before a Vader duel as much as the fight. Nobody in that room seems comfortable."),
+        ("yoda", "Wait for the next move, they must. Give them time to fear it, that silence does."))),
+    ("power_or_restraint", (
+        ("yoda", "Win a fight, strength may. Know which fight to refuse, wisdom must. Different contests, those are."),
+        ("chucky", "Which is why 'most powerful' and 'best character' keep turning into two different arguments."))),
+    ("station_and_people", (
+        ("brucewayne", "The Death Star gives the Empire scale. Vader gives all that machinery a face you can remember."),
+        ("lukeskywalker", "And the story still comes back to a small group trusting each other. That contrast is what I like."))),
+    ("trusting_han", (
+        ("chewbacca", "Rrrroww. Han talks like he has a plan. The interesting part is who sticks beside him when the plan falls apart."),
+        ("yoda", "Confidence, easy to announce it is. Trust, through the difficult part it must last."))),
+    ("patience_contest", (
+        ("chucky", "Yoda wins the patience contest. I'm disqualified before the rules finish."),
+        ("yoda", "Finish listening first, you could. A new strategy, that would be."))),
+    ("ranking_spreadsheet", (
+        ("brucewayne", "There are people who organize their movie rankings in spreadsheets. I respect the preparation."),
+        ("lukeskywalker", "That's a very Bruce Wayne way to say you made one."))),
+    ("dramatic_whisper", (
+        ("chucky", "Chewie keeps winning the loudest entrance category. Do the rest of us get a microphone?"),
+        ("chewbacca", "Rrroww. Turn down the dramatic whispers and you might get a word in."))),
+    ("hairbrush_transfer", (
+        ("yoda", "Chewie, your hairbrush has requested a transfer. Approved, it should be."),
+        ("chewbacca", "Rrroww. Big grooming advice from a profile picture with three hairs."))),
+]
+
 # Each idea has one shared key, regardless of which character delivers it.
 # Questions are occasional; these are not interchangeable engagement banners.
 DISCUSSIONS = [

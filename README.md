@@ -27,6 +27,20 @@ unofficial fictional personas, not independent people, customers or endorsements
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
 - News includes a publication date and plain-text source name. Failed feeds are skipped.
+- Scheduled Star Wars discussion can use twelve short, authored two-persona
+  exchanges with distinct viewpoints. The second turn is a native reply after
+  45–120 seconds; real human activity pauses it. Only configured profiles are
+  used. These are disclosed automated fan personas with character-inspired
+  voices, not independent humans or
+  customer endorsements. Each exchange runs once, preserves its place through
+  worker handovers, and gives the room a pause before another broadcast.
+  Four exchanges are light fan-persona banter, directed only at the fictional
+  profiles rather than real visitors. Eligible topic order is mixed,
+  and scheduled speakers vary among quieter profiles rather than following a
+  fixed cycle of names. Existing topic cooldowns and repetition checks remain.
+- Crypto snapshots use the actual quoted figures as their shared repeat key.
+  A fresh price request is not blocked just because an earlier update was sent
+  in the same clock hour; unchanged figures still share one key.
 - TON is labeled TON. Pregame fixtures are labeled scheduled, without fake live 0–0 scores.
 - No invented sales, hardcoded market numbers, claims to own the desired usernames,
   manufactured praise, fake personal experiences, or automated crowd endorsements.

@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 import engine
-from conversation import DISCUSSIONS, compact_sources
+from conversation import DISCUSSIONS, ROLEPLAY_THREADS, compact_sources
 from checkpoint import merge_state
 
 class CommunityTests(unittest.TestCase):
@@ -24,6 +24,7 @@ class CommunityTests(unittest.TestCase):
             "STATE": engine.initial_state(),
             "TOK": {"brucewayne": "desk-token", "yoda": "yoda-token", "chucky": "chucky-token"},
             "CACHE": {}, "BACKOFF": {}, "LEGACY_STICKERS": set(), "BOT_USERS": {},
+            "ROLEPLAY_THREADS": (),
         }.items():
             replacement = patch.object(engine, name, value)
             replacement.start()
@@ -435,7 +436,7 @@ class CommunityTests(unittest.TestCase):
             self.assertEqual(engine.beat(), 0)
         provider.assert_not_called()
 
-    def test_broadcast_speaker_rotation_is_shared_across_topics(self):
+    def test_broadcast_speaker_varies_among_quieter_profiles_across_topics(self):
         outgoing = []
         engine.STATE["cursor"] = 2
         engine.STATE["last_spoke"] = {"yoda": 200, "brucewayne": 300, "chucky": 100}
@@ -443,17 +444,20 @@ class CommunityTests(unittest.TestCase):
              patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
              patch.object(engine.random, "random", return_value=1):
             self.assertGreater(engine.beat(), 0)
-        self.assertEqual(outgoing[0][0], "chucky-token")
+        self.assertIn(outgoing[0][0], ("chucky-token", "yoda-token"))
 
     def test_topic_cooldown_moves_on_instead_of_posting_another_similar_prompt(self):
         outgoing = []
         engine.STATE["last_topic_at"]["starwars"] = time.time()
         engine.STATE["last_topic_at"]["crypto"] = time.time()
-        with patch.object(engine, "available_content", return_value=[("NBA fixture", "fixture:2")]) as provider, \
+        def content(kind, *args, **kwargs):
+            return [("NBA fixture", "fixture:2")] if kind == "sports" else []
+        with patch.object(engine, "available_content", side_effect=content) as provider, \
              patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
              patch.object(engine.random, "random", return_value=1):
             self.assertGreater(engine.beat(), 0)
         self.assertEqual(provider.call_args.args[0], "sports")
+        self.assertTrue(all(call.args[0] not in ("starwars", "crypto") for call in provider.call_args_list))
 
     def test_recent_fingerprints_survive_checkpoint_merges(self):
         remote = {"updated_at": 3, "recent_content": {"a": {"at": 1, "signature": {}}, "b": {"at": 3, "signature": {}}}}
@@ -536,6 +540,127 @@ class CommunityTests(unittest.TestCase):
                               "last_topic_at": {"source_link": 200}})
         self.assertEqual(merged["scheduled_news_count"], 12)
         self.assertEqual(merged["last_topic_at"]["source_link"], 200)
+
+    def test_roleplay_has_one_delayed_native_reply_from_a_different_character(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
+             patch.object(engine.time, "time", side_effect=lambda: now), \
+             patch.object(engine.random, "uniform", return_value=60):
+            seed = engine.start_roleplay()
+            self.assertGreater(seed, 0)
+            self.assertEqual(engine.continue_roleplay(), 0)
+            now += 61
+            self.assertGreater(engine.continue_roleplay(), 0)
+            self.assertEqual(engine.continue_roleplay(), 0)
+            self.assertIsNone(engine.start_roleplay())
+        self.assertEqual(len(outgoing), 2)
+        self.assertNotEqual(outgoing[0][0], outgoing[1][0])
+        self.assertEqual(outgoing[1][1]["reply_parameters"]["message_id"], seed)
+        self.assertIsNone(engine.STATE["roleplay_pending"])
+        self.assertGreater(engine.STATE["next_beat"], now)
+
+    def test_roleplay_waits_for_real_visitors(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
+             patch.object(engine.time, "time", side_effect=lambda: now):
+            engine.start_roleplay()
+            now += 121
+            engine.STATE["last_topic_at"]["human_activity"] = now
+            self.assertEqual(engine.continue_roleplay(), 0)
+            self.assertEqual(engine.beat(), 0)
+            self.assertEqual(len(outgoing), 1)
+            now += 91
+            self.assertGreater(engine.continue_roleplay(), 0)
+
+    def test_roleplay_resumes_its_pending_reply_after_checkpoint(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
+             patch.object(engine.time, "time", side_effect=lambda: now):
+            seed = engine.start_roleplay()
+            restored = merge_state({}, json.loads((engine.S / "runtime.json").read_text()))
+            now += 121
+            with patch.object(engine, "STATE", restored):
+                self.assertGreater(engine.continue_roleplay(), 0)
+        self.assertEqual(len(outgoing), 2)
+        self.assertEqual(outgoing[1][1]["reply_parameters"]["message_id"], seed)
+
+    def test_uncertain_roleplay_seed_never_creates_a_blind_followup(self):
+        outgoing = []
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing, {"ok": False, "uncertain": True})):
+            self.assertEqual(engine.start_roleplay(), -1)
+            self.assertIsNone(engine.STATE["roleplay_pending"])
+            self.assertEqual(engine.continue_roleplay(), 0)
+            self.assertIsNone(engine.start_roleplay())
+        self.assertEqual(len(outgoing), 1)
+
+    def test_uncertain_roleplay_reply_cannot_repeat_after_a_crash(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine.time, "time", side_effect=lambda: now):
+            with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+                engine.start_roleplay()
+            pending = dict(engine.STATE["roleplay_pending"])
+            now += 121
+            with patch.object(engine, "tg", side_effect=self.api_for([], outgoing, {"ok": False, "uncertain": True})):
+                self.assertEqual(engine.continue_roleplay(), -1)
+                engine.STATE["roleplay_pending"] = pending
+                self.assertEqual(engine.continue_roleplay(), 0)
+        self.assertEqual(len(outgoing), 2)
+        self.assertIsNone(engine.STATE["roleplay_pending"])
+
+    def test_roleplay_requires_its_actual_characters_and_has_distinct_wording(self):
+        bodies = [text for _, turns in ROLEPLAY_THREADS for _, text in turns]
+        self.assertEqual(len(bodies), len(set(bodies)))
+        self.assertTrue(all(len({who for who, _ in turns}) == 2 for _, turns in ROLEPLAY_THREADS))
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine, "TOK", {"chucky": "character-token"}), \
+             patch.object(engine, "tg") as api:
+            self.assertIsNone(engine.start_roleplay())
+        api.assert_not_called()
+
+    def test_changed_crypto_figures_can_answer_a_request_in_the_same_hour(self):
+        outgoing = []
+        data = {"bitcoin": {"usd": 11, "usd_24h_change": 1, "last_updated_at": int(time.time())}}
+        request = self.message(text="Yoda, any fresh crypto figures?", username="darthvader")
+        with patch.object(engine, "jget", return_value=data), \
+             patch.object(engine, "tg", side_effect=self.api_for([request], outgoing)):
+            first, key = engine.crypto()[0]
+            engine.send("yoda", first, content_key=key, kind="crypto")
+            data["bitcoin"]["usd"] = 12
+            self.assertEqual(engine.answer_humans(), 1)
+        self.assertEqual(len(outgoing), 2)
+        self.assertIn("$12.00", outgoing[1][1]["text"])
+        self.assertEqual(outgoing[1][1]["reply_parameters"]["message_id"], 300)
+
+    def test_character_address_does_not_override_the_requested_topic(self):
+        for text, expected in [
+                ("Yoda, any fresh crypto figures?", "crypto"),
+                ("Chewbacca, any fresh crypto numbers?", "crypto"),
+                ("Yoda, what's happening in the NBA?", "sports"),
+                ("Yoda, news about Elon Musk?", "elon"),
+                ("Chewbacca, who bought a company today? Any business deals?", "deals"),
+                ("Yoda, what's in the world news?", "world"),
+                ("Yoda, how much for Instagram verification?", "service"),
+                ("Yoda, why is patience important for a Jedi?", "starwars"),
+                ("Yoda species?", "starwars")]:
+            with self.subTest(text=text):
+                self.assertEqual(engine.topic(text), expected)
+
+    def test_unchanged_crypto_figures_keep_their_shared_key(self):
+        data = {"bitcoin": {"usd": 11, "usd_24h_change": 1, "last_updated_at": int(time.time())}}
+        with patch.object(engine, "jget", return_value=data):
+            _, before = engine.crypto()[0]
+            data["bitcoin"]["last_updated_at"] += 30
+            _, after = engine.crypto()[0]
+        self.assertEqual(before, after)
 
     def test_topic_filters_reject_irrelevant_headlines_and_aggregate_deal_reports(self):
         with patch.object(engine, "gnews", return_value=[

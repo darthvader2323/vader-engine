@@ -17,7 +17,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
-from conversation import (NEWS_KINDS, SIMILARITY_KINDS, compact_sources, discussion_items,
+from conversation import (NEWS_KINDS, ROLEPLAY_THREADS, SIMILARITY_KINDS, compact_sources, discussion_items,
                           signature, similar)
 
 HERE = Path(__file__).resolve().parent
@@ -124,7 +124,7 @@ def initial_state():
     return {"version": 1, "used": {}, "replies": {}, "stickers": {},
             "pins": {}, "profiles": {}, "offsets": {}, "last_spoke": {},
             "last_topic_at": {}, "telegram_retry_until": {}, "profile_retry_until": {},
-            "recent_content": {}, "scheduled_news_count": 0,
+            "recent_content": {}, "scheduled_news_count": 0, "roleplay_pending": None,
             "next_beat": 0, "cursor": 0, "updated_at": 0}
 
 STATE = initial_state()
@@ -447,9 +447,15 @@ def choose_speaker(preferred=None):
     if not candidates:
         return None
     # Fair rotation limits repeated appearances; it does not conceal automation.
-    oldest = min(STATE["last_spoke"].get(name, 0) for name in candidates)
-    return random.choice([name for name in candidates
-                          if STATE["last_spoke"].get(name, 0) == oldest])
+    if len(candidates) > 1:
+        latest = max(STATE["last_spoke"].get(name, 0) for name in candidates)
+        older = [name for name in candidates if STATE["last_spoke"].get(name, 0) < latest]
+        if older:
+            candidates = older
+    # Vary the speaker among the quieter available profiles instead of a fixed
+    # five-name cycle. A single designated service responder remains unchanged.
+    quieter = sorted(candidates, key=lambda name: STATE["last_spoke"].get(name, 0))[:3]
+    return random.choice(quieter)
 
 def send(who, text, reply=None, content_key=None, kind=None):
     if who not in TOK or not text:
@@ -619,7 +625,7 @@ def crypto():
     if not lines:
         return []
     text = "\n".join(lines) + "\nCoinGecko · %s\nhttps://www.coingecko.com/" % stamp(min(times))
-    return [(text, "crypto-hour:%d" % (time.time() // 3600))]
+    return [(text, "crypto-quote:" + digest("\n".join(lines)))]
 
 def sports():
     index = int(STATE.get("league_cursor", 0)) % len(LEAGUES)
@@ -702,6 +708,21 @@ def is_service(text):
 
 def topic(text):
     text = text.casefold()
+    # A character's name is often the addressee, not the requested subject.
+    # Route the remainder first, retaining the full text as a lore fallback.
+    for name, row in ROSTER.items():
+        addresses = {name.casefold(), row.get("display", name).casefold()}
+        if BOT_USERS.get(name):
+            addresses.add("@" + BOT_USERS[name].casefold())
+        alternatives = "|".join(re.escape(address) for address in sorted(addresses, key=len, reverse=True))
+        match = re.match(r"^(?:%s)(?:[\s,!?:]+)" % alternatives, text)
+        if match:
+            remainder = text[match.end():].strip()
+            if remainder:
+                routed = topic(remainder)
+                if routed != "general":
+                    return routed
+            break
     for name, expression in [
         ("service", None), ("fragment", r"\bfragment\b"),
         ("rap", r"\b(youngboy|rapper|rap|music|song|album|mixtape)\b"),
@@ -712,7 +733,7 @@ def topic(text):
         ("fragment", r"\b(fragment|username|handle)\b"),
         ("sports", r"\b(nba|nhl|mlb|nfl|mls|soccer|football|basketball|hockey|baseball|score)\b"),
         ("elon", r"\b(elon|musk|tesla|spacex|xai|grok|starlink)\b"),
-        ("deals", r"\b(trillion|acquisition|merger|buyout|funding|business deal)\b"),
+        ("deals", r"\b(trillion|acquisition|merger|buyout|funding|business deals?)\b"),
         ("world", r"\b(news|world|happening|politics|election)\b")]:
         if name == "service" and is_service(text):
             return name
@@ -854,7 +875,7 @@ def answer_humans(limit=10):
             speaker = speaker_for(text, kind)
             content_key = None
             if kind == "service":
-                reply = "For services, message %s privately with your request. %s" % (HANDLE, SITE)
+                reply = "For services, message %s privately with your request." % HANDLE
             elif kind == "general":
                 if (text.casefold() not in ("/help", "/start")
                         or time.time() - STATE["last_topic_at"].get("help", 0) < 6 * 3600):
@@ -947,17 +968,74 @@ def sticker(who):
         return 1
     return 0
 
+def start_roleplay():
+    """Begin one disclosed fictional exchange, using only configured profiles."""
+    if STATE.get("roleplay_pending"):
+        return None
+    choices = [(key, turns) for key, turns in ROLEPLAY_THREADS
+               if all(who in TOK for who, _ in turns)
+               and digest("roleplay:" + key + ":0") not in STATE["used"]]
+    if not choices:
+        return None
+    key, turns = random.choice(choices)
+    speaker, text = turns[0]
+    sent = send(speaker, text, content_key="roleplay:" + key + ":0", kind="starwars")
+    if sent > 0:
+        STATE["roleplay_pending"] = {"id": key, "reply_to": sent,
+                                     "due": time.time() + random.uniform(45, 120)}
+        persist()
+        log("FICTIONAL ROLEPLAY started: " + key)
+    return sent
+
+
+def continue_roleplay():
+    pending = STATE.get("roleplay_pending")
+    if not isinstance(pending, dict):
+        return 0
+    thread = next((turns for key, turns in ROLEPLAY_THREADS if key == pending.get("id")), None)
+    mid = pending.get("reply_to")
+    if (not thread or not mid or thread[1][0] not in TOK
+            or str(mid) in STATE["replies"]):
+        STATE["roleplay_pending"] = None
+        persist()
+        return 0
+    if (time.time() < pending.get("due", 0)
+            or time.time() - STATE["last_topic_at"].get("human_activity", 0) < 90):
+        return 0
+    speaker, text = thread[1]
+    sent = send(speaker, text, reply=mid,
+                content_key="roleplay:" + pending["id"] + ":1", kind="starwars")
+    if sent:
+        STATE["roleplay_pending"] = None
+        gap = max(60, float(os.environ.get("GAP_MIN", "180")))
+        STATE["next_beat"] = max(STATE.get("next_beat", 0), time.time() + gap)
+        log("FICTIONAL ROLEPLAY completed: " + pending["id"])
+    else:
+        pending["due"] = time.time() + 60
+    persist()
+    return sent
+
+
 def beat():
     if time.time() - STATE["last_topic_at"].get("human_activity", 0) < 90:
+        return 0
+    if STATE.get("roleplay_pending"):
         return 0
     rotation = ["starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment"]
     cooldowns = {"starwars": 900, "crypto": 1800, "sports": 600, "world": 900,
                  "elon": 1800, "deals": 3600, "rap": 3600, "fragment": 1800}
     cursor = int(STATE.get("cursor", 0))
-    for attempt in range(len(rotation)):
-        kind = rotation[(cursor + attempt) % len(rotation)]
+    order = list(rotation)
+    random.shuffle(order)
+    for kind in order:
         if time.time() - STATE["last_topic_at"].get(kind, 0) < cooldowns[kind]:
             continue
+        if kind == "starwars":
+            started = start_roleplay()
+            if started is not None:
+                STATE["cursor"] = (rotation.index(kind) + 1) % len(rotation)
+                persist()
+                return started
         speaker = choose_speaker()
         choices = available_content(kind, speaker, scheduled=True)
         if not choices:
@@ -967,7 +1045,7 @@ def beat():
         if mention_trillion:
             text += "\nRelated business coverage: @trillion on Instagram."
         sent = send(speaker, text, content_key=key, kind=kind)
-        STATE["cursor"] = (cursor + attempt + 1) % len(rotation)
+        STATE["cursor"] = (rotation.index(kind) + 1) % len(rotation)
         if sent:
             STATE["last_topic_at"][kind] = time.time()
             if mention_trillion:
@@ -1086,6 +1164,7 @@ def main():
         sticker(choose_speaker())
         while not STOP.is_set() and time.monotonic() < deadline:
             answer_humans()
+            continue_roleplay()
             now = time.time()
             if now >= next_heartbeat:
                 latest = max(STATE["last_spoke"].values(), default=now)
