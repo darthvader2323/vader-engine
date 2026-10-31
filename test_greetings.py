@@ -227,10 +227,10 @@ class GreetingTests(unittest.TestCase):
         self.assertEqual(len(self.sent()), 1)
         self.assertFalse(self.reacted())
 
-    def test_six_authored_voices_have_distinct_welcomes_and_rotate(self):
+    def test_authored_voices_have_distinct_welcomes_and_rotate(self):
         wording = [line for lines in LINES.values() for line in lines]
         self.assertEqual(len(wording), len(set(wording)))
-        self.assertEqual(len(LINES), 6)
+        self.assertTrue({"brucewayne", "yoda", "chewbacca", "lukeskywalker", "chucky", "tonysoprano", "killer"} <= set(LINES))
         for speaker, lines in LINES.items():
             self.assertGreaterEqual(len(lines), 8)
             self.assertNotEqual(greeting_line(speaker, 0), greeting_line(speaker, 1))

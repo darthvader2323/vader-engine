@@ -144,9 +144,15 @@ tony_voice.py, each with analytical and plain wording. These reuse the room's
 existing idea keys, so activating Tony or changing his daily style cannot replay
 exhausted discussions. His profile remains an unofficial automated fan persona.
 
+The requested generic alias killer is an original fictional sci-fi fan persona,
+with a SFW masked-character avatar and a restrained authored voice. Its 36 ideas
+have separate analytical/plain wording and share the same room history keys.
+There is no reviewed movie pack for this original character; it must not borrow
+another character's face or replay somebody else's clips.
+
 Future human-member join events use the existing bounded greeting path: one
 character sends one native welcome, with no welcome swarm or service-message
-reaction. The six configured voices each have eight distinct short greetings.
+reaction. Each configured voice has eight distinct short greetings.
 The shared counter rotates the wording and survives restarts. Human arrivals
 share the existing ten-minute person cooldown and twenty-second room cooldown;
 a batch join gets one welcome. Bot arrivals and pre-activation joins are skipped.

@@ -2,7 +2,7 @@
 import hashlib
 import html
 import re
-from tony_voice import DISCUSSIONS as TONY_DISCUSSIONS
+from fan_voices import DISCUSSION_VOICES
 
 NEWS_KINDS = {"world", "elon", "deals", "rap", "crypto", "sports", "fragment"}
 SIMILARITY_KINDS = {"world", "elon", "deals", "rap", "starwars", "fragment"}
@@ -384,8 +384,9 @@ DISCUSSIONS.extend([
 ])
 
 for _idea, _voices in DISCUSSIONS:
-    if _idea in TONY_DISCUSSIONS:
-        _voices["tonysoprano"] = TONY_DISCUSSIONS[_idea][0]
+    for _speaker, _catalog in DISCUSSION_VOICES.items():
+        if _idea in _catalog:
+            _voices[_speaker] = _catalog[_idea][0]
 
 DISCUSSION_REFERENCES = (
     "https://www.starwars.com/news/star-wars-inside-intel-darth-vader-suit",

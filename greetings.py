@@ -33,6 +33,11 @@ LINES = {
         "Hey. Good to have you at the table.", "Aye, welcome g. How's everything?",
         "Come sit down. What've you got for the room?", "Hey, glad you made it. How are you doing?",
         "Welcome in. There's always room for another Star Wars argument.", "Yo, take a seat. What's good today?"),
+    "killer": (
+        "Hey. Welcome to the room. What's your take?", "Glad you found us. Come join the chat.",
+        "Welcome in. What brings you here?", "Aye, what's good? Join us.",
+        "You're in. How's your day going?", "Hey there. Plenty to talk about here.",
+        "A new voice in the room. Good to have you.", "Welcome. Star Wars, sports, or something else today?"),
 }
 
 

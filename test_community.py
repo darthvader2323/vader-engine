@@ -319,6 +319,22 @@ class CommunityTests(unittest.TestCase):
     def test_fragment_sale_question_can_mention_a_character_username(self):
         self.assertEqual(engine.topic("Who bought @yoda on Fragment?"), "fragment")
 
+    def test_killer_has_distinct_authored_styles_and_preserves_shared_history(self):
+        from killer_voice import DISCUSSIONS as catalog
+        self.assertEqual(set(catalog), {idea for idea, _ in DISCUSSIONS})
+        for idea, voices in DISCUSSIONS:
+            key = "discussion:starwars:" + idea
+            self.assertEqual(voices["killer"], catalog[idea][0])
+            self.assertEqual(render_style(voices["killer"], "starwars", key, "killer", "plain"), catalog[idea][1])
+            self.assertNotEqual(*catalog[idea])
+            self.assertNotEqual(voices["killer"], voices["tonysoprano"])
+            engine.STATE["used"][engine.digest(key)] = time.time()
+        self.assertEqual(engine.available_content("starwars", "killer"), [])
+        with patch.dict(engine.TOK, {"killer": "killer-token"}):
+            self.assertEqual(engine.speaker_for("Killer, fresh crypto?", "crypto"), "killer")
+            self.assertEqual(engine.topic("Killer, fresh crypto?"), "crypto")
+            self.assertEqual(engine.speaker_for("Killer, who do I contact for services?", "service"), "brucewayne")
+
     def test_tony_has_authored_reading_styles_without_new_history_keys(self):
         from tony_voice import DISCUSSIONS as tony
         self.assertEqual(set(tony), {idea for idea, _ in DISCUSSIONS})
