@@ -55,7 +55,7 @@ def call(method, fields=None, files=None, allow_missing=False):
 
 
 def publish_pack(name, items, owner):
-    """Append to existing packs; Telegram deduplicates identical sticker uploads.
+    """Append only the missing tail of a pack whose order matches the manifest.
 
     Never replace or delete old entries: their unique IDs are the runtime's
     permanent no-repeat keys. A failed/uncertain API request stops the run.
@@ -75,8 +75,11 @@ def publish_pack(name, items, owner):
                                     "stickers": json.dumps(stickers, ensure_ascii=False),
                                     "sticker_type": "regular"}, files)
     else:
-        for item in items:
-            # addStickerToSet leaves the set unchanged for the exact same file.
+        if len(previous) > len(items):
+            raise SystemExit("Existing pack exceeds ordered manifest; stopped: " + name)
+        # The manifest is append-only and matches pack order. Never re-upload
+        # the prefix: Telegram can assign a new identity to identical bytes.
+        for item in items[len(previous):]:
             sticker = {"sticker": "attach://video", "format": "video",
                        "emoji_list": [item["emoji"]]}
             call("addStickerToSet", {"user_id": owner, "name": name,
@@ -87,10 +90,39 @@ def publish_pack(name, items, owner):
     videos = pack.get("stickers", [])
     ids = {s["file_unique_id"] for s in videos}
     if (len(videos) != len(items) or len(ids) != len(videos)
+            or [s["file_unique_id"] for s in videos[:len(previous)]] != [s["file_unique_id"] for s in previous]
             or not all(s.get("is_video") for s in videos)
             or not previous_ids.issubset(ids)):
         raise SystemExit("Published pack failed append-only video verification: " + name)
     return pack, len(ids - previous_ids)
+
+
+def preserve_original_vader_pack(name, items, owner):
+    """Recover from the test re-uploads without deleting media or changing IDs."""
+    original = call("getStickerSet", {"name": name}, allow_missing=True)
+    if not original or len(original.get("stickers", [])) <= len(items):
+        return name
+    # The failed publication appended three uploads after the three originals.
+    # Keep only those original file IDs in a clean set; no file is re-uploaded.
+    canonical = original["stickers"][:len(items)]
+    if len(items) != 3 or not all(s.get("is_video") for s in canonical):
+        raise SystemExit("Unexpected original Vader pack; stopped")
+    clean_name = name.replace("_motion1_", "_motion2_")
+    clean = call("getStickerSet", {"name": clean_name}, allow_missing=True)
+    if not clean:
+        stickers = [{"sticker": sticker["file_id"], "format": "video",
+                     "emoji_list": [item["emoji"]]} for item, sticker in zip(items, canonical)]
+        call("createNewStickerSet", {"user_id": owner, "name": clean_name,
+                                    "title": items[0]["title"],
+                                    "stickers": json.dumps(stickers, ensure_ascii=False),
+                                    "sticker_type": "regular"})
+        clean = call("getStickerSet", {"name": clean_name})
+    if ([s["file_unique_id"] for s in clean.get("stickers", [])]
+            != [s["file_unique_id"] for s in canonical]
+            or not all(s.get("is_video") for s in clean["stickers"])):
+        raise SystemExit("Original Vader identities were not preserved; stopped")
+    print("Vader pack migrated using the three original identities; no media deleted.", flush=True)
+    return clean_name
 
 
 def main():
@@ -125,6 +157,8 @@ def main():
         name = "vadersocial_%s_motion1_by_%s" % (character, identity["username"].lower())
         if len(name) > 64:
             raise SystemExit("Sticker set name exceeds Telegram length limit")
+        if character == "vader":
+            name = preserve_original_vader_pack(name, items, owners[0])
         pack, added = publish_pack(name, items, owners[0])
         videos = pack["stickers"]
         packs[character] = name

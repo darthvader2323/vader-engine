@@ -21,8 +21,9 @@ class PackPublishingTests(unittest.TestCase):
         if method == "addStickerToSet":
             self.assertEqual(json.loads(fields["sticker"])["format"], "video")
             uid = files["video"].stem
-            if uid not in {s["file_unique_id"] for s in self.pack["stickers"]}:
-                self.pack["stickers"].append({"file_id": uid, "file_unique_id": uid, "is_video": True})
+            self.assertNotIn(uid, {s["file_unique_id"] for s in self.pack["stickers"]},
+                             "An existing file must never be uploaded again")
+            self.pack["stickers"].append({"file_id": uid, "file_unique_id": uid, "is_video": True})
             return True
         if method == "createNewStickerSet":
             self.assertTrue(all(s["format"] == "video" for s in json.loads(fields["stickers"])))
@@ -39,6 +40,7 @@ class PackPublishingTests(unittest.TestCase):
             pack, added = sticker_setup.publish_pack("yoda_pack", self.items, 123)
         self.assertEqual(added, 0)
         self.assertEqual(len(pack["stickers"]), 2)
+        self.assertEqual(self.methods.count("addStickerToSet"), 1)
         self.assertFalse(any("delete" in m.lower() or "replace" in m.lower() for m in self.methods))
 
     def test_new_pack_is_created_as_video(self):
@@ -65,6 +67,24 @@ class PackPublishingTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "uncertain"):
                 sticker_setup.publish_pack("yoda_pack", self.items, 123)
         self.assertEqual(self.methods.count("addStickerToSet"), 1)
+
+    def test_vader_recovery_reuses_original_ids_without_upload_or_delete(self):
+        original = {"stickers": [{"file_id": str(i), "file_unique_id": "u" + str(i), "is_video": True}
+                                  for i in range(6)]}
+        clean = None
+        def api(method, fields, **kwargs):
+            nonlocal clean
+            if method == "getStickerSet":
+                return original if "motion1" in fields["name"] else clean
+            self.assertEqual(method, "createNewStickerSet")
+            ids = [s["sticker"] for s in json.loads(fields["stickers"])]
+            self.assertEqual(ids, ["0", "1", "2"])
+            clean = {"stickers": original["stickers"][:3]}
+            return True
+        items = self.items + [{"file": "third.webm", "emoji": "🖤", "title": "Vader"}]
+        with patch.object(sticker_setup, "call", side_effect=api):
+            name = sticker_setup.preserve_original_vader_pack("vader_motion1_by_test", items, 123)
+        self.assertEqual(name, "vader_motion2_by_test")
 
 
 if __name__ == "__main__":
