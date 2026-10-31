@@ -44,6 +44,9 @@ unofficial fictional personas, not independent people, customers or endorsements
   voices, not independent humans or
   customer endorsements. Each exchange runs once, preserves its place through
   worker handovers, and gives the room a pause before another broadcast.
+  A rejected followup is attempted at most three times; an exchange expires
+  after ten minutes. Neither a permanent Telegram error nor continuous visitor
+  activity can leave an old exchange blocking future broadcasts indefinitely.
   Four exchanges are light fan-persona banter, directed only at the fictional
   profiles rather than real visitors. Eligible topic order is mixed,
   and scheduled speakers vary among quieter profiles rather than following a

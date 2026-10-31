@@ -615,6 +615,56 @@ class CommunityTests(unittest.TestCase):
             now += 91
             self.assertGreater(engine.continue_roleplay(), 0)
 
+    def test_rejected_character_reply_cannot_block_broadcasts_forever(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine.time, "time", side_effect=lambda: now):
+            with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+                engine.start_roleplay()
+            now += 121
+            with patch.object(engine, "tg", return_value={"ok": False, "error_code": 400}) as api:
+                for _ in range(3):
+                    self.assertEqual(engine.continue_roleplay(), 0)
+                    now += 61
+                self.assertIsNone(engine.STATE["roleplay_pending"])
+                self.assertEqual(engine.continue_roleplay(), 0)
+                self.assertEqual(api.call_count, 3)
+            self.assertIsNone(engine.start_roleplay())
+
+    def test_expired_roleplay_is_skipped_even_while_people_keep_talking(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine.time, "time", side_effect=lambda: now), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            engine.start_roleplay()
+            now += 601
+            engine.STATE["last_topic_at"]["human_activity"] = now
+            self.assertEqual(engine.continue_roleplay(), 0)
+        self.assertIsNone(engine.STATE["roleplay_pending"])
+        self.assertEqual(len(outgoing), 1)
+
+    def test_reply_attempt_limit_and_expiry_survive_a_checkpoint(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "ROLEPLAY_THREADS", ROLEPLAY_THREADS[:1]), \
+             patch.object(engine.time, "time", side_effect=lambda: now):
+            with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+                engine.start_roleplay()
+            now += 121
+            with patch.object(engine, "tg", return_value={"ok": False, "error_code": 400}):
+                engine.continue_roleplay()
+            restored = merge_state({}, json.loads((engine.S / "runtime.json").read_text()))
+            self.assertEqual(restored["roleplay_pending"]["attempts"], 1)
+            expiry = restored["roleplay_pending"]["expires"]
+            with patch.object(engine, "STATE", restored):
+                now = expiry + 1
+                with patch.object(engine, "tg") as api:
+                    engine.continue_roleplay()
+                    api.assert_not_called()
+                self.assertIsNone(engine.STATE["roleplay_pending"])
+
     def test_roleplay_resumes_its_pending_reply_after_checkpoint(self):
         outgoing = []
         now = 2_000_000_000

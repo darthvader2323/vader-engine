@@ -991,7 +991,8 @@ def start_roleplay():
     sent = send(speaker, text, content_key="roleplay:" + key + ":0", kind="starwars")
     if sent > 0:
         STATE["roleplay_pending"] = {"id": key, "reply_to": sent,
-                                     "due": time.time() + random.uniform(45, 120)}
+                                     "due": time.time() + random.uniform(45, 120),
+                                     "expires": time.time() + 600, "attempts": 0}
         persist()
         log("FICTIONAL ROLEPLAY started: " + key)
     return sent
@@ -1008,10 +1009,22 @@ def continue_roleplay():
         STATE["roleplay_pending"] = None
         persist()
         return 0
+    # Older checkpoints predate the timeout. Initialize it once; retries and
+    # worker handovers must never extend a stale exchange forever.
+    if "expires" not in pending:
+        pending["expires"] = time.time() + 600
+        persist()
+    if time.time() >= pending["expires"] or pending.get("attempts", 0) >= 3:
+        log("FICTIONAL ROLEPLAY skipped: reply unavailable or expired: " + pending["id"])
+        STATE["roleplay_pending"] = None
+        persist()
+        return 0
     if (time.time() < pending.get("due", 0)
             or time.time() - STATE["last_topic_at"].get("human_activity", 0) < 90):
         return 0
     speaker, text = thread[1]
+    pending["attempts"] = pending.get("attempts", 0) + 1
+    persist()
     sent = send(speaker, text, reply=mid,
                 content_key="roleplay:" + pending["id"] + ":1", kind="starwars")
     if sent:
@@ -1020,7 +1033,11 @@ def continue_roleplay():
         STATE["next_beat"] = max(STATE.get("next_beat", 0), time.time() + gap)
         log("FICTIONAL ROLEPLAY completed: " + pending["id"])
     else:
-        pending["due"] = time.time() + 60
+        if pending["attempts"] >= 3:
+            log("FICTIONAL ROLEPLAY skipped: reply retry limit: " + pending["id"])
+            STATE["roleplay_pending"] = None
+        else:
+            pending["due"] = time.time() + 60
     persist()
     return sent
 
