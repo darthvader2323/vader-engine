@@ -1,5 +1,5 @@
 {
-  "cursor": 1,
+  "cursor": 4,
   "greetings": {
     "count": 1,
     "enabled_at": 1793431897,
@@ -31,7 +31,7 @@
     "source_link": 1793475659.8892252,
     "starwars": 1793477703.3781307,
     "trillion_context": 1793407076.9481316,
-    "world": 1793478153.6866467
+    "world": 1793478155.1981525
   },
   "league_cursor": 4,
   "ledger_recoveries": {
@@ -39,7 +39,7 @@
   },
   "ledger_versions": {
     "last_topic_at": {
-      "world": 1793478153.68669
+      "world": 1793478155.1981785
     },
     "recent_content": {
       "316fbc34fc6c27d0091d2d291519fd05db45d3e1b415ec77fdd2186c9ff557ef": 1793478149.2044396,
@@ -2262,7 +2262,7 @@
   "telegram_retry_until": {
     "yoda": 1793409087.085959
   },
-  "updated_at": 1793478153.68669,
+  "updated_at": 1793478155.1981785,
   "used": {
     "017c41d399410ae4c01e5d4514b33248e7715bae07b600ebb9ea409e7b9ad478": 1793444432.8623471,
     "02021b16e6e97e6f298e65cc9ffdebcc674483625bf226c0a20bbba3cff62e8c": 1793439312.052786,
