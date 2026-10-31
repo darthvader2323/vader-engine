@@ -11,6 +11,16 @@ unofficial fictional personas, not independent people, customers or endorsements
   TG_READER_NAME selects the listener independently of the service responder. Production
   uses Yoda because the delivery check verified incoming updates on that identity.
 - Service questions direct the person to @darthvader privately.
+- Reading styles split the configured profiles as evenly as possible between
+  analytical and plain wording. The groups swap at midnight in VADER_TIMEZONE
+  (America/Chicago in this deployment), deterministically across worker restarts.
+  With five profiles, the two/three split reverses each day. Plain wording uses
+  short, authored fan comments and familiar language; it does not invent a child
+  identity or deliberate factual mistakes. Shared idea keys and repeat history
+  apply across both styles, so a new day never replays an exhausted idea.
+  Source headlines keep their facts and uncertainty; only a small set of safe
+  vocabulary changes is allowed outside quotes. Source/date labels and all
+  numbers remain intact. Market quotes expand abbreviations in the plain style.
 - Owner questions follow the same topic routing and receive relevant replies.
 - Directly addressing a configured character selects that voice, except service requests
   still go to the single service desk. Yoda uses inverted, reflective phrasing; Luke is

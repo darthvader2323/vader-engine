@@ -19,6 +19,7 @@ import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 from conversation import (NEWS_KINDS, ROLEPLAY_THREADS, SIMILARITY_KINDS, compact_sources, discussion_items,
                           signature, similar)
+from writing_styles import daily_styles, render_style
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -457,6 +458,11 @@ def choose_speaker(preferred=None):
     quieter = sorted(candidates, key=lambda name: STATE["last_spoke"].get(name, 0))[:3]
     return random.choice(quieter)
 
+def writing_style(who):
+    day = dt.datetime.fromtimestamp(time.time(), ZONE).date()
+    return daily_styles(TOK, day).get(who, "analytical")
+
+
 def send(who, text, reply=None, content_key=None, kind=None):
     if who not in TOK or not text:
         return 0
@@ -485,7 +491,9 @@ def send(who, text, reply=None, content_key=None, kind=None):
     previous_source_at = STATE["last_topic_at"].get("source_link")
     occasional_link = (scheduled_news and (previous_news_count + 1) % 10 == 0
                        and time.time() - (previous_source_at or 0) >= 3600)
-    body, entities = compact_sources(text, kind, include_link=occasional_link)
+    style = writing_style(who)
+    styled_text = render_style(text, kind, content_key, who, style)
+    body, entities = compact_sources(styled_text, kind, include_link=occasional_link)
     if scheduled_news:
         STATE["scheduled_news_count"] = previous_news_count + 1
     if entities:
@@ -504,12 +512,13 @@ def send(who, text, reply=None, content_key=None, kind=None):
     if result.get("ok") or result.get("uncertain"):
         if result.get("ok"):
             STATE["used"][digest(text)] = time.time()
+            STATE["used"][digest(styled_text)] = time.time()
         STATE["last_spoke"][who] = time.time()
         if kind and kind not in ("service", "pin", "general"):
             STATE["last_topic_at"][kind] = time.time()
         persist()
         if result.get("ok"):
-            log("SENT %s%s" % (who, " reply" if reply_key else " scheduled"))
+            log("SENT %s%s style=%s" % (who, " reply" if reply_key else " scheduled", style))
             return result["result"]["message_id"]
         log("DELIVERY UNKNOWN %s; no automatic duplicate send" % who)
         return -1
@@ -1159,6 +1168,7 @@ def main():
     STATE["next_beat"] = min(STATE.get("next_beat", 0), max(time.time(), last_sent + gap_min))
     next_pin = 0
     next_heartbeat = 0
+    style_day = None
     log("ENGINE READY: %d configured character bots; disclosed activity; chat=%s" % (len(TOK), CHAT))
     try:
         sticker(choose_speaker())
@@ -1166,6 +1176,12 @@ def main():
             answer_humans()
             continue_roleplay()
             now = time.time()
+            today = dt.datetime.fromtimestamp(now, ZONE).date()
+            if today != style_day:
+                assignments = daily_styles(TOK, today)
+                log("WRITING STYLES %s: %s" % (today.isoformat(),
+                    ", ".join(name + "=" + assignments[name] for name in sorted(assignments))))
+                style_day = today
             if now >= next_heartbeat:
                 latest = max(STATE["last_spoke"].values(), default=now)
                 log("WORKER ACTIVE: accounts=%s listener=%s last_send_ago=%ss next_broadcast_check=%ss" %

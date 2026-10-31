@@ -13,6 +13,7 @@ from unittest.mock import patch
 import engine
 from conversation import DISCUSSIONS, ROLEPLAY_THREADS, compact_sources
 from checkpoint import merge_state
+from writing_styles import daily_styles, render_style, PLAIN_DISCUSSIONS, PLAIN_THREADS
 
 class CommunityTests(unittest.TestCase):
     def setUp(self):
@@ -32,6 +33,10 @@ class CommunityTests(unittest.TestCase):
         quiet = patch.object(engine, "log")
         quiet.start()
         self.addCleanup(quiet.stop)
+        # Existing behavior checks are independent of the calendar's style group.
+        tone = patch.object(engine, "writing_style", return_value="analytical")
+        tone.start()
+        self.addCleanup(tone.stop)
 
     def message(self, update_id=100, mid=300, text="How much for Instagram verification?", username="visitor"):
         return {"update_id": update_id, "message": {
@@ -231,6 +236,40 @@ class CommunityTests(unittest.TestCase):
             engine.verify_bots()
         self.assertNotIn("chucky", engine.TOK)
         self.assertIn(engine.choose_speaker(["chucky"]), ("brucewayne", "yoda"))
+
+    def test_style_change_cannot_replay_an_already_used_discussion(self):
+        outgoing = []
+        key = "discussion:starwars:suit_life_support"
+        text = next(text for text, item in engine.content_for("starwars", "yoda") if item == key)
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            with patch.object(engine, "writing_style", return_value="plain"):
+                self.assertGreater(engine.send("yoda", text, content_key=key, kind="starwars"), 0)
+            restored = merge_state({}, json.loads((engine.S / "runtime.json").read_text()))
+            with patch.object(engine, "STATE", restored), \
+                 patch.object(engine, "writing_style", return_value="analytical"):
+                self.assertEqual(engine.send("yoda", text, content_key=key, kind="starwars"), 0)
+        self.assertEqual(len(outgoing), 1)
+        self.assertIn("Alive, the suit keeps Vader", outgoing[0][1]["text"])
+
+    def test_plain_native_reply_preserves_price_source_date_and_link_entity_offsets(self):
+        outgoing = []
+        report = "Bitcoin report: approximately $200 million\nExample Wire · Oct 31, 2026\nhttps://example.org/report"
+        with patch.object(engine, "writing_style", return_value="plain"), \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            engine.send("yoda", report, reply=300, content_key="news:plain", kind="world")
+            engine.STATE["scheduled_news_count"] = 9
+            engine.send("chucky", report.replace("$200", "$300"), content_key="news:linked", kind="world")
+        reply = outgoing[0][1]
+        self.assertIn("about $200 million", reply["text"])
+        self.assertEqual(reply["reply_parameters"]["message_id"], 300)
+        self.assertNotIn("entities", reply)
+        linked = outgoing[1][1]
+        entity = linked["entities"][0]
+        encoded = linked["text"].encode("utf-16-le")
+        self.assertEqual(encoded[2*entity["offset"]:2*(entity["offset"]+entity["length"])].decode("utf-16-le"),
+                         "Example Wire · Oct 31, 2026")
+        self.assertIn("about $300 million", linked["text"])
+        self.assertEqual(entity["url"], "https://example.org/report")
 
     def test_news_has_no_stock_introduction_or_clickable_source(self):
         outgoing = []
@@ -836,6 +875,81 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(merged["offsets"]["brucewayne"], 200)
         self.assertEqual(merged["sticker_counts"]["vader"], 4)
         self.assertEqual(merged["updated_at"], 20)
+
+class WritingStyleTests(unittest.TestCase):
+    def test_daily_split_is_balanced_swaps_and_is_stable_across_restarts(self):
+        today = dt.date(2026, 10, 31)
+        for count in (1, 2, 5, 24, 29, 100):
+            names = [f"profile{n}" for n in range(count)]
+            first = daily_styles(names, today)
+            self.assertEqual(first, daily_styles(reversed(names), today))
+            self.assertLessEqual(abs(list(first.values()).count("plain") - count / 2), 0.5)
+            next_day = daily_styles(names, today + dt.timedelta(days=1))
+            self.assertTrue(all(first[name] != next_day[name] for name in names))
+
+    def test_worker_uses_local_midnight_and_swaps_during_a_running_process(self):
+        names = {"brucewayne": "a", "yoda": "b", "chucky": "c"}
+        before = dt.datetime(2026, 10, 31, 4, 59, tzinfo=dt.timezone.utc).timestamp()
+        after = before + 120
+        with patch.object(engine, "TOK", names), \
+             patch.object(engine, "ZONE", engine.ZoneInfo("America/Chicago")):
+            with patch.object(engine.time, "time", return_value=before):
+                old = {name: engine.writing_style(name) for name in names}
+            with patch.object(engine.time, "time", return_value=after):
+                new = {name: engine.writing_style(name) for name in names}
+        self.assertTrue(all(old[name] != new[name] for name in names))
+
+    def test_every_existing_authored_idea_and_thread_has_plain_wording(self):
+        self.assertEqual(set(PLAIN_DISCUSSIONS), {key for key, _ in DISCUSSIONS})
+        self.assertEqual(set(PLAIN_THREADS), {key for key, _ in ROLEPLAY_THREADS})
+        for key, voices in DISCUSSIONS:
+            for name in ("brucewayne", "yoda", "chewbacca", "lukeskywalker", "chucky"):
+                text = render_style(voices[name], "starwars", "discussion:starwars:" + key, name, "plain")
+                self.assertTrue(text)
+                self.assertNotIn("fifth grade", text.casefold())
+        for key, turns in ROLEPLAY_THREADS:
+            for index, (name, text) in enumerate(turns):
+                self.assertTrue(render_style(text, "starwars", f"roleplay:{key}:{index}", name, "plain"))
+
+    def test_plain_crypto_preserves_exact_prices_signs_source_and_date(self):
+        raw = ("TON $1.19 · 24h +0.68%\nBTC $77,083.00 · 24h -1.50%\n"
+               "ETH $2,236.18 · 24h +0.00%\nCoinGecko · Oct 31, 12:00 AM CDT\nhttps://www.coingecko.com/")
+        text = render_style(raw, "crypto", "quote:1", "yoda", "plain")
+        self.assertIn("TON: $1.19, up 0.68% over 24 hours.", text)
+        self.assertIn("Bitcoin: $77,083.00, down 1.50% over 24 hours.", text)
+        self.assertIn("Ethereum: $2,236.18. No change over 24 hours (0.00%).", text)
+        self.assertEqual(text.splitlines()[-2:], raw.splitlines()[-2:])
+        self.assertEqual(render_style(raw, "crypto", "quote:1", "yoda", "analytical"), raw)
+
+    def test_plain_headline_does_not_turn_plans_or_allegations_into_facts(self):
+        raw = ("Acme reportedly plans to acquire Beta for approximately $200 million, but may not proceed\n"
+               "Example Wire · Oct 31, 2026\nhttps://example.org/deal\nContact @darthvader.")
+        text = render_style(raw, "deals", "news:one", "chucky", "plain")
+        self.assertEqual(text.splitlines()[0],
+                         "Acme reportedly plans to buy Beta for about $200 million, but may not proceed")
+        self.assertEqual(text.splitlines()[1:], raw.splitlines()[1:])
+        claim = "Police concluded the alleged deal could not proceed"
+        self.assertEqual(render_style(claim, "world", "n:2", "yoda", "plain"), claim)
+
+    def test_quoted_source_wording_and_capitalized_names_are_not_rewritten(self):
+        for quote in ('"approximately additional assistance"', '“approximately additional assistance”',
+                      "‘approximately additional assistance’", "'approximately additional assistance'"):
+            raw = "Company says " + quote + " is needed"
+            self.assertEqual(render_style(raw, "world", "n:one", "yoda", "plain"), raw)
+        name = "The Additional Assistance Fund plans a vote"
+        self.assertEqual(render_style(name, "world", "n:two", "yoda", "plain"), name)
+
+    def test_service_pins_scores_and_unknown_ideas_keep_their_exact_meaning(self):
+        for kind, key, text in (
+            ("service", "service", "For services, message @darthvader privately with your request."),
+            ("pin", "pin", "Pinned message acknowledged by the automated assistant."),
+            ("sports", "sports:one", "NBA Final: Team A 100–99 Team B · Final\nESPN · checked Oct 31"),
+            ("fragment", "fragment:one", "Reported sale: @example · 100 TON · Oct 31"),
+            ("starwars", "roleplay:unknown", "An unfamiliar authored idea."),
+        ):
+            with self.subTest(kind=kind):
+                self.assertEqual(render_style(text, kind, key, "yoda", "plain"), text)
+
 
 if __name__ == "__main__":
     unittest.main()
