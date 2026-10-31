@@ -2,11 +2,6 @@ name: Publish Vader Video Stickers
 
 on:
   workflow_dispatch:
-    inputs:
-      test:
-        description: Send one verified Darth Vader video sticker to the group
-        type: boolean
-        default: true
 
 permissions:
   contents: read
@@ -21,17 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: d726d38b2928063bd8f28db28f79028963f9b1fb
+          ref: 22af8250cb94b3b3562dd512c0ffe59822d64823
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - run: python3 -m unittest -v test_stickers
       - run: python3 -m py_compile sticker_setup.py
       - name: Publish validated character video packs
         env:
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
           CHAT_HANDLE: '@darthvaderchat2'
-          SEND_STICKER_TEST: ${{ inputs.test && '1' || '0' }}
         run: python3 sticker_setup.py
       - uses: actions/upload-artifact@v4
         with:
