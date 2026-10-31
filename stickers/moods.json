@@ -1,0 +1,227 @@
+{
+  "vadersocial_vader_motion1_by_batmanbrucewaynebot": {
+    "character": "vader",
+    "clips": [
+      {
+        "file": "vader_01.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "vader_02.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "vader_03.webm",
+        "moods": [
+          "serious"
+        ]
+      }
+    ]
+  },
+  "vadersocial_chew_motion1_by_batmanbrucewaynebot": {
+    "character": "chew",
+    "clips": [
+      {
+        "file": "chewbacca_01.webm",
+        "moods": [
+          "angry",
+          "serious"
+        ]
+      },
+      {
+        "file": "chewbacca_02.webm",
+        "moods": [
+          "curious",
+          "serious"
+        ]
+      },
+      {
+        "file": "chewbacca_03.webm",
+        "moods": [
+          "angry"
+        ]
+      },
+      {
+        "file": "chewbacca_04.webm",
+        "moods": [
+          "frustrated",
+          "angry"
+        ]
+      },
+      {
+        "file": "chewbacca_05.webm",
+        "moods": [
+          "surprised",
+          "angry"
+        ]
+      },
+      {
+        "file": "chewbacca_06.webm",
+        "moods": [
+          "happy",
+          "playful"
+        ]
+      }
+    ]
+  },
+  "vadersocial_yoda_motion1_by_batmanbrucewaynebot": {
+    "character": "yoda",
+    "clips": [
+      {
+        "file": "yoda_01.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_02.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_03.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_04.webm",
+        "moods": [
+          "disappointed"
+        ]
+      },
+      {
+        "file": "yoda_05.webm",
+        "moods": [
+          "curious",
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_06.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_07.webm",
+        "moods": [
+          "supportive",
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_08.webm",
+        "moods": [
+          "playful"
+        ]
+      },
+      {
+        "file": "yoda_09.webm",
+        "moods": [
+          "sad"
+        ]
+      }
+    ]
+  },
+  "vadersocial_luke_motion1_by_batmanbrucewaynebot": {
+    "character": "luke",
+    "clips": [
+      {
+        "file": "luke_01.webm",
+        "moods": [
+          "happy",
+          "playful"
+        ]
+      },
+      {
+        "file": "luke_02.webm",
+        "moods": [
+          "sad",
+          "surprised"
+        ]
+      },
+      {
+        "file": "luke_03.webm",
+        "moods": [
+          "sad",
+          "serious"
+        ]
+      },
+      {
+        "file": "luke_04.webm",
+        "moods": [
+          "happy"
+        ]
+      },
+      {
+        "file": "luke_05.webm",
+        "moods": [
+          "sad"
+        ]
+      }
+    ]
+  },
+  "vadersocial_chucky_motion1_by_batmanbrucewaynebot": {
+    "character": "chucky",
+    "clips": [
+      {
+        "file": "chucky_01.webm",
+        "moods": [
+          "playful"
+        ]
+      },
+      {
+        "file": "chucky_02.webm",
+        "moods": [
+          "playful"
+        ]
+      },
+      {
+        "file": "chucky_03.webm",
+        "moods": [
+          "playful"
+        ]
+      },
+      {
+        "file": "chucky_04.webm",
+        "moods": [
+          "frustrated"
+        ]
+      },
+      {
+        "file": "chucky_05.webm",
+        "moods": [
+          "playful"
+        ]
+      }
+    ]
+  },
+  "vadersocial_youngboy_motion1_by_batmanbrucewaynebot": {
+    "character": "youngboy",
+    "clips": [
+      {
+        "file": "youngboy_01.webm",
+        "moods": []
+      }
+    ]
+  },
+  "vadersocial_batman_motion1_by_batmanbrucewaynebot": {
+    "character": "batman",
+    "clips": [
+      {
+        "file": "batman_01.webm",
+        "moods": []
+      },
+      {
+        "file": "batman_02.webm",
+        "moods": []
+      }
+    ]
+  }
+}
