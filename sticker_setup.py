@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import re
-import subprocess
 import time
 import urllib.error
 import urllib.request
@@ -55,6 +54,45 @@ def call(method, fields=None, files=None, allow_missing=False):
     raise SystemExit("%s failed: %s" % (method, description))
 
 
+def publish_pack(name, items, owner):
+    """Append to existing packs; Telegram deduplicates identical sticker uploads.
+
+    Never replace or delete old entries: their unique IDs are the runtime's
+    permanent no-repeat keys. A failed/uncertain API request stops the run.
+    """
+    pack = call("getStickerSet", {"name": name}, allow_missing=True)
+    previous = (pack or {}).get("stickers", [])
+    if previous and (not all(s.get("is_video") for s in previous)
+                     or len({s["file_unique_id"] for s in previous}) != len(previous)):
+        raise SystemExit("Existing pack is not a unique video-only pack: " + name)
+    previous_ids = {s["file_unique_id"] for s in previous}
+    if not pack:
+        files = {"video_%d" % i: HERE / "stickers" / item["file"] for i, item in enumerate(items)}
+        stickers = [{"sticker": "attach://video_%d" % i, "format": "video",
+                     "emoji_list": [item["emoji"]]} for i, item in enumerate(items)]
+        call("createNewStickerSet", {"user_id": owner, "name": name,
+                                    "title": items[0]["title"],
+                                    "stickers": json.dumps(stickers, ensure_ascii=False),
+                                    "sticker_type": "regular"}, files)
+    else:
+        for item in items:
+            # addStickerToSet leaves the set unchanged for the exact same file.
+            sticker = {"sticker": "attach://video", "format": "video",
+                       "emoji_list": [item["emoji"]]}
+            call("addStickerToSet", {"user_id": owner, "name": name,
+                                    "sticker": json.dumps(sticker, ensure_ascii=False)},
+                 {"video": HERE / "stickers" / item["file"]})
+            time.sleep(1)
+    pack = call("getStickerSet", {"name": name})
+    videos = pack.get("stickers", [])
+    ids = {s["file_unique_id"] for s in videos}
+    if (len(videos) != len(items) or len(ids) != len(videos)
+            or not all(s.get("is_video") for s in videos)
+            or not previous_ids.issubset(ids)):
+        raise SystemExit("Published pack failed append-only video verification: " + name)
+    return pack, len(ids - previous_ids)
+
+
 def main():
     if not TOKEN:
         raise SystemExit("Missing existing bot credential")
@@ -83,38 +121,18 @@ def main():
     print("Verified @darthvader as creator of @darthvaderchat2", flush=True)
     print("Public group numeric ID:", chat["id"], flush=True)
     packs = {}
-    vader_sticker = None
     for character, items in groups.items():
         name = "vadersocial_%s_motion1_by_%s" % (character, identity["username"].lower())
         if len(name) > 64:
             raise SystemExit("Sticker set name exceeds Telegram length limit")
-        pack = call("getStickerSet", {"name": name}, allow_missing=True)
-        if not pack:
-            files = {"video_%d" % i: HERE / "stickers" / item["file"] for i, item in enumerate(items)}
-            stickers = [{"sticker": "attach://video_%d" % i, "format": "video",
-                         "emoji_list": [item["emoji"]]} for i, item in enumerate(items)]
-            call("createNewStickerSet", {"user_id": owners[0], "name": name,
-                                        "title": items[0]["title"],
-                                        "stickers": json.dumps(stickers, ensure_ascii=False),
-                                        "sticker_type": "regular"}, files)
-            time.sleep(2)
-            pack = call("getStickerSet", {"name": name})
-        videos = pack.get("stickers", [])
-        if len(videos) != len(items) or not all(item.get("is_video") for item in videos):
-            raise SystemExit("Published pack failed video verification: " + name)
+        pack, added = publish_pack(name, items, owners[0])
+        videos = pack["stickers"]
         packs[character] = name
-        print("VIDEO PACK %s verified=%d name=%s" % (character, len(videos), name), flush=True)
-        if character == "vader":
-            vader_sticker = videos[1 if len(videos) > 1 else 0]["file_id"]
+        print("VIDEO PACK %s verified=%d added=%d name=%s" %
+              (character, len(videos), added, name), flush=True)
         time.sleep(2)
     (HERE / "stickers/packs.json").write_text(json.dumps(packs, indent=2) + "\n")
     print("STICKER_PACKS_JSON=" + json.dumps(packs, separators=(",", ":")), flush=True)
-    if os.environ.get("SEND_STICKER_TEST") == "1" and vader_sticker:
-        message = call("sendSticker", {"chat_id": chat["id"], "sticker": vader_sticker,
-                                       "disable_notification": True})
-        if not (message.get("sticker") or {}).get("is_video"):
-            raise SystemExit("Test delivery was not reported as a video sticker")
-        print("VIDEO STICKER TEST delivered message_id=%s" % message["message_id"], flush=True)
     print("Video sticker setup complete.", flush=True)
 
 
