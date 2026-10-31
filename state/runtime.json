@@ -1,5 +1,5 @@
 {
-  "cursor": 1,
+  "cursor": 2,
   "greetings": {
     "count": 1,
     "enabled_at": 1793431897,
@@ -25,8 +25,8 @@
     "trillion_context": 1793407076.9481316,
     "world": 1793437639.5207517
   },
-  "league_cursor": 6,
-  "next_beat": 1793438103.795046,
+  "league_cursor": 7,
+  "next_beat": 1793438424.8353755,
   "offsets": {
     "yoda": 910447736
   },
@@ -2036,7 +2036,7 @@
   "telegram_retry_until": {
     "yoda": 1793409087.085959
   },
-  "updated_at": 1793437929.1966572,
+  "updated_at": 1793438118.8582892,
   "used": {
     "07c260430aecb653e37cae08acb12df7975589582c1bd447595f9ea945d711f4": 1793415695.7544928,
     "087e5b4e86dcee8b946f60a1edc6b0b07096e9193829005bc355fdaf4ad38466": 1793437044.6068366,
