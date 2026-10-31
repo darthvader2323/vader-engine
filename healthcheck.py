@@ -5,11 +5,14 @@ import engine
 def main():
     if not engine.TOK:
         raise SystemExit("No configured bot tokens.")
+    engine.resolve_chat()
+    engine.load_managed_bots(for_profile_setup=True)
     for name, token in engine.TOK.items():
         result = engine.tg(token, "getMe")
         user = result.get("result") or {}
-        print("BOT %s valid=%s username=%s" %
-              (name, bool(result.get("ok") and user.get("is_bot")), user.get("username", "")), flush=True)
+        print("BOT %s valid=%s username=%s manager=%s privacy_disabled=%s" %
+              (name, bool(result.get("ok") and user.get("is_bot")), user.get("username", ""),
+               bool(user.get("can_manage_bots")), bool(user.get("can_read_all_group_messages"))), flush=True)
     first = next(iter(engine.TOK.values()))
     chat = engine.tg(first, "getChat", {"chat_id": engine.CHAT})
     print("CHAT valid=%s title=%s" %

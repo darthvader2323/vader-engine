@@ -23,7 +23,7 @@ class CommunityTests(unittest.TestCase):
             "CHAT": "-123456",
             "STATE": engine.initial_state(),
             "TOK": {"brucewayne": "desk-token", "yoda": "yoda-token", "chucky": "chucky-token"},
-            "CACHE": {}, "BACKOFF": {}, "LEGACY_STICKERS": set(),
+            "CACHE": {}, "BACKOFF": {}, "LEGACY_STICKERS": set(), "BOT_USERS": {},
         }.items():
             replacement = patch.object(engine, name, value)
             replacement.start()
@@ -59,6 +59,92 @@ class CommunityTests(unittest.TestCase):
             "TG_VADER": " same-token ", "TG_JOHNNY": "same-token", "TG_YODA": "yoda-token",
         }, {})
         self.assertEqual(tokens, {"brucewayne": "same-token", "yoda": "yoda-token"})
+
+    def managed_api(self, calls, privacy=True, photo=True, status="member", manager=True, identity=4242):
+        def api(token, method, params=None):
+            calls.append((token, method, params))
+            if method == "getMe" and token == "desk-token":
+                return {"ok": True, "result": {"id": 90, "is_bot": True, "can_manage_bots": manager}}
+            if method == "getManagedBotToken":
+                return {"ok": True, "result": "4242:" + "x" * 25}
+            if method == "getMe":
+                return {"ok": True, "result": {"id": identity, "is_bot": True,
+                    "username": "exampletonybot", "can_read_all_group_messages": privacy}}
+            if method == "getUserProfilePhotos":
+                return {"ok": True, "result": {"total_count": int(photo)}}
+            if method == "getChatMember":
+                return {"ok": True, "result": {"status": status, "user": {"id": 4242}}}
+            raise AssertionError("Unexpected operation: " + method)
+        return api
+
+    def test_managed_profile_connects_without_persisting_or_logging_its_token(self):
+        calls = []
+        child = "4242:" + "x" * 25
+        with patch.dict(os.environ, {"MANAGED_BOTS_JSON": '{"tonysoprano":4242}'}), \
+             patch.object(engine, "tg", side_effect=self.managed_api(calls)):
+            self.assertEqual(engine.load_managed_bots(), 1)
+        self.assertEqual(engine.TOK["tonysoprano"], child)
+        self.assertIn(("desk-token", "getManagedBotToken", {"user_id": 4242}), calls)
+        self.assertIn((child, "getChatMember", {"chat_id": "-123456", "user_id": 4242}), calls)
+        engine.persist()
+        self.assertNotIn(child, (engine.S / "runtime.json").read_text())
+        self.assertNotIn(child, str(engine.log.call_args_list))
+
+    def test_incomplete_managed_profiles_cannot_enter_group_rotation(self):
+        for options in ({"privacy": False}, {"photo": False}, {"status": "left"},
+                        {"status": "kicked"}, {"manager": False}, {"identity": 5555}):
+            with self.subTest(options=options), \
+                 patch.dict(os.environ, {"MANAGED_BOTS_JSON": '{"tonysoprano":4242}'}), \
+                 patch.object(engine, "tg", side_effect=self.managed_api([], **options)):
+                self.assertEqual(engine.load_managed_bots(), 0)
+                self.assertNotIn("tonysoprano", engine.TOK)
+
+    def test_managed_metadata_setup_can_prepare_a_profile_before_group_join(self):
+        calls = []
+        with patch.dict(os.environ, {"MANAGED_BOTS_JSON": '{"tonysoprano":4242}'}), \
+             patch.object(engine, "tg", side_effect=self.managed_api(calls, privacy=False, photo=False, status="left")):
+            self.assertEqual(engine.load_managed_bots(for_profile_setup=True), 1)
+        self.assertNotIn("getChatMember", [method for _, method, _ in calls])
+        self.assertNotIn("sendMessage", [method for _, method, _ in calls])
+
+    def test_managed_configuration_cannot_override_an_existing_identity(self):
+        with patch.dict(os.environ, {"MANAGED_BOTS_JSON": '{"yoda":4242}'}), \
+             patch.object(engine, "tg") as api:
+            self.assertEqual(engine.load_managed_bots(), 0)
+        api.assert_not_called()
+        self.assertEqual(engine.TOK["yoda"], "yoda-token")
+
+    def test_managed_configuration_rejects_invalid_and_duplicate_ids(self):
+        for raw in ('[]', '{"unknown":123}', '{"tonysoprano":true}', '{"tonysoprano":0}',
+                    '{"tonysoprano":42.5}', '{"tonysoprano":"private-token"}',
+                    '{"tonysoprano":123,"johnwick":123}', 'not-json'):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                engine.managed_bot_config(raw)
+        self.assertEqual(engine.managed_bot_config('{"tonysoprano":"4242"}'), {"tonysoprano": 4242})
+
+    def test_managed_profile_respects_saved_cooldown_before_token_lookup(self):
+        engine.STATE["telegram_retry_until"]["tonysoprano"] = time.time() + 120
+        calls = []
+        with patch.dict(os.environ, {"MANAGED_BOTS_JSON": '{"tonysoprano":4242}'}), \
+             patch.object(engine, "tg", side_effect=self.managed_api(calls)):
+            self.assertEqual(engine.load_managed_bots(), 0)
+        self.assertNotIn("getManagedBotToken", [method for _, method, _ in calls])
+
+    def test_missing_character_picture_does_not_report_success(self):
+        with patch.object(engine, "HERE", engine.S), \
+             patch.object(engine.urllib.request, "urlopen") as request:
+            self.assertFalse(engine.set_photo("tonysoprano", "unused-token"))
+        request.assert_not_called()
+
+    def test_existing_character_avatar_filename_aliases_upload_the_matching_file(self):
+        folder = engine.S / "avatars"
+        folder.mkdir()
+        for name, filename in (("brucewayne", "johnny"), ("chewbacca", "chew"), ("lukeskywalker", "luke")):
+            (folder / (filename + ".jpg")).write_bytes(("picture-" + filename).encode())
+            with self.subTest(name=name), patch.object(engine, "HERE", engine.S), \
+                 patch.object(engine.urllib.request, "urlopen", return_value=io.BytesIO(b'{"ok":true}')) as request:
+                self.assertTrue(engine.set_photo(name, "unused-token"))
+                self.assertIn(("picture-" + filename).encode(), request.call_args.args[0].data)
 
     def test_rate_limit_is_remembered_after_restart_without_storing_tokens(self):
         response = io.BytesIO(json.dumps({"ok": False, "error_code": 429,

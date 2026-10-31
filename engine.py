@@ -302,6 +302,92 @@ def verify_bots():
     if not TOK:
         raise SystemExit("No responsive configured character accounts")
 
+def managed_bot_config(raw):
+    """An explicit roster-name/public-ID map, never a list of access tokens."""
+    try:
+        records = json.loads(raw or "{}")
+    except (TypeError, ValueError):
+        raise ValueError("MANAGED_BOTS_JSON must be a JSON object") from None
+    if not isinstance(records, dict):
+        raise ValueError("MANAGED_BOTS_JSON must be a JSON object")
+    result = {}
+    for name, bot_id in records.items():
+        if name not in ROSTER:
+            raise ValueError("Managed-bot configuration has an unknown roster name")
+        if isinstance(bot_id, bool) or not isinstance(bot_id, (int, str)):
+            raise ValueError("Managed-bot IDs must be positive integers")
+        if not re.fullmatch(r"[1-9]\d*", str(bot_id)):
+            raise ValueError("Managed-bot IDs must be positive integers")
+        bot_id = int(bot_id)
+        if bot_id in result.values():
+            raise ValueError("A managed-bot ID cannot represent two characters")
+        result[name] = bot_id
+    return result
+
+def load_managed_bots(for_profile_setup=False):
+    """Fetch opted-in child tokens from the manager, keeping them only in memory.
+
+    Registration and joining the group happen in Telegram. A normal worker only
+    activates an existing bot after privacy is off, an avatar exists, and group
+    membership is verified. The separate metadata-only setup command can prepare
+    a profile before it joins the group.
+    """
+    records = managed_bot_config(os.environ.get("MANAGED_BOTS_JSON", "{}"))
+    pending = {name: bot_id for name, bot_id in records.items() if name not in TOK}
+    if not pending:
+        return 0
+    manager_name = os.environ.get("TG_MANAGER_NAME", "brucewayne").strip()
+    manager = TOK.get(manager_name)
+    if not manager:
+        log("MANAGED CONNECTION PENDING: configured manager is unavailable")
+        return 0
+    identity = tg(manager, "getMe")
+    manager_user = identity.get("result") or {}
+    if not identity.get("ok") or not manager_user.get("can_manage_bots"):
+        log("MANAGED CONNECTION PENDING: manager mode is not enabled")
+        return 0
+    count = 0
+    for name, bot_id in pending.items():
+        if STATE["telegram_retry_until"].get(name, 0) > time.time():
+            log("MANAGED CONNECTION PENDING %s: Telegram cooldown" % name)
+            continue
+        response = tg(manager, "getManagedBotToken", {"user_id": bot_id})
+        token = response.get("result")
+        if (not response.get("ok") or not isinstance(token, str)
+                or not re.fullmatch(str(bot_id) + r":[A-Za-z0-9_-]{20,}", token)):
+            log("MANAGED CONNECTION PENDING %s: manager access not verified" % name)
+            continue
+        if token in TOK.values():
+            log("MANAGED CONNECTION SKIPPED %s: identity already configured" % name)
+            continue
+        response = tg(token, "getMe")
+        user = response.get("result") or {}
+        if not response.get("ok") or not user.get("is_bot") or user.get("id") != bot_id:
+            log("MANAGED CONNECTION PENDING %s: identity did not match" % name)
+            continue
+        if not for_profile_setup:
+            if not user.get("can_read_all_group_messages"):
+                log("MANAGED CONNECTION PENDING %s: group privacy must be disabled" % name)
+                continue
+            response = tg(token, "getUserProfilePhotos", {"user_id": bot_id, "limit": 1})
+            if not response.get("ok") or not (response.get("result") or {}).get("total_count"):
+                log("MANAGED CONNECTION PENDING %s: profile picture is missing" % name)
+                continue
+            response = tg(token, "getChatMember", {"chat_id": CHAT, "user_id": bot_id})
+            member = response.get("result") or {}
+            present = (member.get("status") in ("member", "administrator", "creator")
+                       or member.get("status") == "restricted" and member.get("is_member"))
+            if (not response.get("ok") or not present
+                    or (member.get("user") or {}).get("id") != bot_id):
+                log("MANAGED CONNECTION PENDING %s: group membership not verified" % name)
+                continue
+        TOK[name] = token
+        BOT_USERS[name] = user.get("username", "")
+        count += 1
+        log("MANAGED PROFILE %s: connected%s" %
+            (name, " for metadata setup only" if for_profile_setup else " to the authorized group"))
+    return count
+
 def polling_reader():
     requested = os.environ.get("TG_READER_NAME", "").strip()
     if requested:
@@ -850,9 +936,11 @@ def beat():
     return 0
 
 def set_photo(name, token):
-    path = HERE / "avatars" / (name + ".jpg")
+    filename = {"brucewayne": "johnny", "chewbacca": "chew",
+                "lukeskywalker": "luke"}.get(name, name)
+    path = HERE / "avatars" / (filename + ".jpg")
     if not path.is_file():
-        return True
+        return False
     boundary = "vader" + os.urandom(12).hex()
     photo = json.dumps({"type": "static", "photo": "attach://profile_photo"})
     body = ('--%s\r\nContent-Disposition: form-data; name="photo"\r\n\r\n%s\r\n' %
@@ -896,7 +984,7 @@ def bootstrap_all():
         bio = ("Automated, unofficial character bot for Darth Vader Chat. "
                "Scripted fan opinions and sourced updates. Services: @darthvader.")
         steps = [
-            ("name", "setMyName", {"name": display + " · Bot"}),
+            ("name", "setMyName", {"name": display}),
             ("description", "setMyDescription", {"description": bio}),
             ("short", "setMyShortDescription", {"short_description":
                 "Automated character bot · Darth Vader Chat · Services: @darthvader"}),
@@ -929,6 +1017,7 @@ def main():
         raise SystemExit("CHAT_ID must be the numeric ID of the authorized Telegram group.")
     verify_bots()
     resolve_chat()
+    load_managed_bots()
     STOP.clear()
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: STOP.set())

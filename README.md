@@ -64,6 +64,25 @@ Additional owned bots can be configured in BOT_TOKENS_JSON as a JSON object mapp
 names or their TG_ environment-variable names to tokens. Duplicate tokens are ignored.
 Adding a roster name or a secret does not create a Telegram bot or buy a username.
 
+Managed profiles can instead use the existing Bruce manager token. After the owner
+creates a profile through Telegram's managed-bot flow, MANAGED_BOTS_JSON maps its
+roster name to its public numeric bot ID, for example {"tonysoprano": 123456789}.
+TG_MANAGER_NAME selects the manager (brucewayne by default). The worker fetches
+the child token using getManagedBotToken at startup and keeps it only in memory;
+no child tokens go in repository files, runtime checkpoints, or logs. Existing
+configured identities take precedence, and duplicate or unknown records are rejected.
+A regular worker activates a managed profile only after verifying its identity,
+disabled group privacy, a profile picture, and membership in the authorized group.
+The separate profiles command can prepare metadata before it joins. Its display
+name uses the roster name directly; its description still discloses automation.
+Missing avatar files leave profile setup incomplete, including for newly registered
+characters. Existing Bruce/Chewbacca/Luke avatar filename aliases are supported.
+
+This connection code does not register accounts, add them to a group, change privacy
+mode, or grant administrators. Those remain Telegram operations. Managed-bot
+creation uses Telegram's official flow and remains subject to Telegram's limits:
+https://core.telegram.org/bots/features#managed-bots
+
 Profile setup sets the display name, a clear bot description and an existing matching
 avatar. It does not automatically grant administrator permissions.
 
