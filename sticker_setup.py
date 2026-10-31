@@ -97,34 +97,6 @@ def publish_pack(name, items, owner):
     return pack, len(ids - previous_ids)
 
 
-def preserve_original_vader_pack(name, items, owner):
-    """Recover from the test re-uploads without deleting media or changing IDs."""
-    original = call("getStickerSet", {"name": name}, allow_missing=True)
-    if not original or len(original.get("stickers", [])) <= len(items):
-        return name
-    # The failed publication appended three uploads after the three originals.
-    # Keep only those original file IDs in a clean set; no file is re-uploaded.
-    canonical = original["stickers"][:len(items)]
-    if len(items) != 3 or not all(s.get("is_video") for s in canonical):
-        raise SystemExit("Unexpected original Vader pack; stopped")
-    clean_name = name.replace("_motion1_", "_motion2_")
-    clean = call("getStickerSet", {"name": clean_name}, allow_missing=True)
-    if not clean:
-        stickers = [{"sticker": sticker["file_id"], "format": "video",
-                     "emoji_list": [item["emoji"]]} for item, sticker in zip(items, canonical)]
-        call("createNewStickerSet", {"user_id": owner, "name": clean_name,
-                                    "title": items[0]["title"],
-                                    "stickers": json.dumps(stickers, ensure_ascii=False),
-                                    "sticker_type": "regular"})
-        clean = call("getStickerSet", {"name": clean_name})
-    if ([s["file_unique_id"] for s in clean.get("stickers", [])]
-            != [s["file_unique_id"] for s in canonical]
-            or not all(s.get("is_video") for s in clean["stickers"])):
-        raise SystemExit("Original Vader identities were not preserved; stopped")
-    print("Vader pack migrated using the three original identities; no media deleted.", flush=True)
-    return clean_name
-
-
 def main():
     if not TOKEN:
         raise SystemExit("Missing existing bot credential")
@@ -158,7 +130,11 @@ def main():
         if len(name) > 64:
             raise SystemExit("Sticker set name exceeds Telegram length limit")
         if character == "vader":
-            name = preserve_original_vader_pack(name, items, owners[0])
+            # No distinct Vader account is configured. Keep the test copies
+            # out of automation without deleting or re-identifying old media.
+            packs[character] = ""
+            print("Vader pack paused; test-copy packs remain unused. Original history preserved.", flush=True)
+            continue
         pack, added = publish_pack(name, items, owners[0])
         videos = pack["stickers"]
         packs[character] = name

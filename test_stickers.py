@@ -68,23 +68,6 @@ class PackPublishingTests(unittest.TestCase):
                 sticker_setup.publish_pack("yoda_pack", self.items, 123)
         self.assertEqual(self.methods.count("addStickerToSet"), 1)
 
-    def test_vader_recovery_reuses_original_ids_without_upload_or_delete(self):
-        original = {"stickers": [{"file_id": str(i), "file_unique_id": "u" + str(i), "is_video": True}
-                                  for i in range(6)]}
-        clean = None
-        def api(method, fields, **kwargs):
-            nonlocal clean
-            if method == "getStickerSet":
-                return original if "motion1" in fields["name"] else clean
-            self.assertEqual(method, "createNewStickerSet")
-            ids = [s["sticker"] for s in json.loads(fields["stickers"])]
-            self.assertEqual(ids, ["0", "1", "2"])
-            clean = {"stickers": original["stickers"][:3]}
-            return True
-        items = self.items + [{"file": "third.webm", "emoji": "🖤", "title": "Vader"}]
-        with patch.object(sticker_setup, "call", side_effect=api):
-            name = sticker_setup.preserve_original_vader_pack("vader_motion1_by_test", items, 123)
-        self.assertEqual(name, "vader_motion2_by_test")
 
 
 if __name__ == "__main__":
