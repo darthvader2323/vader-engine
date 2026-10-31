@@ -233,7 +233,18 @@ PLAIN_DISCUSSIONS = {
         "An AT-AT is a troop ride with weapons. Very unfriendly bus."),
 }
 
+# The shared idea key stays unchanged when a new daily reading style is used.
+from vader_discussions import CATALOG as FRESH_VADER
+PLAIN_DISCUSSIONS.update({key: tuple(voices[name][1] for name in PLAIN_NAMES)
+                          for key, voices in FRESH_VADER.items()})
+
 PLAIN_THREADS = {
+    "wookiee_alarm": (
+        "A Chewie alarm clock would make snooze a scary button.",
+        "Rrroww. A Chucky clock would make people move out. Different customers."),
+    "yoda_waiting_room": (
+        "A waiting room run by Yoda sounds like a very long visit.",
+        "A magazine, read. Six words, the advice may take. Quick enough, that is."),
     "presence_or_wisdom": (
         "Vader walks in and owns the scene. That gets my vote.",
         "Notice a doorway, you do. Learn from a good teacher, you can. My pick, Yoda is."),

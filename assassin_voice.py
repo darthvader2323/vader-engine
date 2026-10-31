@@ -37,3 +37,7 @@ DISCUSSIONS = {
 'walker_intimidation': ('The walkers use their height and slow approach to build pressure. The shape of the threat is clear before the encounter develops.', 'Those tall walkers approach slowly. The pressure builds with every step.'),
 'walker_transport': ('The walkers also move troops and equipment. Their practical role makes the imposing silhouette feel part of a larger force.', 'Walkers carry troops and gear too. They are more than a scary shape.'),
 }
+
+# Fresh room-wide ideas retain the same permanent keys across voices and styles.
+from vader_discussions import CATALOG as _FRESH_VADER
+DISCUSSIONS.update({key: voices['assassin'] for key, voices in _FRESH_VADER.items()})

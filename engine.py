@@ -748,7 +748,7 @@ def topic(text):
         ("rap", r"\b(youngboy|rapper|rap|music|song|album|mixtape)\b"),
         ("starwars", r"\b(star wars|starwars|vader|jedi|sith|yoda|chewbacca|skywalker|grogu|"
          r"anakin|padm[eé]|r2[- ]?d2|c[- ]?3po|threepio|leia|han solo|dagobah|tatooine|"
-         r"death star|millennium falcon|at-at|bail organa|mustafar)\b"),
+         r"death star|millennium falcon|at-at|bail organa|mustafar|carbonite|bacta|boba fett|tantive iv|executor flagship)\b"),
         ("crypto", r"\b(crypto|bitcoin|btc|ethereum|eth|ton|solana|coin)\b"),
         ("fragment", r"\b(fragment|username|handle)\b"),
         ("sports", r"\b(nba|nhl|mlb|nfl|mls|soccer|football|basketball|hockey|baseball|score)\b"),
@@ -783,6 +783,12 @@ def available_content(kind, speaker, scheduled=False, question=None):
         selected = None
         if kind == "starwars":
             for idea, pattern in [
+                ("castle_mustafar", r"castle|fortress|mustafar.*home"),
+                ("vader_bacta_rest", r"vader.*bacta|bacta.*vader"),
+                ("carbonite_trap", r"carbonite|carbon.freez"),
+                ("executor_flagship", r"executor|vader.*flagship"),
+                ("bounty_hunter_search", r"bounty hunter|boba.*falcon|boba.*vader"),
+                ("tantive_capture", r"tantive|blockade runner"),
                 ("order66_loss", r"order\s*66|jedi.*loss"),
                 ("suit_life_support", r"life support|respirator|respiratory|medical equipment"),
                 ("breathing_sound", r"breathing|breath sound"),

@@ -37,3 +37,7 @@ DISCUSSIONS = {
 'walker_transport': ("The walkers bring soldiers with them, so their size has a job beyond looking frightening. That makes the attack feel like an actual operation.", "Those walkers carry troops too. The size has a job."),
 'walker_intimidation': ("The walkers do not need to sprint to make the rebels feel boxed in. That slow advance gives the defenders time to see trouble coming.", "The walkers move slowly. That somehow makes them scarier."),
 }
+
+# Fresh room-wide ideas retain the same permanent keys across voices and styles.
+from vader_discussions import CATALOG as _FRESH_VADER
+DISCUSSIONS.update({key: voices['gangsta'] for key, voices in _FRESH_VADER.items()})

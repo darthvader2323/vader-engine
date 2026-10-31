@@ -68,7 +68,7 @@ unofficial fictional personas, not independent people, customers or endorsements
   conversation and pending fan threads keep their existing priority. This adds
   no second poster or separate automation. Scheduled execution remains best effort.
 - News freshness is checked before rendering. Failed feeds are skipped.
-- Scheduled Star Wars discussion can use twelve short, authored two-persona
+- Scheduled Star Wars discussion can use fourteen short, authored two-persona
   exchanges with distinct viewpoints. The second turn is a native reply after
   45–120 seconds; real human activity pauses it. Only configured profiles are
   used. These are disclosed automated fan personas with character-inspired
@@ -78,7 +78,7 @@ unofficial fictional personas, not independent people, customers or endorsements
   A rejected followup is attempted at most three times; an exchange expires
   after ten minutes. Neither a permanent Telegram error nor continuous visitor
   activity can leave an old exchange blocking future broadcasts indefinitely.
-  Four exchanges are light fan-persona banter, directed only at the fictional
+  Six exchanges are light fan-persona banter, directed only at the fictional
   profiles rather than real visitors. Eligible topic order is mixed,
   and scheduled speakers vary among quieter profiles rather than following a
   fixed cycle of names. Existing topic cooldowns and repetition checks remain.
@@ -126,7 +126,7 @@ Run read-only connectivity checks with: python3 healthcheck.py
 This is a sourced-update worker with a finite authored discussion catalog in
 conversation.py. No open-ended language-model API is configured. Exhausted ideas are
 skipped instead of being reworded and replayed.
-The catalog contains 36 different Star Wars discussion ideas with separate authored
+The catalog contains 42 different Star Wars discussion ideas with separate authored
 voices, grounded in the official references listed in DISCUSSION_REFERENCES.
 Star Wars becomes eligible again after 15 minutes, sports after 10 minutes, and
 other topics after 15–60 minutes. Each still requires a genuinely unused item.
@@ -159,13 +159,13 @@ name uses the roster name directly; its description still discloses automation.
 Missing avatar files leave profile setup incomplete, including for newly registered
 characters. Existing Bruce/Chewbacca/Luke avatar filename aliases are supported.
 
-Tony Soprano has a matching SFW fan avatar and 36 separately authored takes in
-tony_voice.py, each with analytical and plain wording. These reuse the room's
+Tony Soprano has a matching SFW fan avatar and 42 separately authored takes in
+tony_voice.py and vader_discussions.py, each with analytical and plain wording. These reuse the room's
 existing idea keys, so activating Tony or changing his daily style cannot replay
 exhausted discussions. His profile remains an unofficial automated fan persona.
 
 The requested generic alias killer is an original fictional sci-fi fan persona,
-with a SFW masked-character avatar and a restrained authored voice. Its 36 ideas
+with a SFW masked-character avatar and a restrained authored voice. Its 42 ideas
 have separate analytical/plain wording and share the same room history keys.
 There is no reviewed movie pack for this original character; it must not borrow
 another character's face or replay somebody else's clips.

@@ -110,3 +110,7 @@ DISCUSSIONS = {
         "The AT-AT carries troops inside an advancing armored platform. That purpose makes the ground assault more than a contest between large weapons.",
         "The AT-AT carries troops under armor. It has more than one role."),
 }
+
+# Fresh room-wide ideas retain the same permanent keys across voices and styles.
+from vader_discussions import CATALOG as _FRESH_VADER
+DISCUSSIONS.update({key: voices['killer'] for key, voices in _FRESH_VADER.items()})

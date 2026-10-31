@@ -3,6 +3,7 @@ import hashlib
 import html
 import re
 from fan_voices import DISCUSSION_VOICES
+from vader_discussions import CATALOG as FRESH_VADER, REFERENCES as FRESH_VADER_REFERENCES
 
 NEWS_KINDS = {"world", "elon", "deals", "rap", "crypto", "sports", "fragment"}
 SIMILARITY_KINDS = {"world", "elon", "deals", "rap", "starwars", "fragment", "fan", "bible"}
@@ -48,6 +49,16 @@ ROLEPLAY_THREADS = [
         ("yoda", "Chewie, your hairbrush has requested a transfer. Approved, it should be."),
         ("chewbacca", "Rrroww. Big grooming advice from a profile picture with three hairs."))),
 ]
+
+# Light fictional-character jokes, never aimed automatically at real visitors.
+ROLEPLAY_THREADS.extend([
+    ("wookiee_alarm", (
+        ("chucky", "A Chewie alarm clock would make the snooze button feel like a terrible idea."),
+        ("chewbacca", "Rrroww. A Chucky alarm clock would make people move house. Different market."))),
+    ("yoda_waiting_room", (
+        ("brucewayne", "Put Yoda in charge of a waiting room and nobody can call it a short visit."),
+        ("yoda", "Read the magazines, you could. Six words of advice, a long appointment they do not require."))),
+])
 
 # Each idea has one shared key, regardless of which character delivers it.
 # Questions are occasional; these are not interchangeable engagement banners.
@@ -383,6 +394,9 @@ DISCUSSIONS.extend([
     }),
 ])
 
+DISCUSSIONS.extend((key, {name: pair[0] for name, pair in voices.items()})
+                   for key, voices in FRESH_VADER.items())
+
 for _idea, _voices in DISCUSSIONS:
     for _speaker, _catalog in DISCUSSION_VOICES.items():
         if _idea in _catalog:
@@ -402,6 +416,8 @@ DISCUSSION_REFERENCES = (
     "https://www.starwars.com/databank/c-3po",
     "https://www.starwars.com/databank/at-at-walker",
 )
+
+DISCUSSION_REFERENCES += tuple(dict.fromkeys(FRESH_VADER_REFERENCES.values()))
 
 RAP_DISCUSSIONS = [
     ("delivery", "YoungBoy's shifts between melody and a rougher delivery are a big part of the appeal for me."),

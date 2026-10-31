@@ -112,3 +112,7 @@ DISCUSSIONS = {
         "An AT-AT brings the troops along with its armor and firepower. That's why thinking of it as just a weapon misses part of the problem.",
         "An AT-AT carries troops too. It's bringing more trouble with it."),
 }
+
+# Fresh room-wide ideas retain the same permanent keys across voices and styles.
+from vader_discussions import CATALOG as _FRESH_VADER
+DISCUSSIONS.update({key: voices['tonysoprano'] for key, voices in _FRESH_VADER.items()})

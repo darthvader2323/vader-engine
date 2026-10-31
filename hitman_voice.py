@@ -37,3 +37,7 @@ DISCUSSIONS = {
 'walker_transport': ('An AT-AT delivers troops as well as intimidation. Its role in the attack explains the scale of the machine.', 'The giant walker carries troops into the attack.'),
 'walker_intimidation': ('The walkers advance slowly enough to feel inevitable. Speed is not the only way a machine can create pressure.', 'Those slow walkers feel hard to stop.'),
 }
+
+# Fresh room-wide ideas retain the same permanent keys across voices and styles.
+from vader_discussions import CATALOG as _FRESH_VADER
+DISCUSSIONS.update({key: voices['hitman'] for key, voices in _FRESH_VADER.items()})

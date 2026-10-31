@@ -320,6 +320,33 @@ class CommunityTests(unittest.TestCase):
                 choices = engine.available_content("starwars", "yoda", question=question)
                 self.assertEqual([key for _, key in choices], ["discussion:starwars:" + expected])
 
+    def test_fresh_vader_topics_preserve_exhausted_room_history(self):
+        from vader_discussions import CATALOG, REFERENCES
+        self.assertEqual(set(CATALOG), set(REFERENCES))
+        fresh = {"discussion:starwars:" + key for key in CATALOG}
+        for key, _ in DISCUSSIONS:
+            if key not in CATALOG:
+                engine.STATE["used"][engine.digest("discussion:starwars:" + key)] = time.time()
+        for speaker in ("brucewayne", "yoda", "tonysoprano", "gangsta"):
+            self.assertEqual({key for _, key in engine.available_content("starwars", speaker)}, fresh)
+        for key in fresh:
+            engine.STATE["used"][engine.digest(key)] = time.time()
+        self.assertEqual(engine.available_content("starwars", "gangsta"), [])
+
+    def test_fresh_vader_question_routes_are_specific(self):
+        for question, idea in (
+            ("Yoda, why is Vader's castle on Mustafar?", "castle_mustafar"),
+            ("Bruce, what about Vader resting in bacta?", "vader_bacta_rest"),
+            ("Chewbacca, why did Vader freeze Han in carbonite?", "carbonite_trap"),
+            ("Luke, what about Vader's Executor flagship?", "executor_flagship"),
+            ("Chucky, why did Vader hire bounty hunters?", "bounty_hunter_search"),
+            ("Gangsta, what happened to the Tantive IV?", "tantive_capture"),
+        ):
+            with self.subTest(question=question):
+                self.assertEqual(engine.topic(question), "starwars")
+                self.assertEqual([key for _, key in engine.available_content("starwars", "brucewayne", question=question)],
+                                 ["discussion:starwars:" + idea])
+
     def test_fragment_sale_question_can_mention_a_character_username(self):
         self.assertEqual(engine.topic("Who bought @yoda on Fragment?"), "fragment")
 
