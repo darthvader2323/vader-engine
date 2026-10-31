@@ -29,11 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref == 'refs/heads/main' && 'f93d332e7c1f4719a0d23fe7f4e46cf266fd41fa' || github.ref }}
+          ref: ${{ github.ref == 'refs/heads/main' && '67071a2490f2890399f83c4dc2a9154621b2a3a0' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python3 -m unittest -v test_community test_stickers test_reactions test_greetings
+      - run: python3 -m unittest -v test_community test_stickers test_reactions test_greetings test_checkpoint
       - run: python3 -m py_compile engine.py run.py avatars.py checkpoint.py healthcheck.py reactions.py greetings.py
 
   community:
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: f93d332e7c1f4719a0d23fe7f4e46cf266fd41fa
+          ref: 67071a2490f2890399f83c4dc2a9154621b2a3a0
           persist-credentials: false
       - name: Load the current runtime ledger
         run: |
@@ -82,6 +82,9 @@ jobs:
           GAP_MIN: '180'
           GAP_MAX: '360'
           RUN_MODE: ${{ inputs.mode }}
+          VADER_DURABLE_CHECKPOINT: '1'
+          STATE_BRANCH: community-live
+          GITHUB_TOKEN: ${{ (github.event_name == 'schedule' || inputs.mode == 'run') && github.token || '' }}
         run: |
           git rev-parse --short HEAD
           if [ "$RUN_MODE" = "probe" ]; then
