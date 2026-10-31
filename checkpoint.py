@@ -33,6 +33,8 @@ def merge_state(remote, local):
             if isinstance(record, dict) and record.get("at", 0) >= recent.get(key, {}).get("at", 0):
                 recent[key] = record
     result["recent_content"] = dict(sorted(recent.items(), key=lambda item: item[1].get("at", 0), reverse=True)[:100])
+    result["scheduled_news_count"] = max(remote.get("scheduled_news_count", 0),
+                                         local.get("scheduled_news_count", 0))
     result["updated_at"] = max(remote.get("updated_at", 0), local.get("updated_at", 0))
     return result
 

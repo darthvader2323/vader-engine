@@ -17,7 +17,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
-from conversation import (SIMILARITY_KINDS, compact_sources, discussion_items,
+from conversation import (NEWS_KINDS, SIMILARITY_KINDS, compact_sources, discussion_items,
                           signature, similar)
 
 HERE = Path(__file__).resolve().parent
@@ -124,7 +124,7 @@ def initial_state():
     return {"version": 1, "used": {}, "replies": {}, "stickers": {},
             "pins": {}, "profiles": {}, "offsets": {}, "last_spoke": {},
             "last_topic_at": {}, "telegram_retry_until": {}, "profile_retry_until": {},
-            "recent_content": {},
+            "recent_content": {}, "scheduled_news_count": 0,
             "next_beat": 0, "cursor": 0, "updated_at": 0}
 
 STATE = initial_state()
@@ -472,10 +472,21 @@ def send(who, text, reply=None, content_key=None, kind=None):
     if claim_used:
         STATE["used"][key] = time.time()
     remember_content(key, text, kind)
-    persist()
     # Telegram account status and the profile disclose automation; avoid a
     # repetitive identity banner in every message body.
-    body, entities = compact_sources(text, kind)
+    scheduled_news = reply is None and kind in NEWS_KINDS
+    previous_news_count = STATE.get("scheduled_news_count", 0)
+    previous_source_at = STATE["last_topic_at"].get("source_link")
+    occasional_link = (scheduled_news and (previous_news_count + 1) % 10 == 0
+                       and time.time() - (previous_source_at or 0) >= 3600)
+    body, entities = compact_sources(text, kind, include_link=occasional_link)
+    if scheduled_news:
+        STATE["scheduled_news_count"] = previous_news_count + 1
+    if entities:
+        STATE["last_topic_at"]["source_link"] = time.time()
+    # Claim link frequency before the API call too: an uncertain result must
+    # not cause extra links after a restart.
+    persist()
     params = {"chat_id": CHAT, "text": body,
               "link_preview_options": {"is_disabled": True}}
     if entities:
@@ -507,6 +518,13 @@ def send(who, text, reply=None, content_key=None, kind=None):
         STATE["recent_content"].pop(key, None)
     else:
         STATE["recent_content"][key] = previous_recent
+    if scheduled_news:
+        STATE["scheduled_news_count"] = previous_news_count
+    if entities:
+        if previous_source_at is None:
+            STATE["last_topic_at"].pop("source_link", None)
+        else:
+            STATE["last_topic_at"]["source_link"] = previous_source_at
     persist()
     if not result.get("cached_rate_limit"):
         log("SEND FAILED %s code=%s" % (who, result.get("error_code", "unknown")))

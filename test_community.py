@@ -231,18 +231,16 @@ class CommunityTests(unittest.TestCase):
         self.assertNotIn("chucky", engine.TOK)
         self.assertIn(engine.choose_speaker(["chucky"]), ("brucewayne", "yoda"))
 
-    def test_news_has_no_stock_introduction_and_keeps_a_clickable_source(self):
+    def test_news_has_no_stock_introduction_or_clickable_source(self):
         outgoing = []
         report = "🚀 Acme opens a new research center\nExample Wire · Oct 30, 2026\nhttps://example.org/report"
         with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
             engine.send("yoda", report, content_key="news:one", kind="world")
         payload = outgoing[0][1]
         self.assertEqual(payload["text"], report.rsplit("\n", 1)[0])
-        entity = payload["entities"][0]
-        self.assertEqual(entity["url"], "https://example.org/report")
-        encoded = payload["text"].encode("utf-16-le")
-        label = encoded[entity["offset"] * 2:(entity["offset"] + entity["length"]) * 2].decode("utf-16-le")
-        self.assertEqual(label, "Example Wire · Oct 30, 2026")
+        self.assertNotIn("entities", payload)
+        self.assertIn("Example Wire · Oct 30, 2026", payload["text"])
+        self.assertNotIn("https://", payload["text"])
 
     def test_addressed_yoda_uses_his_voice_but_service_goes_to_desk(self):
         self.assertEqual(engine.speaker_for("Yoda, who is the best Jedi?", "starwars"), "yoda")
@@ -464,12 +462,80 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(set(merged["recent_content"]), {"a", "b", "c"})
         self.assertEqual(merged["recent_content"]["a"]["at"], 2)
 
-    def test_compact_source_link_preserves_fragment_username_and_context(self):
+    def test_link_removal_preserves_fragment_username_and_context(self):
         text = "Reported username sale: @example · 100 TON\nOct 30, 2026\nhttps://fragment.com/username/example\nSale details above."
         body, entities = compact_sources(text, "fragment")
         self.assertIn("@example · 100 TON", body)
         self.assertIn("Sale details above.", body)
-        self.assertEqual(entities[0]["url"], "https://fragment.com/username/example")
+        self.assertEqual(entities, [])
+        self.assertNotIn("https://", body)
+
+    def test_all_routine_news_topics_remove_multiple_and_inline_urls(self):
+        report = ("Acme buys Beta for $200 million https://example.org/deal\n"
+                  "Example Wire · Oct 30, 2026\nhttps://example.org/report\n"
+                  "More at www.example.org. Contact @darthvader.")
+        for kind in ("world", "elon", "deals", "rap", "crypto", "sports", "fragment"):
+            with self.subTest(kind=kind):
+                body, entities = compact_sources(report, kind)
+                self.assertEqual(entities, [])
+                self.assertNotRegex(body, r"https?://|www\.")
+                self.assertIn("$200 million", body)
+                self.assertIn("Example Wire · Oct 30, 2026", body)
+                self.assertIn("@darthvader", body)
+
+    def test_bare_source_hostnames_do_not_auto_link(self):
+        body, entities = compact_sources("Headline\nfeeds.bbci.co.uk · Oct 30, 2026\nhttps://www.bbc.co.uk/news", "world")
+        self.assertEqual(body, "Headline\nBBC News · Oct 30, 2026")
+        self.assertEqual(entities, [])
+
+    def test_occasional_short_source_handles_emoji_and_publisher_labels(self):
+        body, entities = compact_sources("🚀 New mission\nfeeds.bbci.co.uk · Oct 30, 2026\nhttps://www.bbc.co.uk/news", "world", include_link=True)
+        self.assertNotIn("https://", body)
+        entity = entities[0]
+        encoded = body.encode("utf-16-le")
+        label = encoded[2 * entity["offset"]:2 * (entity["offset"] + entity["length"])].decode("utf-16-le")
+        self.assertEqual(label, "BBC News · Oct 30, 2026")
+        self.assertEqual(entity["url"], "https://www.bbc.co.uk/news")
+
+    def test_links_are_sparse_and_share_one_groupwide_cooldown(self):
+        outgoing = []
+        now = 2_000_000_000
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)), \
+             patch.object(engine.time, "time", side_effect=lambda: now):
+            for index in range(30):
+                if index == 20:
+                    now += 3601
+                report = f"Market sample {index}\nExample Wire · Oct 30, 2026\nhttps://example.org/{index}"
+                engine.send("yoda" if index % 2 else "chucky", report,
+                            content_key=f"market:{index}", kind="crypto")
+        linked = [i for i, (_, payload) in enumerate(outgoing) if payload.get("entities")]
+        self.assertEqual(linked, [9, 29])
+        self.assertTrue(all("https://" not in p["text"] for _, p in outgoing))
+
+    def test_replies_do_not_consume_the_occasional_link_slot(self):
+        outgoing = []
+        engine.STATE["scheduled_news_count"] = 9
+        report = "Market sample\nExample Wire · Oct 30, 2026\nhttps://example.org/report"
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            engine.send("yoda", report, reply=300, kind="crypto")
+        self.assertNotIn("entities", outgoing[0][1])
+        self.assertEqual(engine.STATE["scheduled_news_count"], 9)
+
+    def test_failed_delivery_preserves_the_link_slot(self):
+        engine.STATE["scheduled_news_count"] = 9
+        report = "Market sample\nExample Wire · Oct 30, 2026\nhttps://example.org/report"
+        with patch.object(engine, "tg", return_value={"ok": False, "error_code": 400}):
+            engine.send("yoda", report, kind="crypto")
+        self.assertEqual(engine.STATE["scheduled_news_count"], 9)
+        self.assertNotIn("source_link", engine.STATE["last_topic_at"])
+
+    def test_link_frequency_survives_checkpoint_merges(self):
+        merged = merge_state({"updated_at": 4, "scheduled_news_count": 9,
+                              "last_topic_at": {"source_link": 100}},
+                             {"updated_at": 3, "scheduled_news_count": 12,
+                              "last_topic_at": {"source_link": 200}})
+        self.assertEqual(merged["scheduled_news_count"], 12)
+        self.assertEqual(merged["last_topic_at"]["source_link"], 200)
 
     def test_topic_filters_reject_irrelevant_headlines_and_aggregate_deal_reports(self):
         with patch.object(engine, "gnews", return_value=[

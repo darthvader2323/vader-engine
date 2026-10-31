@@ -384,19 +384,36 @@ def similar(left, right):
     return 2 * common / (len(a) + len(b)) >= 0.82
 
 
-def compact_sources(text, kind):
-    """Keep factual text and dates; attach the source URL to its metadata line."""
+def compact_sources(text, kind, include_link=False):
+    """Keep factual text and short attribution without routine clickable links."""
     if kind not in NEWS_KINDS:
         return text, []
-    lines = text.splitlines()
-    for index in range(len(lines) - 1, 0, -1):
-        url = lines[index].strip()
-        label = lines[index - 1]
-        if not re.fullmatch(r"https://\S+", url) or not label.strip():
-            continue
-        prefix = "\n".join(lines[:index - 1])
-        offset = len((prefix + ("\n" if prefix else "")).encode("utf-16-le")) // 2
-        del lines[index]
-        return "\n".join(lines), [{"type": "text_link", "offset": offset,
-                                     "length": len(label.encode("utf-16-le")) // 2, "url": url}]
-    return text, []
+    lines = []
+    publishers = {"feeds.bbci.co.uk": "BBC News", "bbc.co.uk": "BBC News",
+                  "bbc.com": "BBC News", "espn.com": "ESPN",
+                  "coingecko.com": "CoinGecko", "fragment.com": "Fragment",
+                  "tonviewer.com": "TON Viewer", "tonscan.org": "TON Scan"}
+    originals = text.splitlines()
+    source = None
+    for index, line in enumerate(originals):
+        if (re.fullmatch(r"https://\S+", line.strip()) and index
+                and originals[index - 1].strip()
+                and not re.search(r"https?://|www\.", originals[index - 1], re.I)):
+            source = (len(lines) - 1, line.strip())
+        line = re.sub(r"(?:https?://|www\.)\S+", "", line, flags=re.I).strip()
+        # Feed fallbacks sometimes use a bare hostname as their source label.
+        # Those also auto-link in Telegram, even with no text_link entity.
+        label, separator, metadata = line.partition(" · ")
+        if re.fullmatch(r"(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}", label):
+            label = publishers.get(label.casefold(), label.replace(".", " dot "))
+            line = label + (separator + metadata if separator else "")
+        if line:
+            lines.append(line)
+    body = "\n".join(lines)
+    if include_link and source and 0 <= source[0] < len(lines):
+        index, url = source
+        label = lines[index]
+        prefix = "\n".join(lines[:index]) + ("\n" if index else "")
+        return body, [{"type": "text_link", "offset": len(prefix.encode("utf-16-le")) // 2,
+                       "length": len(label.encode("utf-16-le")) // 2, "url": url}]
+    return body, []

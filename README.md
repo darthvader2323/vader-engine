@@ -16,11 +16,17 @@ unofficial fictional personas, not independent people, customers or endorsements
   still go to the single service desk. Yoda uses inverted, reflective phrasing; Luke is
   hopeful, Chewbacca is direct, Bruce is measured and Chucky is playful. Character
   wording is authored inside the discussion itself. News has no stock introduction;
-  facts and dates are retained, with the source attached as a compact clickable label.
+  facts and dates are retained, with a short plain-text source label. Routine posts
+  contain no visible article URLs; bare feed hostnames are rendered as publisher
+  names so Telegram does not auto-link them. Most source labels are plain text.
+  An occasional short clickable source is allowed on every tenth scheduled news
+  post, with at least an hour between links across the entire group. Replies do
+  not automatically add links or consume that schedule. The counter and deadline
+  survive restarts and checkpoints.
 - A new pin gets one neutral assistant acknowledgement, without a swarm of automated likes.
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
-- News includes a publication date and source link. Failed feeds are skipped.
+- News includes a publication date and plain-text source name. Failed feeds are skipped.
 - TON is labeled TON. Pregame fixtures are labeled scheduled, without fake live 0–0 scores.
 - No invented sales, hardcoded market numbers, claims to own the desired usernames,
   manufactured praise, fake personal experiences, or automated crowd endorsements.
