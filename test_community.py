@@ -222,6 +222,32 @@ class CommunityTests(unittest.TestCase):
             engine.resolve_chat()
         self.assertEqual(engine.CHAT, "-1003758482841")
 
+    def test_group_title_change_keeps_the_same_authorized_destination(self):
+        with patch.dict(os.environ, {"CHAT_HANDLE": "@vadersocial"}), \
+             patch.object(engine, "tg", return_value={"ok": True, "result": {
+                 "id": -1003758482841, "title": "Vader Social", "username": "vadersocial"}}):
+            engine.resolve_chat()
+        self.assertEqual(engine.CHAT, "-1003758482841")
+
+    def test_same_title_or_handle_cannot_authorize_another_group_id(self):
+        with patch.dict(os.environ, {"CHAT_HANDLE": "@vadersocial"}), \
+             patch.object(engine, "tg", return_value={"ok": True, "result": {
+                 "id": -1001234567890, "title": "Darth Vader Chat", "username": "vadersocial"}}):
+            with self.assertRaisesRegex(SystemExit, "canonical"):
+                engine.resolve_chat()
+
+    def test_canonical_group_still_requires_the_authorized_public_handle(self):
+        with patch.dict(os.environ, {"CHAT_HANDLE": "@vadersocial"}), \
+             patch.object(engine, "tg", return_value={"ok": True, "result": {
+                 "id": -1003758482841, "title": "Vader Social", "username": "othergroup"}}):
+            with self.assertRaisesRegex(SystemExit, "username"):
+                engine.resolve_chat()
+
+    def test_failed_group_lookup_does_not_start_a_worker(self):
+        with patch.object(engine, "tg", return_value={"ok": False, "error_code": 403}):
+            with self.assertRaisesRegex(SystemExit, "Cannot verify"):
+                engine.resolve_chat()
+
     def test_separate_listener_still_uses_one_service_responder(self):
         outgoing = []
         with patch.dict(os.environ, {"TG_READER_NAME": "yoda"}), \

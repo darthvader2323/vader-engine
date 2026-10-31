@@ -30,6 +30,7 @@ from checkpoint import apply_recovery, confirm_persist, version_changes
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
 CHAT = os.environ.get("CHAT_ID", "").strip()
+CANONICAL_GROUP_ID = "-1003758482841"
 HANDLE = "@darthvader"
 SITE = "https://vader-social-ppulq7yo.agent.mira.tg"
 ZONE = ZoneInfo(os.environ.get("VADER_TIMEZONE", "America/Chicago"))
@@ -297,15 +298,17 @@ def resolve_chat():
     reader = TOK.get("brucewayne") or next(iter(TOK.values()), None)
     result = tg(reader, "getChat", {"chat_id": reference})
     chat = result.get("result") or {}
-    if not result.get("ok") or chat.get("title") != "Darth Vader Chat":
-        raise SystemExit("Cannot verify access to the authorized Darth Vader Chat")
+    if not result.get("ok"):
+        raise SystemExit("Cannot verify access to the authorized group")
     if reference.startswith("@") and chat.get("username", "").casefold() != reference[1:].casefold():
         raise SystemExit("Public group username did not match the authorized destination")
     resolved = str(chat.get("id", ""))
     if not re.fullmatch(r"-\d+", resolved):
         raise SystemExit("Authorized destination did not resolve to a group ID")
+    if resolved != CANONICAL_GROUP_ID:
+        raise SystemExit("Resolved group ID did not match the authorized canonical group")
     CHAT = resolved
-    log("GROUP VERIFIED: Darth Vader Chat; canonical ID resolved")
+    log("GROUP VERIFIED: %s; canonical ID matched" % (chat.get("title") or "authorized group"))
 
 def verify_bots():
     """Exclude an unavailable identity for this run instead of selecting it forever."""

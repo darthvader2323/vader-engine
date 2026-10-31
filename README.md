@@ -135,6 +135,8 @@ the time since a successful send and the next broadcast check. Deferral reasons
 are logged without adding filler messages to the group.
 
 CHAT_ID must be the numeric ID of the authorized group. Tokens stay in deployment secrets.
+The public destination must resolve to canonical group -1003758482841 and the
+configured @vadersocial handle. Its editable display title is not an identity check.
 CHAT_HANDLE can additionally name its public address (@vadersocial). At startup the
 worker verifies the group title/handle and resolves its canonical numeric ID, so a group
 upgrade or an older ID alias cannot silently discard incoming messages.

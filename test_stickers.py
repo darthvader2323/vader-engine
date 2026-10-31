@@ -8,6 +8,17 @@ import sticker_setup
 
 
 class PackPublishingTests(unittest.TestCase):
+    def test_publisher_accepts_a_renamed_canonical_group(self):
+        sticker_setup.verify_group({"id": -1003758482841, "username": "vadersocial", "title": "Vader Social"})
+
+    def test_publisher_rejects_a_different_group_even_with_matching_title(self):
+        with self.assertRaises(SystemExit):
+            sticker_setup.verify_group({"id": -1001234567890, "username": "vadersocial", "title": "Darth Vader Chat"})
+
+    def test_publisher_rejects_a_different_public_handle(self):
+        with self.assertRaises(SystemExit):
+            sticker_setup.verify_group({"id": -1003758482841, "username": "othergroup", "title": "Vader Social"})
+
     def setUp(self):
         self.items = [{"file": name + ".webm", "emoji": "💚", "title": "Yoda Motion"}
                       for name in ("old", "new")]

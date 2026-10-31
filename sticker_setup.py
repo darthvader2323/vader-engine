@@ -11,6 +11,13 @@ import urllib.request
 
 HERE = Path(__file__).resolve().parent
 TOKEN = os.environ.get("TG_JOHNNY", "")
+CANONICAL_GROUP_ID = -1003758482841
+
+
+def verify_group(chat):
+    if (str(chat.get("id", "")) != str(CANONICAL_GROUP_ID)
+            or chat.get("username", "").casefold() != "vadersocial"):
+        raise SystemExit("Public group did not match the authorized canonical destination")
 
 
 def call(method, fields=None, files=None, allow_missing=False):
@@ -115,8 +122,7 @@ def main():
     if not identity.get("is_bot") or not re.fullmatch(r"[A-Za-z0-9_]+", identity.get("username", "")):
         raise SystemExit("Existing credential is not a bot")
     chat = call("getChat", {"chat_id": os.environ.get("CHAT_HANDLE", "@vadersocial")})
-    if chat.get("title") != "Darth Vader Chat" or chat.get("username", "").casefold() != "vadersocial":
-        raise SystemExit("Public group did not match the authorized destination")
+    verify_group(chat)
     admins = call("getChatAdministrators", {"chat_id": chat["id"]})
     owners = [a["user"]["id"] for a in admins if a.get("status") == "creator"
               and a.get("user", {}).get("username", "").casefold() == "darthvader"]
