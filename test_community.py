@@ -507,6 +507,62 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(outgoing, [])
         self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
 
+    def test_mars_choice_gets_one_native_character_answer_not_a_headline(self):
+        outgoing = []
+        question = "LukeSkywalker, If Elon could send you to mars right now would you go?"
+        update = self.message(text=question, username="darthvader")
+        with patch.dict(engine.TOK, {"lukeskywalker": "luke-token"}), \
+             patch.object(engine, "writing_style", return_value="plain"), \
+             patch.object(engine, "elon") as news, \
+             patch.object(engine, "tg", side_effect=self.api_for([update], outgoing)):
+            self.assertEqual(engine.answer_humans(), 1)
+            self.assertEqual(engine.answer_humans(), 0)
+        news.assert_not_called()
+        self.assertEqual(len(outgoing), 1)
+        self.assertEqual(outgoing[0][0], "luke-token")
+        self.assertEqual(outgoing[0][1]["reply_parameters"]["message_id"], 300)
+        self.assertIn("round trip", outgoing[0][1]["text"])
+        self.assertNotIn("Stock", outgoing[0][1]["text"])
+
+    def test_fan_choice_stays_used_across_styles_characters_and_checkpoint(self):
+        outgoing = []
+        question = "If Elon could send you to Mars, would you go?"
+        text, key = engine.available_content("fan", "yoda", question=question)[0]
+        with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            self.assertGreater(engine.send("yoda", text, reply=3, content_key=key, kind="fan"), 0)
+        saved = merge_state({}, json.loads((engine.S / "runtime.json").read_text()))
+        with patch.object(engine, "STATE", saved), patch.object(engine, "writing_style", return_value="plain"):
+            self.assertEqual(engine.available_content("fan", "chucky", question=question), [])
+        self.assertEqual(len(outgoing), 1)
+
+    def test_unknown_specific_elon_question_does_not_fetch_arbitrary_news(self):
+        outgoing = []
+        with patch.object(engine, "elon") as news, \
+             patch.object(engine, "tg", side_effect=self.api_for(
+                 [self.message(text="What does Elon think about my business plan?", username="darthvader")], outgoing)):
+            self.assertEqual(engine.answer_humans(), 0)
+        news.assert_not_called()
+        self.assertEqual(outgoing, [])
+        self.assertEqual(engine.STATE["offsets"]["brucewayne"], 101)
+
+    def test_news_requests_keep_requested_subject_and_skip_unrelated_headlines(self):
+        with patch.object(engine, "elon", return_value=[
+                ("SpaceX launch update", "story:spacex"), ("Tesla production update", "story:tesla")]):
+            self.assertEqual(engine.available_content("elon", "yoda", question="Any fresh Tesla news?"),
+                             [("Tesla production update", "story:tesla")])
+            self.assertEqual(len(engine.available_content("elon", "yoda", scheduled=True)), 2)
+        with patch.object(engine, "crypto", return_value=[("TON $1.00 · 24h +1.00%", "quote:new")]):
+            self.assertTrue(engine.available_content("crypto", "yoda", question="Yoda, fresh crypto figures?"))
+
+    def test_mars_question_catalog_does_not_invent_real_trips(self):
+        from human_questions import MARS_CHOICES, fan_question_key
+        self.assertEqual(fan_question_key("If Elon could send you to Mars, would you go?"), "mars_trip_choice")
+        for factual in ("Did Elon send people to Mars?", "When will SpaceX reach Mars?", "Latest Mars news?"):
+            self.assertIsNone(fan_question_key(factual))
+        self.assertEqual(len({line for pair in MARS_CHOICES.values() for line in pair}), 14)
+        for speaker, lines in MARS_CHOICES.items():
+            self.assertEqual(render_style(lines[0], "fan", "question:mars_trip_choice", speaker, "plain"), lines[1])
+
     def test_scheduled_rap_has_no_scripted_opinion_fallback(self):
         with patch.object(engine, "youngboy", return_value=[]):
             self.assertEqual(engine.content_for("rap", "chucky", scheduled=True), [])
@@ -984,7 +1040,7 @@ class CommunityTests(unittest.TestCase):
                 self.assertEqual(engine.sticker(who, "A quiet moment."), 0)
                 api.assert_called_once_with("character-token", "getStickerSet", {"name": character + "-pack"})
 
-    def test_pin_ack_is_once_even_if_the_original_message_was_answered(self):
+    def test_pin_of_an_answered_message_is_quiet_even_after_checkpoint(self):
         calls = []
         engine.STATE["replies"]["123"] = time.time()
         def api(token, method, params=None):
@@ -995,11 +1051,62 @@ class CommunityTests(unittest.TestCase):
                 return {"ok": True, "result": {"message_id": 999}}
             return {"ok": False}
         with patch.object(engine, "tg", side_effect=api):
-            self.assertEqual(engine.react_to_pin(), 1)
             self.assertEqual(engine.react_to_pin(), 0)
-        self.assertEqual(calls.count("sendMessage"), 1)
+            engine.STATE = merge_state({}, json.loads((engine.S / "runtime.json").read_text()))
+            self.assertEqual(engine.react_to_pin(), 0)
+        self.assertEqual(calls.count("sendMessage"), 0)
         self.assertNotIn("getChatPinnedMessage", calls)
         self.assertNotIn("setMessageReaction", calls)
+
+    def test_fresh_unanswered_pin_gets_one_relevant_reply_and_no_gif_or_reaction(self):
+        outgoing, calls = [], []
+        pinned = self.message(mid=123, text="Yoda, if Elon could send you to Mars, would you go?")["message"]
+        def api(token, method, params=None):
+            calls.append(method)
+            if method == "getChat":
+                return {"ok": True, "result": {"pinned_message": pinned}}
+            if method == "sendMessage":
+                outgoing.append((token, params))
+                return {"ok": True, "result": {"message_id": 999}}
+            return {"ok": False}
+        with patch.object(engine, "tg", side_effect=api):
+            self.assertEqual(engine.react_to_pin(), 1)
+            self.assertEqual(engine.react_to_pin(), 0)
+        self.assertEqual(len(outgoing), 1)
+        self.assertEqual(outgoing[0][0], "yoda-token")
+        self.assertEqual(outgoing[0][1]["reply_parameters"]["message_id"], 123)
+        self.assertIn("home", outgoing[0][1]["text"])
+        engine.maybe_sticker.assert_not_called()
+        self.assertNotIn("setMessageReaction", calls)
+
+    def test_old_bot_and_unsupported_pins_never_get_generic_acknowledgements(self):
+        for change in ({"text": "A room announcement"}, {"date": 1},
+                       {"from": {"id": 10, "is_bot": True}}):
+            engine.STATE = engine.initial_state()
+            pinned = self.message(mid=123, text="If Elon sent you to Mars, would you go?")["message"]
+            pinned.update(change)
+            with self.subTest(change=change), patch.object(engine, "tg", return_value={
+                    "ok": True, "result": {"pinned_message": pinned}}) as api:
+                self.assertEqual(engine.react_to_pin(), 0)
+                self.assertIn("123", engine.STATE["pins"])
+                self.assertEqual([call.args[1] for call in api.call_args_list], ["getChat"])
+
+    def test_failed_pinned_answer_remains_pending_but_unknown_delivery_never_replies_twice(self):
+        pinned = self.message(mid=123, text="If Elon could send you to Mars, would you go?")["message"]
+        for outcome in ({"ok": False, "error_code": 403}, {"ok": False, "uncertain": True}):
+            engine.STATE = engine.initial_state()
+            outgoing = []
+            def api(token, method, params=None):
+                if method == "getChat":
+                    return {"ok": True, "result": {"pinned_message": pinned}}
+                outgoing.append(method)
+                return outcome
+            with self.subTest(outcome=outcome), patch.object(engine, "tg", side_effect=api):
+                self.assertEqual(engine.react_to_pin(), int(bool(outcome.get("uncertain"))))
+                self.assertEqual("123" in engine.STATE["pins"], bool(outcome.get("uncertain")))
+                if outcome.get("uncertain"):
+                    self.assertEqual(engine.react_to_pin(), 0)
+                    self.assertEqual(outgoing, ["sendMessage"])
 
     def test_checkpoint_preserves_both_ledgers_and_highest_offsets(self):
         remote = {"updated_at": 20, "used": {"remote": 5}, "offsets": {"brucewayne": 200},

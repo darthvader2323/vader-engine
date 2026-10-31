@@ -1,6 +1,7 @@
 """Daily reading styles for disclosed fan personas; facts and idea keys stay fixed."""
 import re
 from fan_voices import DISCUSSION_VOICES
+from human_questions import fan_reply
 
 
 def daily_styles(speakers, day):
@@ -311,6 +312,9 @@ def render_style(text, kind, content_key, speaker, style):
     """Render one idea. Service/pin routing and factual uncertainty are unchanged."""
     if kind in ("service", "pin", "general"):
         return text
+    if kind == "fan":
+        item = fan_reply(text, speaker, style, content_key)
+        return item[0] if item else text
     if kind == "crypto":
         def quote(match):
             symbol, price, change = match.groups()

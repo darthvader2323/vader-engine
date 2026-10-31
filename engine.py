@@ -22,6 +22,7 @@ from conversation import (NEWS_KINDS, ROLEPLAY_THREADS, SIMILARITY_KINDS, compac
 from writing_styles import daily_styles, render_style
 from reactions import comment_mood, sticker_moods
 from greetings import is_greeting, greeting_line
+from human_questions import fan_question_key, fan_reply, requests_update, matches_requested_subject
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -465,7 +466,7 @@ def writing_style(who):
     return daily_styles(TOK, day).get(who, "analytical")
 
 
-def send(who, text, reply=None, content_key=None, kind=None):
+def send(who, text, reply=None, content_key=None, kind=None, allow_sticker=True):
     if who not in TOK or not text:
         return 0
     key = digest(content_key or text)
@@ -522,7 +523,8 @@ def send(who, text, reply=None, content_key=None, kind=None):
         if result.get("ok"):
             log("SENT %s%s style=%s" % (who, " reply" if reply_key else " scheduled", style))
             mid = result["result"]["message_id"]
-            maybe_sticker(who, body, kind, content_key, mid)
+            if allow_sticker:
+                maybe_sticker(who, body, kind, content_key, mid)
             return mid
         log("DELIVERY UNKNOWN %s; no automatic duplicate send" % who)
         return -1
@@ -720,6 +722,10 @@ def is_service(text):
         or re.search(r"\bservices?\b.{0,60}\b(contact|provide|offer|available|pricing|cost)\b", text))
 
 def topic(text):
+    if is_service(text):
+        return "service"
+    if fan_question_key(text):
+        return "fan"
     text = text.casefold()
     # A character's name is often the addressee, not the requested subject.
     # Route the remainder first, retaining the full text as a lore fallback.
@@ -766,7 +772,12 @@ def content_for(kind, speaker=None, scheduled=False):
 
 def available_content(kind, speaker, scheduled=False, question=None):
     migrate_discussion_history()
-    if question is not None and kind in ("starwars", "rap"):
+    if question is not None and kind == "fan":
+        item = fan_reply(question, speaker)
+        choices = [item] if item else []
+    elif question is not None and kind in NEWS_KINDS and kind != "rap" and not requests_update(question, kind):
+        choices = []
+    elif question is not None and kind in ("starwars", "rap"):
         choices = discussion_items(kind, speaker)
         selected = None
         if kind == "starwars":
@@ -822,13 +833,16 @@ def available_content(kind, speaker, scheduled=False, question=None):
             elif re.search(r"delivery|melody|voice|sing", question, re.I):
                 selected = "delivery"
             else:
-                choices = youngboy()
+                choices = youngboy() if requests_update(question, kind) else []
         if selected:
             choices = [(text, key) for text, key in choices if key.endswith(":" + selected)]
         elif kind == "starwars":
             choices = []
     else:
         choices = content_for(kind, speaker, scheduled=scheduled)
+    if question is not None and kind in NEWS_KINDS:
+        choices = [(text, key) for text, key in choices
+                   if key.startswith("discussion:") or matches_requested_subject(text, question)]
     return [(text, key) for text, key in choices if not repeated_content(text, key, kind)]
 
 DESKS = {
@@ -844,7 +858,8 @@ def speaker_for(text, kind):
         return choose_speaker(DESKS["service"])
     for name in TOK:
         display = ROSTER.get(name, {}).get("display", name)
-        if re.match(r"^%s(?:\b|[,!?:])" % re.escape(display), text, re.I):
+        if any(re.match(r"^%s(?:\b|[,!?:])" % re.escape(alias), text, re.I)
+               for alias in {name, display}):
             return name
         username = BOT_USERS.get(name)
         if username and re.search(r"@%s\b" % re.escape(username), text, re.I):
@@ -975,16 +990,35 @@ def react_to_pin():
     if not reader:
         return 0
     result = tg(TOK[reader], "getChat", {"chat_id": CHAT})
+    if not result.get("ok"):
+        return 0
     pinned = (result.get("result") or {}).get("pinned_message") or {}
     mid = pinned.get("message_id")
     if not mid or str(mid) in STATE["pins"]:
         return 0
-    sent = send(reader, "Pinned message acknowledged by the automated assistant.", reply=mid, content_key="pin", kind="pin")
-    if sent:
+    text = (pinned.get("text") or pinned.get("caption") or "").strip()
+    kind = topic(text)
+    # A pin is the original message, not a second chance to claim engagement.
+    # Never backfill old questions or add a generic acknowledgement/reaction.
+    if (str(mid) in STATE["replies"] or (pinned.get("from") or {}).get("is_bot")
+            or not text or time.time() - pinned.get("date", 0) > 1800
+            or kind in ("general", "service")):
         STATE["pins"][str(mid)] = time.time()
         persist()
-        return 1
-    return 0
+        return 0
+    speaker = speaker_for(text, kind)
+    choices = available_content(kind, speaker, question=text)
+    if not choices:
+        STATE["pins"][str(mid)] = time.time()
+        persist()
+        return 0
+    reply, key = choices[0]
+    sent = send(speaker, reply, reply=mid, content_key=key, kind=kind, allow_sticker=False)
+    if not sent:
+        return 0
+    STATE["pins"][str(mid)] = time.time()
+    persist()
+    return 1
 
 def maybe_sticker(who, text, kind, content_key, reply_to):
     # The same context path covers broadcasts, native answers and fan threads.

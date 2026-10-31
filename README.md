@@ -30,7 +30,14 @@ unofficial fictional personas, not independent people, customers or endorsements
   Source headlines keep their facts and uncertainty; only a small set of safe
   vocabulary changes is allowed outside quotes. All numbers and uncertainty
   remain intact. Market quotes expand abbreviations in the plain style.
-- Owner questions follow the same topic routing and receive relevant replies.
+- Owner questions follow the same topic routing and the same single-character
+  reply rule. A recognized hypothetical Mars-trip question gets an authored
+  fictional viewpoint, rather than an Elon/SpaceX news headline. The seven
+  configured voices have distinct analytical/plain versions of that one shared
+  idea. This is a bounded rule and catalog, not open-ended question answering.
+  Feed replies require an explicit update/price/score/sale request, and named
+  supported subjects must match the returned item. Unsupported direct questions
+  are skipped instead of being answered with an unrelated headline.
 - Directly addressing a configured character selects that voice, except service requests
   still go to the single service desk. Yoda uses inverted, reflective phrasing; Luke is
   hopeful, Chewbacca is direct, Bruce is measured and Chucky is playful. Character
@@ -44,7 +51,11 @@ unofficial fictional personas, not independent people, customers or endorsements
   links across the entire group. Replies do
   not automatically add links or consume that schedule. The counter and deadline
   survive restarts and checkpoints.
-- A new pin gets one neutral assistant acknowledgement, without a swarm of automated likes.
+- Pins never get a generic acknowledgement or a swarm of automated likes.
+  A fresh, unanswered human question can receive one relevant native reply using
+  the same routing. A previously answered message is not answered again because
+  it was pinned. Old/bot/unsupported pins are recorded quietly; pin handling
+  cannot attach a separate reaction GIF. Existing pin/reply histories survive.
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
 - News freshness is checked before rendering. Failed feeds are skipped.
