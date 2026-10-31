@@ -62,5 +62,85 @@
     "bytes": 26317,
     "unique_frames": 20,
     "sha256": "b1218d704bfc29adcdb2b80411cd0faae389a0ddcdbab4f0051a27fa16becda5"
+  },
+  "yoda_02.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 2.8,
+    "bytes": 28898,
+    "unique_frames": 56,
+    "sha256": "e8397a605decf32079e504b52e5ed66aacdfb92549d0d7f4f688b5c84631eda0"
+  },
+  "yoda_03.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 2.5,
+    "bytes": 41119,
+    "unique_frames": 50,
+    "sha256": "e8689b308de7d1a2b97d038687a8036754c8aae51d91f64bba46af955be5eaa8"
+  },
+  "chewbacca_02.webm": {
+    "width": 512,
+    "height": 222,
+    "seconds": 1.4,
+    "bytes": 65348,
+    "unique_frames": 28,
+    "sha256": "e09137cba79b9770b04647babb4e8e8033d7fb0f6e01e9d056b3d79f5b4cd2be"
+  },
+  "chewbacca_03.webm": {
+    "width": 512,
+    "height": 222,
+    "seconds": 1.15,
+    "bytes": 27840,
+    "unique_frames": 23,
+    "sha256": "411996b0cb9b1af7c2c81b6a58858627e2f657065686426d3af95da4674c2f7a"
+  },
+  "luke_02.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 2.5,
+    "bytes": 58370,
+    "unique_frames": 50,
+    "sha256": "90474ddf581b7c09de9a24a79eccf5a0f5d1536b65451b0e61f4b391c2e21348"
+  },
+  "luke_03.webm": {
+    "width": 512,
+    "height": 220,
+    "seconds": 2.25,
+    "bytes": 22920,
+    "unique_frames": 45,
+    "sha256": "62b456bac0531ee7aa4537caa7504431293a2abc63c8f65a2e907eb388b21f82"
+  },
+  "chucky_02.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.05,
+    "bytes": 32482,
+    "unique_frames": 41,
+    "sha256": "e14479a0b84b4eb653abd2a79f7036db5fdae374cc24ebbf6cb430811392b453"
+  },
+  "chucky_03.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 1.7,
+    "bytes": 13509,
+    "unique_frames": 34,
+    "sha256": "7f592e5e261d5494b74561ddb9e571cd8b262adcb1de0ae54537d688d8a16ae3"
+  },
+  "batman_01.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 1.2,
+    "bytes": 57731,
+    "unique_frames": 24,
+    "sha256": "29087f39541b5ef3a5f55b5f6469317ceb43122fddf1982ee038ece5f2a2c925"
+  },
+  "batman_02.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.4,
+    "bytes": 193368,
+    "unique_frames": 48,
+    "sha256": "e5695e3ca4b0790db37b4703f97d87871a83d7cd4d4f64ab13bf0bc3348fbe08"
   }
 }

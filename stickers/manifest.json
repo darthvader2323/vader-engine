@@ -1,10 +1,146 @@
 [
-  {"file":"vader_01.webm","character":"vader","title":"Vader Social · Darth Vader Motion","emoji":"🖤","source":"https://giphy.com/gifs/starwars-darth-vader-l1KugyIovSYdPgN0I","creator":"Star Wars"},
-  {"file":"vader_02.webm","character":"vader","title":"Vader Social · Darth Vader Motion","emoji":"🔥","source":"https://giphy.com/gifs/starwars-star-wars-darth-vader-l1KuhBCqxOoJyr0m4","creator":"Star Wars"},
-  {"file":"vader_03.webm","character":"vader","title":"Vader Social · Darth Vader Motion","emoji":"⚔️","source":"https://giphy.com/gifs/starwars-star-wars-darth-vader-3ohuPd6rCphcSkJvZC","creator":"Star Wars"},
-  {"file":"chewbacca_01.webm","character":"chew","title":"Vader Social · Chewbacca Motion","emoji":"💪","source":"https://giphy.com/gifs/starwars-star-wars-chewbacca-l3diLV2QHVzh3koJa","creator":"Star Wars"},
-  {"file":"yoda_01.webm","character":"yoda","title":"Vader Social · Yoda Motion","emoji":"💚","source":"https://giphy.com/gifs/starwars-star-wars-yoda-26FmQ6EOvLxp6cWyY","creator":"Star Wars"},
-  {"file":"luke_01.webm","character":"luke","title":"Vader Social · Luke Skywalker Motion","emoji":"🫡","source":"https://giphy.com/gifs/starwars-movie-star-wars-xT9DPlDPn6tvVs3UXe","creator":"Star Wars"},
-  {"file":"chucky_01.webm","character":"chucky","title":"Vader Social · Chucky Motion","emoji":"😈","source":"https://giphy.com/gifs/amc-tv-amc-fearfest-Wipwbm8AflIh301MzM","creator":"AMC Networks"},
-  {"file":"youngboy_01.webm","character":"youngboy","title":"Vader Social · YoungBoy Motion","emoji":"🎤","source":"https://giphy.com/gifs/youngboynba-nba-youngboy-never-broke-again-UqMCcaZxcL7ZAaUMJj","creator":"YoungBoy Never Broke Again"}
+  {
+    "file": "vader_01.webm",
+    "character": "vader",
+    "title": "Vader Social · Darth Vader Motion",
+    "emoji": "🖤",
+    "source": "https://giphy.com/gifs/starwars-darth-vader-l1KugyIovSYdPgN0I",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "vader_02.webm",
+    "character": "vader",
+    "title": "Vader Social · Darth Vader Motion",
+    "emoji": "🔥",
+    "source": "https://giphy.com/gifs/starwars-star-wars-darth-vader-l1KuhBCqxOoJyr0m4",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "vader_03.webm",
+    "character": "vader",
+    "title": "Vader Social · Darth Vader Motion",
+    "emoji": "⚔️",
+    "source": "https://giphy.com/gifs/starwars-star-wars-darth-vader-3ohuPd6rCphcSkJvZC",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "chewbacca_01.webm",
+    "character": "chew",
+    "title": "Vader Social · Chewbacca Motion",
+    "emoji": "💪",
+    "source": "https://giphy.com/gifs/starwars-star-wars-chewbacca-l3diLV2QHVzh3koJa",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "yoda_01.webm",
+    "character": "yoda",
+    "title": "Vader Social · Yoda Motion",
+    "emoji": "💚",
+    "source": "https://giphy.com/gifs/starwars-star-wars-yoda-26FmQ6EOvLxp6cWyY",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "luke_01.webm",
+    "character": "luke",
+    "title": "Vader Social · Luke Skywalker Motion",
+    "emoji": "🫡",
+    "source": "https://giphy.com/gifs/starwars-movie-star-wars-xT9DPlDPn6tvVs3UXe",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "chucky_01.webm",
+    "character": "chucky",
+    "title": "Vader Social · Chucky Motion",
+    "emoji": "😈",
+    "source": "https://giphy.com/gifs/amc-tv-amc-fearfest-Wipwbm8AflIh301MzM",
+    "creator": "AMC Networks"
+  },
+  {
+    "file": "youngboy_01.webm",
+    "character": "youngboy",
+    "title": "Vader Social · YoungBoy Motion",
+    "emoji": "🎤",
+    "source": "https://giphy.com/gifs/youngboynba-nba-youngboy-never-broke-again-UqMCcaZxcL7ZAaUMJj",
+    "creator": "YoungBoy Never Broke Again"
+  },
+  {
+    "file": "yoda_02.webm",
+    "character": "yoda",
+    "title": "Vader Social · Yoda Motion",
+    "emoji": "💚",
+    "source": "https://giphy.com/gifs/starwars-star-wars-yoda-3ohuPp7uWLgTdU83iU",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "yoda_03.webm",
+    "character": "yoda",
+    "title": "Vader Social · Yoda Motion",
+    "emoji": "💚",
+    "source": "https://giphy.com/gifs/starwars-star-wars-yoda-3ohuPiC0qDDuB2sH2U",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "chewbacca_02.webm",
+    "character": "chew",
+    "title": "Vader Social · Chewbacca Motion",
+    "emoji": "💪",
+    "source": "https://giphy.com/gifs/starwars-star-wars-confused-3o84stLSt5H7WeWJtS",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "chewbacca_03.webm",
+    "character": "chew",
+    "title": "Vader Social · Chewbacca Motion",
+    "emoji": "💪",
+    "source": "https://giphy.com/gifs/starwars-star-wars-return-of-the-jedi-3oeSAYIbNvlZ4BRsaY",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "luke_02.webm",
+    "character": "luke",
+    "title": "Vader Social · Luke Skywalker Motion",
+    "emoji": "🫡",
+    "source": "https://giphy.com/gifs/starwars-star-wars-luke-3ohuPrhvXgjR8DCJhK",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "luke_03.webm",
+    "character": "luke",
+    "title": "Vader Social · Luke Skywalker Motion",
+    "emoji": "🫡",
+    "source": "https://giphy.com/gifs/starwars-star-wars-luke-skywalker-3ohuPuJBPQabaBVATm",
+    "creator": "Star Wars"
+  },
+  {
+    "file": "chucky_02.webm",
+    "character": "chucky",
+    "title": "Vader Social · Chucky Motion",
+    "emoji": "😈",
+    "source": "https://giphy.com/gifs/syfy-chucky-e53ppZ6tnYRnMfWXB9",
+    "creator": "SYFY"
+  },
+  {
+    "file": "chucky_03.webm",
+    "character": "chucky",
+    "title": "Vader Social · Chucky Motion",
+    "emoji": "😈",
+    "source": "https://giphy.com/gifs/syfy-chucky-AOkqIqLiDM1CZSHpac",
+    "creator": "SYFY"
+  },
+  {
+    "file": "batman_01.webm",
+    "character": "batman",
+    "title": "Vader Social · Batman Motion",
+    "emoji": "🦇",
+    "source": "https://giphy.com/gifs/dccomics-batman-dc-comics-3o85xFQCrUhsnFmo8M",
+    "creator": "DC"
+  },
+  {
+    "file": "batman_02.webm",
+    "character": "batman",
+    "title": "Vader Social · Batman Motion",
+    "emoji": "🦇",
+    "source": "https://giphy.com/gifs/dccomics-batman-dc-comics-xTiTnAhAX7AaNMORTa",
+    "creator": "DC"
+  }
 ]
