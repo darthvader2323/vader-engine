@@ -11,6 +11,15 @@ unofficial fictional personas, not independent people, customers or endorsements
   TG_READER_NAME selects the listener independently of the service responder. Production
   uses Yoda because the delivery check verified incoming updates on that identity.
 - Service questions direct the person to @darthvader privately.
+- New standalone greetings, including "what's up!", can receive one short native
+  reply from one disclosed character and one thumbs-up acknowledgement from that
+  same character. Recognized greetings include hello, hi, hey, yo, good morning
+  and /hello. This uses the existing polling worker, credentials and permission
+  scope. It adds no separate welcome workflow and never backfills older greetings.
+  Per-person ten-minute and group twenty-second cooldowns avoid repeated welcomes.
+  Human-to-human replies are left alone. Bots, other groups, duplicate updates
+  and uncertain deliveries cannot trigger a swarm. The greeting activation time,
+  visitor hashes, cooldowns and variant count persist through checkpoints.
 - Reading styles split the configured profiles as evenly as possible between
   analytical and plain wording. The groups swap at midnight in VADER_TIMEZONE
   (America/Chicago in this deployment), deterministically across worker restarts.

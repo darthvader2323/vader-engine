@@ -9,7 +9,7 @@ import urllib.error
 import urllib.request
 
 MAPS = ("used", "replies", "stickers", "pins", "offsets", "last_spoke", "last_topic_at",
-        "telegram_retry_until", "profile_retry_until")
+        "telegram_retry_until", "profile_retry_until", "greetings")
 
 def merge_state(remote, local):
     newer = local if local.get("updated_at", 0) >= remote.get("updated_at", 0) else remote

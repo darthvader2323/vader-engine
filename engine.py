@@ -21,6 +21,7 @@ from conversation import (NEWS_KINDS, ROLEPLAY_THREADS, SIMILARITY_KINDS, compac
                           signature, similar)
 from writing_styles import daily_styles, render_style
 from reactions import comment_mood, sticker_moods
+from greetings import is_greeting, greeting_line
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -124,7 +125,7 @@ def load(name, default):
 
 def initial_state():
     return {"version": 1, "used": {}, "replies": {}, "stickers": {},
-            "pins": {}, "profiles": {}, "offsets": {}, "last_spoke": {},
+            "pins": {}, "profiles": {}, "offsets": {}, "last_spoke": {}, "greetings": {},
             "last_topic_at": {}, "telegram_retry_until": {}, "profile_retry_until": {},
             "recent_content": {}, "scheduled_news_count": 0, "roleplay_pending": None,
             "next_beat": 0, "cursor": 0, "updated_at": 0}
@@ -134,7 +135,7 @@ _saved = load("runtime.json", {})
 if isinstance(_saved, dict):
     STATE.update(_saved)
 for _key in ("used", "replies", "stickers", "pins", "profiles", "offsets",
-             "last_spoke", "last_topic_at", "telegram_retry_until", "profile_retry_until", "recent_content"):
+             "last_spoke", "last_topic_at", "telegram_retry_until", "profile_retry_until", "recent_content", "greetings"):
     if not isinstance(STATE.get(_key), dict):
         STATE[_key] = {}
 LEGACY_STICKERS = set(load("stk_used.json", []))
@@ -854,6 +855,11 @@ def answer_humans(limit=10):
     reader = polling_reader()
     if not reader:
         return 0
+    # First activation is persisted. This is future greeting handling, not a
+    # backfill of older comments or the rejected one-off welcome workflow.
+    if "enabled_at" not in STATE["greetings"]:
+        STATE["greetings"]["enabled_at"] = int(time.time())
+        persist()
     params = {"timeout": 0, "limit": 100,
               "allowed_updates": ["message", "edited_message"]}
     offset = STATE["offsets"].get(reader)
@@ -881,13 +887,35 @@ def answer_humans(limit=10):
         fresh = time.time() - message.get("date", time.time()) <= 1800
         if relevant and fresh and text:
             STATE["last_topic_at"]["human_activity"] = time.time()
+        addresses = [row.get("display", name) for name, row in ROSTER.items()]
+        addresses.extend("@" + username for username in BOT_USERS.values() if username)
+        greeting = is_greeting(text, addresses)
+        # Let a real person's conversation with another real person continue.
+        quoted = message.get("reply_to_message") or {}
+        if quoted and not (quoted.get("from") or {}).get("is_bot"):
+            greeting = False
         asks = is_service(text) or "?" in text or text.startswith("/") or bool(
             re.search(r"\b(who|what|why|when|where|how|tell|send|show|explain)\b", text, re.I))
-        if relevant and fresh and text and asks and str(mid) not in STATE["replies"]:
-            kind = topic(text)
+        if relevant and fresh and text and (asks or greeting) and str(mid) not in STATE["replies"]:
+            kind = "general" if greeting else topic(text)
             speaker = speaker_for(text, kind)
             content_key = None
-            if kind == "service":
+            visitor_key = None
+            if greeting:
+                now = time.time()
+                visitor = sender.get("id")
+                visitor_key = "person:" + digest(str(visitor))
+                history = STATE["greetings"]
+                eligible = (visitor is not None and message.get("date", 0) >= history["enabled_at"]
+                            and now - history.get(visitor_key, 0) >= 600
+                            and now - history.get("last", 0) >= 20)
+                if not eligible:
+                    STATE["offsets"][reader] = update_id + 1
+                    persist()
+                    continue
+                reply = greeting_line(speaker, int(history.get("count", 0)))
+                content_key = "greeting:" + str(mid)
+            elif kind == "service":
                 reply = "For services, message %s privately with your request." % HANDLE
             elif kind == "general":
                 if (text.casefold() not in ("/help", "/start")
@@ -910,7 +938,20 @@ def answer_humans(limit=10):
                 # Keep this update and the rest of the batch pending on a known failure.
                 break
             answered += 1
-            if kind == "general":
+            if greeting:
+                history = STATE["greetings"]
+                history[visitor_key] = history["last"] = time.time()
+                history["count"] = int(history.get("count", 0)) + 1
+                persist()
+                # One acknowledgement, from the same disclosed character only.
+                # No likes on arbitrary claims, no paid reactions, no retry swarm.
+                if sent > 0:
+                    reacted = tg(TOK[speaker], "setMessageReaction", {
+                        "chat_id": CHAT, "message_id": mid,
+                        "reaction": [{"type": "emoji", "emoji": "👍"}], "is_big": False})
+                    if reacted.get("ok"):
+                        log("GREETING ACKNOWLEDGED %s; one reply and one reaction" % speaker)
+            elif kind == "general":
                 STATE["last_topic_at"]["help"] = time.time()
         STATE["offsets"][reader] = update_id + 1
         persist()
