@@ -246,5 +246,29 @@
     "bytes": 59334,
     "unique_frames": 35,
     "sha256": "cd2161fa9939f0665bad9b428cac1c8540dd27f3584d6ff68fb7c981e1cef94c"
+  },
+  "tonysoprano_01.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.9,
+    "bytes": 89573,
+    "unique_frames": 57,
+    "sha256": "9e695ec5839c41046dc678c6858e2fb62d72a6f661f512383be582eb66136776"
+  },
+  "tonysoprano_02.webm": {
+    "width": 512,
+    "height": 288,
+    "seconds": 2.9,
+    "bytes": 30716,
+    "unique_frames": 58,
+    "sha256": "d862e274efe0c9b522f100418fe19297dcbf5b5edd6d572b16bd7f786fdd8971"
+  },
+  "tonysoprano_03.webm": {
+    "width": 512,
+    "height": 432,
+    "seconds": 2.9,
+    "bytes": 25166,
+    "unique_frames": 57,
+    "sha256": "c5b5b8a4778427161b43e63a536e828397060ce81fb54a262a257c4397791bef"
   }
 }

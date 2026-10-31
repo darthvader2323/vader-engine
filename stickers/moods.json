@@ -223,5 +223,29 @@
         "moods": []
       }
     ]
+  },
+  "vadersocial_tonysoprano_motion1_by_batmanbrucewaynebot": {
+    "character": "tonysoprano",
+    "clips": [
+      {
+        "file": "tonysoprano_01.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "tonysoprano_02.webm",
+        "moods": [
+          "sad"
+        ]
+      },
+      {
+        "file": "tonysoprano_03.webm",
+        "moods": [
+          "happy",
+          "playful"
+        ]
+      }
+    ]
   }
 }
