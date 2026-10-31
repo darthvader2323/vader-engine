@@ -7,6 +7,7 @@ import re
 
 
 MARS_CHOICES = {
+    "gangsta": ("The view sounds unreal, but the people on the trip and the route home would decide it for me. A huge adventure still needs a careful plan.", "Mars sounds wild. Who is coming, and how do we get home?"),
     "hitman": ("I would want the complete route and a working return plan before deciding. A launch is only one stage of the trip.", "Show me the whole trip first. Getting there is only half of it."),
     "assassin": ("A return plan would be my first question. A distant horizon is tempting, but the way home deserves just as much thought.",
                  "A new horizon sounds good. Show me the way home first."),

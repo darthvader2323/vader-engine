@@ -88,7 +88,7 @@
     "name": "gangsta",
     "display": "gangsta",
     "persona": "gangsta",
-    "pack": "crew",
+    "pack": "",
     "env": "TG_GANGSTA",
     "desks": [
       "general"
