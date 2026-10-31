@@ -1,5 +1,6 @@
 """Daily reading styles for disclosed fan personas; facts and idea keys stay fixed."""
 import re
+from tony_voice import DISCUSSIONS as TONY_DISCUSSIONS
 
 
 def daily_styles(speakers, day):
@@ -350,6 +351,8 @@ def render_style(text, kind, content_key, speaker, style):
     key = content_key or ""
     prefix = "discussion:starwars:"
     if key.startswith(prefix):
+        if speaker == "tonysoprano" and key[len(prefix):] in TONY_DISCUSSIONS:
+            return TONY_DISCUSSIONS[key[len(prefix):]][1]
         row = PLAIN_DISCUSSIONS.get(key[len(prefix):])
         if row and speaker in PLAIN_NAMES:
             return row[PLAIN_NAMES.index(speaker)]

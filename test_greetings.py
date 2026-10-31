@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 import engine
-from greetings import is_greeting
+from greetings import LINES, greeting_line, is_greeting
 from checkpoint import merge_state
 
 
@@ -173,6 +173,68 @@ class GreetingTests(unittest.TestCase):
         self.assertEqual(merged["greetings"], engine.STATE["greetings"])
         self.assertNotIn("1234567", str(merged["greetings"]))
         self.assertIn("person:" + engine.digest("1234567"), merged["greetings"])
+
+    def arrival(self, mid=400, uid=2, date=1000, bot=False):
+        update = self.message(mid, uid=50, text="", date=date)
+        update["message"]["new_chat_members"] = [{"id": uid, "is_bot": bot}]
+        return update
+
+    def test_human_arrival_gets_one_native_welcome_not_inviter_cooldown(self):
+        update = self.arrival()
+        with patch.object(engine, "tg", side_effect=self.api([update])):
+            self.assertEqual(engine.answer_humans(), 1)
+            engine.answer_humans()
+        self.assertEqual(len(self.sent()), 1)
+        self.assertFalse(self.reacted())
+        self.assertEqual(self.sent()[0][2]["reply_parameters"]["message_id"], 400)
+        self.assertIn("person:" + engine.digest("2"), engine.STATE["greetings"])
+        self.assertNotIn("person:" + engine.digest("50"), engine.STATE["greetings"])
+        self.assertEqual(engine.STATE["greetings"]["joins_enabled_at"], 1000)
+
+    def test_bot_arrivals_old_joins_and_other_groups_are_not_welcomed(self):
+        bot = self.arrival(400, bot=True)
+        old = self.arrival(401, date=999)
+        other = self.arrival(402)
+        other["message"]["chat"]["id"] = -999
+        with patch.object(engine, "tg", side_effect=self.api([bot, old, other])):
+            engine.answer_humans()
+        self.assertFalse(self.sent())
+        self.assertFalse(self.reacted())
+
+    def test_failed_and_uncertain_arrival_deliveries_do_not_duplicate(self):
+        update = self.arrival()
+        self.outcome = {"ok": False, "error_code": 403}
+        with patch.object(engine, "tg", side_effect=self.api([update])):
+            self.assertEqual(engine.answer_humans(), 0)
+        self.assertNotIn("brucewayne", engine.STATE["offsets"])
+        self.outcome = {"ok": False, "uncertain": True}
+        with patch.object(engine, "tg", side_effect=self.api([update])):
+            engine.answer_humans()
+            engine.answer_humans()
+        self.assertEqual(len(self.sent()), 2)  # Known failure, then uncertain; never a third.
+        self.assertFalse(self.reacted())
+        merged = merge_state({"updated_at": 1100}, engine.STATE)
+        self.assertEqual(merged["greetings"]["joins_enabled_at"], 1000)
+
+    def test_batch_arrival_is_one_welcome_and_following_hi_is_suppressed(self):
+        update = self.arrival()
+        update["message"]["new_chat_members"].append({"id": 3, "is_bot": False})
+        with patch.object(engine, "tg", side_effect=self.api([update])):
+            engine.answer_humans()
+        with patch.object(engine.time, "time", return_value=1030), \
+             patch.object(engine, "tg", side_effect=self.api([self.message(401, uid=3, date=1030)])):
+            engine.answer_humans()
+        self.assertEqual(len(self.sent()), 1)
+        self.assertFalse(self.reacted())
+
+    def test_six_authored_voices_have_distinct_welcomes_and_rotate(self):
+        wording = [line for lines in LINES.values() for line in lines]
+        self.assertEqual(len(wording), len(set(wording)))
+        self.assertEqual(len(LINES), 6)
+        for speaker, lines in LINES.items():
+            self.assertGreaterEqual(len(lines), 8)
+            self.assertNotEqual(greeting_line(speaker, 0), greeting_line(speaker, 1))
+            self.assertNotIn("@", " ".join(lines))
 
 
 if __name__ == "__main__":

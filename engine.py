@@ -860,6 +860,9 @@ def answer_humans(limit=10):
     if "enabled_at" not in STATE["greetings"]:
         STATE["greetings"]["enabled_at"] = int(time.time())
         persist()
+    if "joins_enabled_at" not in STATE["greetings"]:
+        STATE["greetings"]["joins_enabled_at"] = int(time.time())
+        persist()
     params = {"timeout": 0, "limit": 100,
               "allowed_updates": ["message", "edited_message"]}
     offset = STATE["offsets"].get(reader)
@@ -882,31 +885,37 @@ def answer_humans(limit=10):
         sender = message.get("from") or {}
         text = (message.get("text") or message.get("caption") or "").strip()
         mid = message.get("message_id")
+        # Only Telegram's structured human-member join events are eligible.
+        # Bot invitations never trigger a welcome or an autonomous reply loop.
+        newcomers = [person for person in message.get("new_chat_members", [])
+                     if person.get("id") is not None and not person.get("is_bot")]
+        joined = bool(newcomers)
         relevant = (str((message.get("chat") or {}).get("id")) == CHAT
-                    and not sender.get("is_bot") and mid is not None)
+                    and (joined or not sender.get("is_bot")) and mid is not None)
         fresh = time.time() - message.get("date", time.time()) <= 1800
-        if relevant and fresh and text:
+        if relevant and fresh and (text or joined):
             STATE["last_topic_at"]["human_activity"] = time.time()
         addresses = [row.get("display", name) for name, row in ROSTER.items()]
         addresses.extend("@" + username for username in BOT_USERS.values() if username)
-        greeting = is_greeting(text, addresses)
+        greeting = joined or is_greeting(text, addresses)
         # Let a real person's conversation with another real person continue.
         quoted = message.get("reply_to_message") or {}
-        if quoted and not (quoted.get("from") or {}).get("is_bot"):
+        if quoted and not joined and not (quoted.get("from") or {}).get("is_bot"):
             greeting = False
         asks = is_service(text) or "?" in text or text.startswith("/") or bool(
             re.search(r"\b(who|what|why|when|where|how|tell|send|show|explain)\b", text, re.I))
-        if relevant and fresh and text and (asks or greeting) and str(mid) not in STATE["replies"]:
+        if relevant and fresh and (text or joined) and (asks or greeting) and str(mid) not in STATE["replies"]:
             kind = "general" if greeting else topic(text)
             speaker = speaker_for(text, kind)
             content_key = None
             visitor_key = None
             if greeting:
                 now = time.time()
-                visitor = sender.get("id")
+                visitor = newcomers[0]["id"] if joined else sender.get("id")
                 visitor_key = "person:" + digest(str(visitor))
                 history = STATE["greetings"]
-                eligible = (visitor is not None and message.get("date", 0) >= history["enabled_at"]
+                enabled_at = history["joins_enabled_at"] if joined else history["enabled_at"]
+                eligible = (visitor is not None and message.get("date", 0) >= enabled_at
                             and now - history.get(visitor_key, 0) >= 600
                             and now - history.get("last", 0) >= 20)
                 if not eligible:
@@ -941,16 +950,20 @@ def answer_humans(limit=10):
             if greeting:
                 history = STATE["greetings"]
                 history[visitor_key] = history["last"] = time.time()
+                for person in newcomers:
+                    history["person:" + digest(str(person["id"]))] = history["last"]
                 history["count"] = int(history.get("count", 0)) + 1
                 persist()
                 # One acknowledgement, from the same disclosed character only.
                 # No likes on arbitrary claims, no paid reactions, no retry swarm.
-                if sent > 0:
+                if sent > 0 and not joined:
                     reacted = tg(TOK[speaker], "setMessageReaction", {
                         "chat_id": CHAT, "message_id": mid,
                         "reaction": [{"type": "emoji", "emoji": "👍"}], "is_big": False})
                     if reacted.get("ok"):
                         log("GREETING ACKNOWLEDGED %s; one reply and one reaction" % speaker)
+                elif sent > 0:
+                    log("ARRIVAL WELCOMED %s; one native reply" % speaker)
             elif kind == "general":
                 STATE["last_topic_at"]["help"] = time.time()
         STATE["offsets"][reader] = update_id + 1

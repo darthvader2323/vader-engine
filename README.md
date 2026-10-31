@@ -139,6 +139,19 @@ name uses the roster name directly; its description still discloses automation.
 Missing avatar files leave profile setup incomplete, including for newly registered
 characters. Existing Bruce/Chewbacca/Luke avatar filename aliases are supported.
 
+Tony Soprano has a matching SFW fan avatar and 36 separately authored takes in
+tony_voice.py, each with analytical and plain wording. These reuse the room's
+existing idea keys, so activating Tony or changing his daily style cannot replay
+exhausted discussions. His profile remains an unofficial automated fan persona.
+
+Future human-member join events use the existing bounded greeting path: one
+character sends one native welcome, with no welcome swarm or service-message
+reaction. The six configured voices each have eight distinct short greetings.
+The shared counter rotates the wording and survives restarts. Human arrivals
+share the existing ten-minute person cooldown and twenty-second room cooldown;
+a batch join gets one welcome. Bot arrivals and pre-activation joins are skipped.
+Disable legacy clone welcome handlers before enabling this join path in production.
+
 This connection code does not register accounts, add them to a group, change privacy
 mode, or grant administrators. Those remain Telegram operations. Managed-bot
 creation uses Telegram's official flow and remains subject to Telegram's limits:
@@ -157,6 +170,11 @@ STICKER_PACKS_JSON can supply a character-to-pack-name map.
 CHUCKY_STICKER_PACK and YOUNGBOY_STICKER_PACK configure those additional packs.
 Only packs actually containing unused animated/video assets can produce moving stickers.
 The worker never substitutes a static image or resets the used-sticker ledger.
+
+The Tony pack appends three reviewed live-action reactions for serious, sad and
+happy/playful comments. The sitting scene is an HBO GIPHY upload; the crying and
+winking scenes are attributed community uploads on GIPHY and Tenor. The previous
+31 ordered assets, pack slots and used identities are unchanged.
 Pack keys follow the character identity, with vader, chew and luke as aliases for
 Darth Vader, Chewbacca and Luke Skywalker; brucewayne maps to batman and the
 unofficial NBA YoungBoy fan persona maps to youngboy. Broad legacy roster pack

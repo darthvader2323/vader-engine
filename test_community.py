@@ -319,6 +319,22 @@ class CommunityTests(unittest.TestCase):
     def test_fragment_sale_question_can_mention_a_character_username(self):
         self.assertEqual(engine.topic("Who bought @yoda on Fragment?"), "fragment")
 
+    def test_tony_has_authored_reading_styles_without_new_history_keys(self):
+        from tony_voice import DISCUSSIONS as tony
+        self.assertEqual(set(tony), {idea for idea, _ in DISCUSSIONS})
+        for idea, voices in DISCUSSIONS:
+            key = "discussion:starwars:" + idea
+            analytical = voices["tonysoprano"]
+            plain = render_style(analytical, "starwars", key, "tonysoprano", "plain")
+            self.assertEqual((analytical, plain), tony[idea])
+            self.assertNotEqual(analytical, plain)
+            engine.STATE["used"][engine.digest(key)] = time.time()
+        self.assertEqual(engine.available_content("starwars", "tonysoprano"), [])
+        with patch.dict(engine.TOK, {"tonysoprano": "tony-token"}):
+            self.assertEqual(engine.speaker_for("Tony Soprano, fresh crypto?", "crypto"), "tonysoprano")
+            self.assertEqual(engine.topic("Tony Soprano, fresh crypto?"), "crypto")
+            self.assertEqual(engine.speaker_for("Tony Soprano, who do I message for services?", "service"), "brucewayne")
+
     def test_starwars_can_resume_after_its_shorter_topic_cooldown(self):
         now = time.time()
         for kind in ("starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment"):
