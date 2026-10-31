@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '9e5f54bae5b82c71201a60ad13f0b45008c00ab9' || github.ref }}
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'e2a696576d21dcece861b485b8cb4a3f0cf207c9' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 9e5f54bae5b82c71201a60ad13f0b45008c00ab9
+          ref: e2a696576d21dcece861b485b8cb4a3f0cf207c9
           persist-credentials: false
       - name: Load the current runtime ledger
         run: |
