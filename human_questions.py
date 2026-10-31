@@ -7,6 +7,8 @@ import re
 
 
 MARS_CHOICES = {
+    "assassin": ("A return plan would be my first question. A distant horizon is tempting, but the way home deserves just as much thought.",
+                 "A new horizon sounds good. Show me the way home first."),
     "brucewayne": (
         "Only with a credible plan for getting back. A dramatic launch is the easy part to get excited about; the return matters too.",
         "Only with a way back. The launch is cool, but so is getting home."),

@@ -3,6 +3,11 @@ import re
 
 
 LINES = {
+    "assassin": (
+        "Aye, welcome in. What brings you to the room?", "Hey, a place for another voice. How are you?",
+        "Welcome. Bring your best Star Wars take.", "Good to have you here. What caught your eye?",
+        "You found us. Come join the conversation.", "Hey there. What are we talking about today?",
+        "Welcome aboard. Any good stories today?", "Aye, settle in. What is on your mind?"),
     "brucewayne": (
         "Hey, welcome in 👋", "Hello there. Good to have you here.",
         "Hey! What's on your mind?", "Aye, welcome to the room. How's it going?",
