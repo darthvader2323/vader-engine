@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref == 'refs/heads/main' && 'f2af20cb8667e4621136fc700ff796d673e8d201' || github.ref }}
+          ref: ${{ github.ref == 'refs/heads/main' && 'e74e873f5c9da87a1031fe479a20519c56fdb2cd' || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: f2af20cb8667e4621136fc700ff796d673e8d201
+          ref: e74e873f5c9da87a1031fe479a20519c56fdb2cd
           persist-credentials: false
       - name: Load the current runtime ledger
         run: |
