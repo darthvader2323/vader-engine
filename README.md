@@ -135,7 +135,7 @@ the time since a successful send and the next broadcast check. Deferral reasons
 are logged without adding filler messages to the group.
 
 CHAT_ID must be the numeric ID of the authorized group. Tokens stay in deployment secrets.
-CHAT_HANDLE can additionally name its public address (@darthvaderchat2). At startup the
+CHAT_HANDLE can additionally name its public address (@vadersocial). At startup the
 worker verifies the group title/handle and resolves its canonical numeric ID, so a group
 upgrade or an older ID alias cannot silently discard incoming messages.
 Unavailable account identities are excluded for that run and checked again on restart.
