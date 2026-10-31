@@ -685,8 +685,11 @@ def is_service(text):
 def topic(text):
     text = text.casefold()
     for name, expression in [
-        ("service", None), ("rap", r"\b(youngboy|rapper|rap|music|song|album|mixtape)\b"),
-        ("starwars", r"\b(star wars|starwars|vader|jedi|sith|yoda|chewbacca|skywalker|grogu)\b"),
+        ("service", None), ("fragment", r"\bfragment\b"),
+        ("rap", r"\b(youngboy|rapper|rap|music|song|album|mixtape)\b"),
+        ("starwars", r"\b(star wars|starwars|vader|jedi|sith|yoda|chewbacca|skywalker|grogu|"
+         r"anakin|padm[eé]|r2[- ]?d2|c[- ]?3po|threepio|leia|han solo|dagobah|tatooine|"
+         r"death star|millennium falcon|at-at|bail organa|mustafar)\b"),
         ("crypto", r"\b(crypto|bitcoin|btc|ethereum|eth|ton|solana|coin)\b"),
         ("fragment", r"\b(fragment|username|handle)\b"),
         ("sports", r"\b(nba|nhl|mlb|nfl|mls|soccer|football|basketball|hockey|baseball|score)\b"),
@@ -716,6 +719,30 @@ def available_content(kind, speaker, scheduled=False, question=None):
         selected = None
         if kind == "starwars":
             for idea, pattern in [
+                ("suit_life_support", r"life support|respirator|respiratory|medical equipment"),
+                ("breathing_sound", r"breathing|breath sound"),
+                ("padme_fear", r"padm[eé]|fear of los"),
+                ("anakin_hero_past", r"clone wars|anakin.*hero"),
+                ("vader_pilot", r"vader.*pilot|pilot.*vader"),
+                ("tie_silhouette", r"\btie\b|fighter design"),
+                ("luke_farm_beginning", r"moisture farm|farmboy|tatooine"),
+                ("dagobah_failures", r"dagobah|training fail"),
+                ("yoda_teaching_centuries", r"eight centur|800|eight hundred|teaching career"),
+                ("yoda_species_mystery", r"yoda.*species|species.*yoda"),
+                ("leia_adoption", r"bail organa|leia.*adopt|adopt.*leia"),
+                ("skywalker_twins", r"skywalker twins|luke and leia|leia and luke"),
+                ("han_yavin_return", r"yavin|han.*return"),
+                ("han_hoth_rescue", r"han.*hoth|hoth.*rescue|tauntaun"),
+                ("falcon_hyperdrive", r"hyperdrive"),
+                ("falcon_modifications", r"falcon|freighter"),
+                ("deathstar_weakness", r"exhaust port|death star.*weak|death star.*flaw"),
+                ("deathstar_secrecy", r"death star.*plans|stolen plans"),
+                ("r2_bravery", r"r2.*brav|r2.*courage"),
+                ("r2_generations", r"r2.*generations|r2.*padm[eé]"),
+                ("threepio_builder", r"anakin.*3po|built.*threepio|built.*3po"),
+                ("threepio_translation", r"threepio|c-3po|translation|protocol droid"),
+                ("walker_transport", r"walker.*transport|at-at.*transport"),
+                ("walker_intimidation", r"at-at|walkers"),
                 ("music", r"imperial march|music|soundtrack|theme song"),
                 ("cloud_city_reveal", r"cloud city|reveal"),
                 ("leia_leadership", r"leia|leadership"),
@@ -906,8 +933,8 @@ def beat():
     if time.time() - STATE["last_topic_at"].get("human_activity", 0) < 90:
         return 0
     rotation = ["starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment"]
-    cooldowns = {"starwars": 5400, "crypto": 3600, "sports": 1800, "world": 3600,
-                 "elon": 3600, "deals": 7200, "rap": 7200, "fragment": 3600}
+    cooldowns = {"starwars": 900, "crypto": 1800, "sports": 600, "world": 900,
+                 "elon": 1800, "deals": 3600, "rap": 3600, "fragment": 1800}
     cursor = int(STATE.get("cursor", 0))
     for attempt in range(len(rotation)):
         kind = rotation[(cursor + attempt) % len(rotation)]
@@ -1029,20 +1056,32 @@ def main():
     if not TOK:
         raise SystemExit("No valid configured bot tokens.")
     prime_reader()
-    gap_min = max(60, float(os.environ.get("GAP_MIN", "600")))
-    gap_max = max(gap_min, float(os.environ.get("GAP_MAX", "1200")))
+    gap_min = max(60, float(os.environ.get("GAP_MIN", "180")))
+    gap_max = max(gap_min, float(os.environ.get("GAP_MAX", "360")))
+    # A cadence change should not retain a longer delay from the previous worker.
+    last_sent = max(STATE["last_spoke"].values(), default=0)
+    STATE["next_beat"] = min(STATE.get("next_beat", 0), max(time.time(), last_sent + gap_min))
     next_pin = 0
+    next_heartbeat = 0
     log("ENGINE READY: %d configured character bots; disclosed activity; chat=%s" % (len(TOK), CHAT))
     try:
         sticker(choose_speaker())
         while not STOP.is_set() and time.monotonic() < deadline:
             answer_humans()
             now = time.time()
+            if now >= next_heartbeat:
+                latest = max(STATE["last_spoke"].values(), default=now)
+                log("WORKER ACTIVE: accounts=%s listener=%s last_send_ago=%ss next_broadcast_check=%ss" %
+                    (len(TOK), polling_reader(), max(0, int(now - latest)),
+                     max(0, int(STATE.get("next_beat", 0) - now))))
+                next_heartbeat = now + 60
             if now >= next_pin:
                 react_to_pin()
                 next_pin = now + 30
             if now >= STATE.get("next_beat", 0):
-                beat()
+                sent = beat()
+                if not sent:
+                    log("BROADCAST DEFERRED: cooldown, recent conversation, or no fresh unused item")
                 STATE["next_beat"] = time.time() + random.uniform(gap_min, gap_max)
                 persist()
             if os.environ.get("VADER_ONCE") == "1":

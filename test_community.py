@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 import engine
-from conversation import compact_sources
+from conversation import DISCUSSIONS, compact_sources
 from checkpoint import merge_state
 
 class CommunityTests(unittest.TestCase):
@@ -249,6 +249,54 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(engine.speaker_for("Yoda, how much for account recovery?", "service"), "brucewayne")
         lines = engine.content_for("starwars", "yoda")
         self.assertTrue(any("Before a word, the music speaks" in text for text, _ in lines))
+
+    def test_discussion_ideas_and_character_wording_are_not_duplicated(self):
+        keys = [idea for idea, _ in DISCUSSIONS]
+        self.assertEqual(len(keys), len(set(keys)))
+        wording = [engine.digest(text) for _, voices in DISCUSSIONS for text in voices.values()]
+        self.assertEqual(len(wording), len(set(wording)))
+
+    def test_specific_new_lore_questions_do_not_get_an_unrelated_generic_reply(self):
+        for question, expected in (
+            ("Yoda, why does Vader need life support?", "suit_life_support"),
+            ("Who built C-3PO?", "threepio_builder"),
+            ("Yoda, what about the Falcon hyperdrive?", "falcon_hyperdrive"),
+        ):
+            with self.subTest(question=question):
+                self.assertEqual(engine.topic(question), "starwars")
+                choices = engine.available_content("starwars", "yoda", question=question)
+                self.assertEqual([key for _, key in choices], ["discussion:starwars:" + expected])
+
+    def test_fragment_sale_question_can_mention_a_character_username(self):
+        self.assertEqual(engine.topic("Who bought @yoda on Fragment?"), "fragment")
+
+    def test_starwars_can_resume_after_its_shorter_topic_cooldown(self):
+        now = time.time()
+        for kind in ("starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment"):
+            engine.STATE["last_topic_at"][kind] = now
+        engine.STATE["last_topic_at"]["starwars"] = now - 901
+        with patch.object(engine, "available_content", return_value=[("An unused observation.", "new-idea")]), \
+             patch.object(engine, "send", return_value=1) as send, \
+             patch.object(engine, "sticker"):
+            self.assertEqual(engine.beat(), 1)
+        self.assertEqual(send.call_args.kwargs["kind"], "starwars")
+
+    def test_cadence_update_does_not_keep_the_previous_long_wait(self):
+        now = time.time()
+        engine.STATE["next_beat"] = now + 800
+        engine.STATE["last_spoke"]["yoda"] = now - 1000
+        with patch.dict(os.environ, {"VADER_ONCE": "1", "GAP_MIN": "180", "GAP_MAX": "360"}), \
+             patch.object(engine.time, "time", return_value=now), \
+             patch.object(engine.signal, "signal"), \
+             patch.object(engine, "verify_bots"), patch.object(engine, "resolve_chat"), \
+             patch.object(engine, "load_managed_bots"), patch.object(engine, "bootstrap_all"), \
+             patch.object(engine, "prime_reader"), patch.object(engine, "answer_humans"), \
+             patch.object(engine, "react_to_pin"), patch.object(engine, "sticker"), \
+             patch.object(engine, "beat", return_value=1) as beat:
+            engine.main()
+        beat.assert_called_once()
+        self.assertGreaterEqual(engine.STATE["next_beat"], now + 180)
+        self.assertLessEqual(engine.STATE["next_beat"], now + 360)
 
     def test_owner_music_question_gets_a_relevant_answer_not_praise(self):
         outgoing = []

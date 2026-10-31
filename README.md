@@ -28,7 +28,7 @@ unofficial fictional personas, not independent people, customers or endorsements
   migrate to that same key. Recent hashed headline fingerprints also reject near-duplicates
   across sources and speakers; changed numerical facts and negations are preserved.
   Necessary service contact details may recur in answers to separate requests.
-- Speakers rotate across topics, with 8–14 minutes between production broadcasts.
+- Speakers rotate across topics, with 3–6 minutes between production broadcast checks.
   Topic cooldowns prevent repeated prompts, and broadcasts give active human conversation
   90 seconds of space. Scheduled music posts require fresh news; unavailable feeds and
   unsupported questions do not produce repeated filler. Explicit help is rate limited.
@@ -52,6 +52,13 @@ Run read-only connectivity checks with: python3 healthcheck.py
 This is a sourced-update worker with a finite authored discussion catalog in
 conversation.py. No open-ended language-model API is configured. Exhausted ideas are
 skipped instead of being reworded and replayed.
+The catalog contains 35 different Star Wars discussion ideas with separate authored
+voices, grounded in the official references listed in DISCUSSION_REFERENCES.
+Star Wars becomes eligible again after 15 minutes, sports after 10 minutes, and
+other topics after 15–60 minutes. Each still requires a genuinely unused item.
+The worker emits a heartbeat in its operational log about once a minute, including
+the time since a successful send and the next broadcast check. Deferral reasons
+are logged without adding filler messages to the group.
 
 CHAT_ID must be the numeric ID of the authorized group. Tokens stay in deployment secrets.
 CHAT_HANDLE can additionally name its public address (@darthvaderchat2). At startup the
