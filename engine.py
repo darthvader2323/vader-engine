@@ -962,6 +962,9 @@ def sticker(who):
             continue
         fresh.append(item)
     if not fresh:
+        # Newly published matching clips should be seen at the next opportunity,
+        # rather than remaining hidden behind an exhausted one-hour cache.
+        CACHE.pop(cache_key, None)
         log("NO UNUSED MATCHING MOVING STICKER %s; skipped" % who)
         return 0
     counts = STATE.setdefault("sticker_counts", {})
@@ -1188,7 +1191,7 @@ def main():
     style_day = None
     log("ENGINE READY: %d configured character bots; disclosed activity; chat=%s" % (len(TOK), CHAT))
     try:
-        sticker(choose_speaker())
+        sticker(choose_speaker(["yoda"]))
         while not STOP.is_set() and time.monotonic() < deadline:
             answer_humans()
             continue_roleplay()

@@ -251,7 +251,7 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(len(outgoing), 1)
         self.assertIn("Alive, the suit keeps Vader", outgoing[0][1]["text"])
 
-    def test_plain_native_reply_preserves_price_source_date_and_link_entity_offsets(self):
+    def test_plain_native_reply_preserves_price_and_occasional_link_entity_offsets(self):
         outgoing = []
         report = "Bitcoin report: approximately $200 million\nExample Wire · Oct 31, 2026\nhttps://example.org/report"
         with patch.object(engine, "writing_style", return_value="plain"), \
@@ -267,8 +267,10 @@ class CommunityTests(unittest.TestCase):
         entity = linked["entities"][0]
         encoded = linked["text"].encode("utf-16-le")
         self.assertEqual(encoded[2*entity["offset"]:2*(entity["offset"]+entity["length"])].decode("utf-16-le"),
-                         "Example Wire · Oct 31, 2026")
+                         "More here")
         self.assertIn("about $300 million", linked["text"])
+        self.assertNotIn("Example Wire", linked["text"])
+        self.assertNotIn("Oct 31", linked["text"])
         self.assertEqual(entity["url"], "https://example.org/report")
 
     def test_news_has_no_stock_introduction_or_clickable_source(self):
@@ -277,9 +279,10 @@ class CommunityTests(unittest.TestCase):
         with patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
             engine.send("yoda", report, content_key="news:one", kind="world")
         payload = outgoing[0][1]
-        self.assertEqual(payload["text"], report.rsplit("\n", 1)[0])
+        self.assertEqual(payload["text"], report.splitlines()[0])
         self.assertNotIn("entities", payload)
-        self.assertIn("Example Wire · Oct 30, 2026", payload["text"])
+        self.assertNotIn("Example Wire", payload["text"])
+        self.assertNotIn("Oct 30", payload["text"])
         self.assertNotIn("https://", payload["text"])
 
     def test_addressed_yoda_uses_his_voice_but_service_goes_to_desk(self):
@@ -523,12 +526,13 @@ class CommunityTests(unittest.TestCase):
                 self.assertEqual(entities, [])
                 self.assertNotRegex(body, r"https?://|www\.")
                 self.assertIn("$200 million", body)
-                self.assertIn("Example Wire · Oct 30, 2026", body)
+                self.assertNotIn("Example Wire", body)
+                self.assertNotIn("Oct 30", body)
                 self.assertIn("@darthvader", body)
 
     def test_bare_source_hostnames_do_not_auto_link(self):
         body, entities = compact_sources("Headline\nfeeds.bbci.co.uk · Oct 30, 2026\nhttps://www.bbc.co.uk/news", "world")
-        self.assertEqual(body, "Headline\nBBC News · Oct 30, 2026")
+        self.assertEqual(body, "Headline")
         self.assertEqual(entities, [])
 
     def test_occasional_short_source_handles_emoji_and_publisher_labels(self):
@@ -537,7 +541,8 @@ class CommunityTests(unittest.TestCase):
         entity = entities[0]
         encoded = body.encode("utf-16-le")
         label = encoded[2 * entity["offset"]:2 * (entity["offset"] + entity["length"])].decode("utf-16-le")
-        self.assertEqual(label, "BBC News · Oct 30, 2026")
+        self.assertEqual(label, "More here")
+        self.assertNotIn("BBC News", body)
         self.assertEqual(entity["url"], "https://www.bbc.co.uk/news")
 
     def test_links_are_sparse_and_share_one_groupwide_cooldown(self):
@@ -554,6 +559,48 @@ class CommunityTests(unittest.TestCase):
         linked = [i for i, (_, payload) in enumerate(outgoing) if payload.get("entities")]
         self.assertEqual(linked, [9, 29])
         self.assertTrue(all("https://" not in p["text"] for _, p in outgoing))
+
+    def test_casual_format_keeps_fixture_times_price_windows_and_dates_in_the_story(self):
+        stories = (
+            ("sports", "NBA scheduled: Team A at Team B · Tonight 7 PM ET"),
+            ("crypto", "BTC is down 1.50% over 24 hours."),
+            ("world", "The deadline is Nov 5, 2026, not today."),
+        )
+        for kind, story in stories:
+            raw = story + "\nExample Wire · Oct 31, 01:10 AM CDT\nhttps://example.org/report"
+            self.assertEqual(compact_sources(raw, kind), (story, []))
+        sale = "Reported username sale: @example · 100 TON\nOct 30, 01:10 PM CDT\nhttps://fragment.com/username/example"
+        self.assertEqual(compact_sources(sale, "fragment"), (sale.splitlines()[0], []))
+
+    def test_known_source_metadata_remains_available_before_chat_rendering(self):
+        now = int(time.time())
+        quote = {"bitcoin": {"usd": 12, "usd_24h_change": -1, "last_updated_at": now}}
+        with patch.object(engine, "jget", return_value=quote):
+            raw, key = engine.crypto()[0]
+        self.assertIn("CoinGecko", raw)
+        self.assertIn("https://www.coingecko.com/", raw)
+        body, _ = compact_sources(render_style(raw, "crypto", key, "yoda", "plain"), "crypto")
+        self.assertIn("$12.00", body)
+        self.assertIn("down 1.00%", body)
+        self.assertNotIn("CoinGecko", body)
+
+    def test_exhausted_sticker_cache_can_see_new_clips_without_resetting_history(self):
+        engine.ROSTER["yoda"]["persona"] = "yoda"
+        old = {"file_id": "old-file", "file_unique_id": "old-uid", "is_video": True}
+        fresh = {"file_id": "new-file", "file_unique_id": "new-uid", "is_video": True}
+        engine.STATE["stickers"]["uid:old-uid"] = time.time()
+        with patch.object(engine, "PACKS", {"yoda": "matching-pack"}):
+            engine.CACHE["stickers:yoda:matching-pack"] = (time.time()+3600, [old])
+            self.assertEqual(engine.sticker("yoda"), 0)
+            def api(token, method, params):
+                if method == "getStickerSet":
+                    return {"ok": True, "result": {"stickers": [old, fresh]}}
+                self.assertEqual(params["sticker"], "new-file")
+                return {"ok": True, "result": {"message_id": 900}}
+            with patch.object(engine, "tg", side_effect=api):
+                self.assertEqual(engine.sticker("yoda"), 1)
+        self.assertIn("uid:old-uid", engine.STATE["stickers"])
+        self.assertIn("uid:new-uid", engine.STATE["stickers"])
 
     def test_replies_do_not_consume_the_occasional_link_slot(self):
         outgoing = []
@@ -965,11 +1012,26 @@ class WritingStyleTests(unittest.TestCase):
         raw = ("TON $1.19 · 24h +0.68%\nBTC $77,083.00 · 24h -1.50%\n"
                "ETH $2,236.18 · 24h +0.00%\nCoinGecko · Oct 31, 12:00 AM CDT\nhttps://www.coingecko.com/")
         text = render_style(raw, "crypto", "quote:1", "yoda", "plain")
-        self.assertIn("TON: $1.19, up 0.68% over 24 hours.", text)
-        self.assertIn("Bitcoin: $77,083.00, down 1.50% over 24 hours.", text)
-        self.assertIn("Ethereum: $2,236.18. No change over 24 hours (0.00%).", text)
+        self.assertIn("$1.19", text)
+        self.assertIn("Up 0.68%", text)
+        self.assertIn("$77,083.00", text)
+        self.assertIn("down 1.50%", text)
+        self.assertIn("$2,236.18", text)
+        self.assertIn("unchanged over 24 hours (0.00%)", text)
         self.assertEqual(text.splitlines()[-2:], raw.splitlines()[-2:])
-        self.assertEqual(render_style(raw, "crypto", "quote:1", "yoda", "analytical"), raw)
+        advanced = render_style(raw, "crypto", "quote:1", "yoda", "analytical")
+        for fact in ("$1.19", "$77,083.00", "$2,236.18", "0.68%", "1.50%", "0.00%"):
+            self.assertIn(fact, advanced)
+        self.assertEqual(advanced.splitlines()[-2:], raw.splitlines()[-2:])
+
+    def test_casual_business_headline_preserves_future_status_and_proper_names(self):
+        raw = "First Community Bancshares to Acquire Main Street Financial Services for $243 Million"
+        for style in ("plain", "analytical"):
+            body = render_style(raw, "deals", "headline:one", "chewbacca", style)
+            self.assertEqual(body, "First Community Bancshares plans to buy Main Street Financial Services for $243 million.")
+        for headline in ("Acme may not acquire Beta", "Acme denies plans to acquire Beta", "'Acme to Acquire Beta' is an unconfirmed rumor"):
+            body = render_style(headline, "deals", "headline:two", "brucewayne", "analytical")
+            self.assertEqual(body, headline)
 
     def test_plain_headline_does_not_turn_plans_or_allegations_into_facts(self):
         raw = ("Acme reportedly plans to acquire Beta for approximately $200 million, but may not proceed\n"

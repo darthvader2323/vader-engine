@@ -19,24 +19,26 @@ unofficial fictional personas, not independent people, customers or endorsements
   identity or deliberate factual mistakes. Shared idea keys and repeat history
   apply across both styles, so a new day never replays an exhausted idea.
   Source headlines keep their facts and uncertainty; only a small set of safe
-  vocabulary changes is allowed outside quotes. Source/date labels and all
-  numbers remain intact. Market quotes expand abbreviations in the plain style.
+  vocabulary changes is allowed outside quotes. All numbers and uncertainty
+  remain intact. Market quotes expand abbreviations in the plain style.
 - Owner questions follow the same topic routing and receive relevant replies.
 - Directly addressing a configured character selects that voice, except service requests
   still go to the single service desk. Yoda uses inverted, reflective phrasing; Luke is
   hopeful, Chewbacca is direct, Bruce is measured and Chucky is playful. Character
-  wording is authored inside the discussion itself. News has no stock introduction;
-  facts and dates are retained, with a short plain-text source label. Routine posts
-  contain no visible article URLs; bare feed hostnames are rendered as publisher
-  names so Telegram does not auto-link them. Most source labels are plain text.
-  An occasional short clickable source is allowed on every tenth scheduled news
-  post, with at least an hour between links across the entire group. Replies do
+  wording is authored inside the discussion itself. Routine updates omit the
+  feed's publisher/date/time footer, while retrieval still verifies freshness
+  and source links. Actual game times, price windows and dates inside a story
+  remain when they carry meaning. Market quotes use conversational sentences;
+  planned acquisitions stay plans rather than becoming completed sales.
+  There is no stock introduction. An occasional compact 'More here' link is
+  allowed on every tenth scheduled news post, with at least an hour between
+  links across the entire group. Replies do
   not automatically add links or consume that schedule. The counter and deadline
   survive restarts and checkpoints.
 - A new pin gets one neutral assistant acknowledgement, without a swarm of automated likes.
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
-- News includes a publication date and plain-text source name. Failed feeds are skipped.
+- News freshness is checked before rendering. Failed feeds are skipped.
 - Scheduled Star Wars discussion can use twelve short, authored two-persona
   exchanges with distinct viewpoints. The second turn is a native reply after
   45–120 seconds; real human activity pauses it. Only configured profiles are

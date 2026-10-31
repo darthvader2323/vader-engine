@@ -302,7 +302,44 @@ def _plain_headline(line, kind):
 
 def render_style(text, kind, content_key, speaker, style):
     """Render one idea. Service/pin routing and factual uncertainty are unchanged."""
-    if style != "plain" or kind in ("service", "pin", "general"):
+    if kind in ("service", "pin", "general"):
+        return text
+    if kind == "crypto":
+        def quote(match):
+            symbol, price, change = match.groups()
+            name = {"BTC": "Bitcoin", "ETH": "Ethereum"}.get(symbol, symbol) if style == "plain" else symbol
+            amount = change.lstrip("+-")
+            if float(change) == 0:
+                return f"{name} is at ${price}, unchanged over 24 hours ({amount}%)."
+            direction = "down" if change.startswith("-") else "up"
+            variant = (sum(text.encode()) + ("TON", "BTC", "ETH").index(symbol)) % 3
+            if speaker == "yoda" and symbol == "TON":
+                return f"At ${price}, {name} sits. {direction.capitalize()} {amount}% over 24 hours, it is."
+            if style == "plain":
+                choices = (f"{name} is at ${price}, {direction} {amount}% over 24 hours.",
+                           f"{name}'s at ${price}. That's {amount}% {'lower' if direction == 'down' else 'higher'} over 24 hours.",
+                           f"${price} for {name}, {direction} {amount}% over 24 hours.")
+            else:
+                choices = (f"{name}'s at ${price} — {change}% over 24h.",
+                           f"{name} is trading at ${price}, {direction} {amount}% in 24h.",
+                           f"${price} for {name}; its 24h move is {change}%.")
+            return choices[variant]
+        return re.sub(r"^(TON|BTC|ETH) \$([\d,]+\.\d+) · 24h ([+-]\d+\.\d+)%$",
+                      quote, text, flags=re.M)
+    if kind in ("world", "elon", "deals", "rap") and not (content_key or "").startswith("discussion:"):
+        lines = text.splitlines()
+        if lines:
+            line = _plain_headline(lines[0], kind) if style == "plain" else lines[0]
+            # A headline's 'to acquire' announces a plan, not a completed deal.
+            # Restrict this rewrite to unquoted, affirmative company headlines.
+            if kind == "deals" and not re.search(r'''["“”‘’]|(?<!\w)'[^'\n]+'(?!\w)''', line):
+                planned = re.match(r"^(.+?)\s+to\s+(?:acquire|buy)\s+(.+)$", line, re.I)
+                if planned and not re.search(r"\b(how|why|whether|plans?|wants?|hopes?|seeks?|may|might|not|denies?|reportedly|claims?)\b", planned[1], re.I):
+                    line = planned[1] + " plans to buy " + planned[2].rstrip(".") + "."
+                line = re.sub(r"(\$[\d,.]+)\s+(Million|Billion)\b", lambda m: m[1] + " " + m[2].lower(), line)
+            lines[0] = line
+        return "\n".join(lines)
+    if style != "plain":
         return text
     key = content_key or ""
     prefix = "discussion:starwars:"
@@ -320,19 +357,4 @@ def render_style(text, kind, content_key, speaker, style):
         body = PLAIN_RAP.get(key.rsplit(":", 1)[-1])
         if body:
             return body
-    if kind == "crypto":
-        def quote(match):
-            symbol, price, change = match.groups()
-            name = {"BTC": "Bitcoin", "ETH": "Ethereum"}.get(symbol, symbol)
-            direction = "down" if change.startswith("-") else "up"
-            if float(change) == 0:
-                return f"{name}: ${price}. No change over 24 hours ({change.lstrip('+-')}%)."
-            return f"{name}: ${price}, {direction} {change.lstrip('+-')}% over 24 hours."
-        return re.sub(r"^(TON|BTC|ETH) \$([\d,]+\.\d+) · 24h ([+-]\d+\.\d+)%$",
-                      quote, text, flags=re.M)
-    if kind in ("world", "elon", "deals", "rap"):
-        lines = text.splitlines()
-        if lines:
-            lines[0] = _plain_headline(lines[0], kind)
-        return "\n".join(lines)
     return text
