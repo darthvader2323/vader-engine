@@ -1,5 +1,5 @@
 {
-  "cursor": 4,
+  "cursor": 1,
   "greetings": {
     "count": 1,
     "enabled_at": 1793431897,
@@ -8,30 +8,32 @@
     "person:80390e5d42271e431dc918e1c1c6b17dd5f5ff1e27b39107ca71064a95a22c21": 1793431920.2740512
   },
   "last_spoke": {
-    "brucewayne": 1793439312.9123402,
-    "chewbacca": 1793439861.4507155,
+    "brucewayne": 1793441639.1937308,
+    "chewbacca": 1793441424.6564624,
     "chucky": 1793437923.3177145,
-    "lukeskywalker": 1793438953.6033766,
-    "tonysoprano": 1793439556.3478935,
-    "yoda": 1793438658.9092286
+    "killer": 1793439917.8380938,
+    "lukeskywalker": 1793441599.7294993,
+    "tonysoprano": 1793441196.5440013,
+    "yoda": 1793442042.9088728
   },
   "last_topic_at": {
-    "crypto": 1793438659.3132107,
+    "crypto": 1793440515.0550084,
     "deals": 1793438294.807864,
-    "elon": 1793439556.3499763,
-    "human_activity": 1793439706.0565195,
+    "elon": 1793441599.7295814,
+    "human_activity": 1793441599.1962724,
     "rap": 1793425253.6197915,
-    "source_link": 1793435232.513595,
-    "starwars": 1793439313.3052046,
+    "source_link": 1793440514.5100083,
+    "starwars": 1793442042.9106348,
     "trillion_context": 1793407076.9481316,
-    "world": 1793439861.4529076
+    "world": 1793441198.1213655
   },
-  "league_cursor": 8,
-  "next_beat": 1793440056.6855738,
+  "league_cursor": 3,
+  "next_beat": 1793442237.4027328,
   "offsets": {
-    "yoda": 910447745
+    "yoda": 910447758
   },
   "pins": {
+    "1573": 1793441639.1951149,
     "540": 1793402918.5070002,
     "883": 1793395952.242374
   },
@@ -233,6 +235,23 @@
         ]
       }
     },
+    "2d5638dadeda197caf0a59f334883f20f43c44880beda236b1c32c8614fed367": {
+      "at": 1793441599.204166,
+      "kind": "elon",
+      "signature": {
+        "negative": false,
+        "numbers": [
+          "59e19706d51d39f66711"
+        ],
+        "terms": [
+          "08c4242b5f585628bb8c",
+          "b86fa550c70e74d33a5e",
+          "e78bdebae031095bebcf",
+          "e8197b20f8e71e429645",
+          "f39592393ef0859cb196"
+        ]
+      }
+    },
     "2d8bd081cdc0ba9ea2c5987e3bda32e983ab1b4a1998e4736dad9fa4c6dd5ddd": {
       "at": 1793427817.4268982,
       "kind": "starwars",
@@ -353,6 +372,27 @@
           "cccf52f3d03c5072ee64",
           "e272deecde720ffc773d",
           "f39592393ef0859cb196"
+        ]
+      }
+    },
+    "31ce1e03abd1795663bd95cfe0a77dff69265d8d88ddd036f20e1f1cba29d39e": {
+      "at": 1793441424.088988,
+      "kind": "elon",
+      "signature": {
+        "negative": false,
+        "numbers": [],
+        "terms": [
+          "00e13ed7af55b27622f1",
+          "0e031e954a432055ace9",
+          "1f58b1e965af65127ac8",
+          "4b42194596899bcdf9c3",
+          "4db16eb962f33f6faf2a",
+          "5b3975651c3cab92d044",
+          "7358bd4ec877e1b62239",
+          "73c9c98668a34c54d131",
+          "8b64d09d9a7290a38765",
+          "8d2ac8b58ead9744d772",
+          "a718e3e9aefa308ac31b"
         ]
       }
     },
@@ -691,25 +731,6 @@
         ]
       }
     },
-    "5c16c8f7a0357ff5c1714a814da21fb9ba2db3fbbe605799e30cd10c2d15567c": {
-      "at": 1793406930.5859263,
-      "kind": "starwars",
-      "signature": {
-        "negative": false,
-        "numbers": [],
-        "terms": [
-          "135fc7a09da25f03e44f",
-          "2f3ca61c7e8e99361399",
-          "4137b01e139589b7a1d3",
-          "5a7cf4ac138054a82f60",
-          "6ca7ea2feefc88ecb5ed",
-          "bd5a946796ac51374fea",
-          "d3410732409bcff63290",
-          "d81ea1595a0453780e68",
-          "e6b88623f7209b6c11fc"
-        ]
-      }
-    },
     "5efb727194aff4144eaa8ba3174a79588113586f1d56a4c7ccc1f11141de90b8": {
       "at": 1793407973.609006,
       "kind": "starwars",
@@ -729,24 +750,6 @@
           "a77de8a6daa1129516b1",
           "b1f51a511f1da0cd348b",
           "cf83f0f9828551b6247b"
-        ]
-      }
-    },
-    "6866b395783127aeadb3f6b3552298cf849635cff64bbd2e09123af5c29ae0bb": {
-      "at": 1793407318.44478,
-      "kind": "rap",
-      "signature": {
-        "negative": false,
-        "numbers": [
-          "d4735e3a265e16eee03f"
-        ],
-        "terms": [
-          "20e419f21ec6515ee6db",
-          "3cb968a982080be1d7a5",
-          "43ff792d79f75890d3c5",
-          "471bcf3ba0df253d3971",
-          "d5af62b33b8eb622e314",
-          "dec5f57d8091bca4c222"
         ]
       }
     },
@@ -811,6 +814,24 @@
           "96eebba49dbbf422d245",
           "d5df61d74243bc947cb9",
           "f96c94f287038f69433b"
+        ]
+      }
+    },
+    "6f11f26c9123fe1eb2a13ed45f18f00554099f5549f3107826b9241688ed7605": {
+      "at": 1793440865.93916,
+      "kind": "starwars",
+      "signature": {
+        "negative": false,
+        "numbers": [],
+        "terms": [
+          "3fc9b689459d738f8c88",
+          "4137b01e139589b7a1d3",
+          "51280dabfbc880cdc5f9",
+          "6a8da52e920664ef15b3",
+          "961eb43699731759fd0d",
+          "c2fb788c7deedbeaa296",
+          "c7ce66d0fb14e3c2d4d9",
+          "cccf52f3d03c5072ee64"
         ]
       }
     },
@@ -1042,6 +1063,26 @@
         ]
       }
     },
+    "87ee30399ffea69db5be823b79bf3ebe77147d0cebc6236cac01294b93b95ecd": {
+      "at": 1793441195.893985,
+      "kind": "world",
+      "signature": {
+        "negative": false,
+        "numbers": [],
+        "terms": [
+          "00d8d3f11739d2f35370",
+          "4a70fe9aa6436e02c2de",
+          "4b9e99d2bd5e48d9a569",
+          "77a739d68b79d71dacba",
+          "8044aae1f86875d993f2",
+          "8898e2a8552492475c01",
+          "9df609548ddeff82e9b8",
+          "a5bb1667d72ced57ff23",
+          "abeda62fefc1b342f793",
+          "b29dbba57df61de7eb36"
+        ]
+      }
+    },
     "88762b6a54efca3e7957bc57a90727c28cf19ca403e98fc33467fb3511a09290": {
       "at": 1793420698.3611028,
       "kind": "starwars",
@@ -1192,32 +1233,6 @@
           "93dc77265fc67a13ee54",
           "a24e10fde71a121ae709",
           "bb93cff8851d49accdf6"
-        ]
-      }
-    },
-    "9def1062daeef967888b0be8e1c6688fd3d75a34e96c3039faa34a68ca432b2f": {
-      "at": 1793407076.1988482,
-      "kind": "deals",
-      "signature": {
-        "negative": false,
-        "numbers": [
-          "1a6562590ef19d1045d0"
-        ],
-        "terms": [
-          "08c4242b5f585628bb8c",
-          "12765295db4f1e7911dd",
-          "2269c0be009b610cfdbb",
-          "2870a1790f1d8792fc9a",
-          "2fe840e13244a9d74888",
-          "3e167607d1438b895135",
-          "41d311a605520fc7b8b9",
-          "5ef5ef0364b6939c4ca6",
-          "5fb6a47e368e12e5d8b1",
-          "80c697e9924a526066b2",
-          "8a92bcdd6dbdaa6ec99d",
-          "a42a13b7bcac91deed16",
-          "d5df61d74243bc947cb9",
-          "f168ccdd91548c5a8c87"
         ]
       }
     },
@@ -1619,25 +1634,24 @@
         ]
       }
     },
-    "d3e6ae7a4b6de093ed407cb0d5e244e88429db77cebf971dadf53d20707ce0af": {
-      "at": 1793406477.3617873,
-      "kind": "world",
+    "d371dd0ec6b2e33fdc345a03c02b11caa39b553048e75702b5540646250fd640": {
+      "at": 1793442042.3605173,
+      "kind": "starwars",
       "signature": {
         "negative": false,
         "numbers": [
-          "44cb730c420480a0477b"
+          "db77fd01af957221a498"
         ],
         "terms": [
-          "187897ce0afcf20b50ba",
-          "41ef29df4a53ab2d8b1d",
-          "512eea46ceb3921dff43",
-          "603705cc260e946d130a",
-          "6bef42a85561289ce276",
-          "7383711c1b05e72a1edd",
-          "82e31d5020a88903aa9c",
-          "c8ce96a5ba0d15da2f24",
-          "d28f8c2373c679cc67da",
-          "f408830bcc7fab370819"
+          "12ea12eace7d655f471c",
+          "23fc951e491773127334",
+          "2534e2de1dec24fedab4",
+          "543b1c4bd4f6b184ca2a",
+          "81db8ebbbbc69c6c6ad4",
+          "9c6725dc269a48ce4b5b",
+          "9f584196e7fe6de85d38",
+          "bc020a35b7f9cb1382e7",
+          "d041924c15885af6d065"
         ]
       }
     },
@@ -1877,25 +1891,6 @@
         ]
       }
     },
-    "ebd02852e7d2b35a4423f81289c89bfcf2402ebd2bb1d6bf5ca9b8e20ef491dc": {
-      "at": 1793407651.8322685,
-      "kind": "world",
-      "signature": {
-        "negative": false,
-        "numbers": [],
-        "terms": [
-          "2be23c585f15e5fd3279",
-          "2c1d8af3b671c780ba70",
-          "4d591b76b7170de5ed66",
-          "5ef2c394d5b63e4175cd",
-          "a8d79f40ddb79de569d7",
-          "baed831623943be39ebf",
-          "c585f1decb986f7ff19b",
-          "ed5eb9a37e2d8231af33",
-          "ee4d988c65de860fabbf"
-        ]
-      }
-    },
     "f35d5b375fd06a5da4e3ccc036be60c308153db952c920aaf193b340c7708a81": {
       "at": 1793420213.8221345,
       "kind": "elon",
@@ -1937,25 +1932,6 @@
         ]
       }
     },
-    "f618cba48c1337e68e220208ffaed991819d3c50e7ea50615419dac74ecbff4a": {
-      "at": 1793406849.6781008,
-      "kind": "elon",
-      "signature": {
-        "negative": false,
-        "numbers": [
-          "b17ef6d19c7a5b1ee83b"
-        ],
-        "terms": [
-          "0ca60590b2324492b14f",
-          "4db16eb962f33f6faf2a",
-          "80c697e9924a526066b2",
-          "8b64d09d9a7290a38765",
-          "8d2ac8b58ead9744d772",
-          "b4dc66dde806261bdda8",
-          "ea0890697a77af0a2e05"
-        ]
-      }
-    },
     "f64337d885f247436cd2cb43ad2b24ff7787afd970ff72f3247edada584630b1": {
       "at": 1793417621.7293289,
       "kind": "elon",
@@ -1973,6 +1949,31 @@
           "8753d1703f15ada998db",
           "8b64d09d9a7290a38765",
           "a87590cd27e611f9b15a"
+        ]
+      }
+    },
+    "f764275aaf47da79f93166fbf4c1c1b92a2d02568a8bd69f1722cb91dd56bb89": {
+      "at": 1793439916.9296281,
+      "kind": "starwars",
+      "signature": {
+        "negative": false,
+        "numbers": [],
+        "terms": [
+          "28faaa675ccec57fe305",
+          "31207a2065f46a5b948f",
+          "4d040d3f6466018c568a",
+          "50d4cb584be52c867fe9",
+          "6196fd3ecdea874b8005",
+          "6db7d803e74f1ffa7d8f",
+          "9dff50df08c635815f4b",
+          "9f584196e7fe6de85d38",
+          "ace8f89851d1e64d3be3",
+          "dd29442deca69f52c500",
+          "dff0669b4df441c26626",
+          "e0787d272a439bb74b76",
+          "e8b22d83b417e85ba4f2",
+          "ee0874170b7f6f32b8c2",
+          "efbde73cf7b4ef001efe"
         ]
       }
     },
@@ -2081,16 +2082,20 @@
     "1527": 1793435972.3853827,
     "1551": 1793437922.7869077,
     "1554": 1793438358.8181696,
+    "1564": 1793439916.929627,
+    "1573": 1793441599.204165,
+    "pin:1573": 1793441638.6884959,
     "pin:540": 1793402917.85407,
     "pin:883": 1793395951.5988274
   },
   "roleplay_pending": null,
-  "scheduled_news_count": 39,
+  "scheduled_news_count": 42,
   "sticker_counts": {
     "chew": 4,
     "chucky": 3,
     "grogu": 4,
     "luke": 4,
+    "tonysoprano": 1,
     "yoda": 8
   },
   "stickers": {
@@ -2113,6 +2118,7 @@
     "fid:CAACAgEAAxUAAWrlklV3Z628hzrydOSwtVqxkxMRAALnCAACjhwpR_-U3zzMsM-APQQ": 1793435884.3392835,
     "fid:CAACAgEAAxUAAWrlklVWAiyjaRojyVa-uiwmTvVaAAJ6DAACSG0wR7IDLCNy0ir-PQQ": 1793434013.2849236,
     "fid:CAACAgEAAxUAAWrlklVyk-ckAiIK5qip6umamNmnAALhDgAC-z0pRwYOJktAuBRDPQQ": 1793430102.3299813,
+    "fid:CAACAgEAAxUAAWrlvayer2bE24b7Le_JvRHonuKvAAJACgACfpopR8NARWqHvTuoPQQ": 1793441198.1196141,
     "fid:CAACAgIAAxUAAWrlB7HR73gdRk5ivSuME0AKfS13AAKCAgACVp29Ctoil7Tbmco2PQQ": 1793395950.503756,
     "fid:CAACAgIAAxUAAWrlDkw4Crz43irqiJRqNTrK8OO6AAKAAgACVp29CqCjII2WjOH2PQQ": 1793396773.5319197,
     "fid:CAACAgIAAxUAAWrlDkwSlqGIBfjbUg-74BFqalS1AAKRAgACVp29ChPetSBAuAsiPQQ": 1793396306.1608667,
@@ -2129,6 +2135,7 @@
     "uid:AgADNQoAAqMhMUc": 1793431861.8601644,
     "uid:AgADOAcAAprZMUc": 1793413398.1577463,
     "uid:AgADPBIAAvcgKEc": 1793410296.7580628,
+    "uid:AgADQAoAAn6aKUc": 1793441198.1196117,
     "uid:AgADcQcAAvFcMEc": 1793429664.20229,
     "uid:AgADeQcAArW_MEc": 1793397562.9431028,
     "uid:AgADegwAAkhtMEc": 1793434013.2849212,
@@ -2144,7 +2151,7 @@
   "telegram_retry_until": {
     "yoda": 1793409087.085959
   },
-  "updated_at": 1793439861.576181,
+  "updated_at": 1793442042.9119844,
   "used": {
     "02021b16e6e97e6f298e65cc9ffdebcc674483625bf226c0a20bbba3cff62e8c": 1793439312.052786,
     "07c260430aecb653e37cae08acb12df7975589582c1bd447595f9ea945d711f4": 1793415695.7544928,
@@ -2187,8 +2194,10 @@
     "29e99522f663f4da7d4a03d6da8404d7c5c90e5bd831945a658b9f9b18f668ce": 1793433750.3697894,
     "2af1e0cdceb1eb7e94e8ee0475bba5454f64f5f9c879c2361a9b62c846514951": 1793420432.3388782,
     "2c1e6560d4e8da4b9134fabb4a30cd81356d975b9d144e46f27e8167ced771a6": 1793416735.3008819,
+    "2c5b39169be64df823c35a6d8dc8664d86b75fcf7b38d1f2e4769583a8ebc757": 1793441599.7294111,
     "2cc04da3dcd52c2ac2265f7d6ee0ba04c338c9bec98ebb6ba01953cb0d70ee66": 1793414968.180366,
     "2cce0ee0c8b4077bc6d9dc28735ec4b42639018f702928858df73045f98cfff2": 1793416480.5519683,
+    "2d5638dadeda197caf0a59f334883f20f43c44880beda236b1c32c8614fed367": 1793441599.2041655,
     "2d8bd081cdc0ba9ea2c5987e3bda32e983ab1b4a1998e4736dad9fa4c6dd5ddd": 1793427817.4268968,
     "2e5e2d984f4cbd46422ca9cb65d05af28fe65aac68b87f67aa7e50a0258424d6": 1793432945.443382,
     "2e674373eadd9bdf52d9511307477e04a11f76ca49793530f97f6c94427d4e9e": 1793423125.9072921,
@@ -2199,10 +2208,13 @@
     "3072c1bfef7cfc7f39a19253d291a7b04d53dcd6c0056511ccee49079cc7bc07": 1793416160.4615173,
     "30ecf9fabe492f89d74477799220cc3a712b4e2e6d33f867e190640ced26e9d4": 1793397564.0167236,
     "317a336541d2130b1a7822430e0716f556160c62952a3981ae2e7d4f7ea800ab": 1793438658.9092171,
+    "31ce1e03abd1795663bd95cfe0a77dff69265d8d88ddd036f20e1f1cba29d39e": 1793441424.0889874,
     "337b964b5e67579fd334b98c2e7333ba3735b687d3a35e4ebe89fcd9e01a3fae": 1793426812.9789073,
     "340187d0bd5de5ac717d17f9b0d46fcad849b62e2bfd402b532e6c371932c892": 1793431253.544205,
+    "341595d06e358c8810cb8ff7f8c70a0489a7ae7aa743c200f6b121fa8d39de08": 1793441196.5439944,
     "34220c8177ccc2d3bc9efc506c6b8f1478419922173bdb98840acc79c14aab72": 1793434951.0087106,
     "359d6aa2236372ff651367cf1d2f349b02f0ee55efe6f87d80a8c583be3b8342": 1793433266.714836,
+    "36c1d86c42a265e951c011a5aee973bcfe734d89e47d2830ba5394c37c441601": 1793442042.908869,
     "36d0576a366894f22ea4fd091a0bae8dde65ccc3f6dd4a5ba9fb933584e1e4e7": 1793433816.4267752,
     "37256497b4a21dcfc864e285fdc871e86745f62160c82719c613a46869d4634e": 1793426535.9658656,
     "3a21b9b42ff64e783275feab38d70b7cf76c28f4ec64d0ca9a532b12ba91228a": 1793437923.3177106,
@@ -2210,6 +2222,7 @@
     "3db13a4f5efea6701910be4ccb12a492c15adb5bb8b59f79e1c909873567f82c": 1793419149.7991407,
     "3e5dbeddd26fcf31183d9d85d3d7973b4dd393c26ca3a31f349949744dcf6263": 1793424392.8078115,
     "3f91d7760ceeba654cd57f4c2290167e9908fa8faffbc92613b453e4f8de509c": 1793402283.0550861,
+    "3fb559ac02ee29eb1ea82b8a2791e4b5b173c115cd80e2b92887981bd769b964": 1793440515.053312,
     "3fe261554d5a54f3f632513962ac1101c6a266b7e428c5a3684333415996ea74": 1793431000.558579,
     "400d89e50d8634b6e4601dbb17c8c28b99080032be6cee472564028166d48443": 1793422673.3064399,
     "40a778574a7c78d9f7770bd7179bb7054863c9d2ef02d274ae807989223750fc": 1793429072.8564925,
@@ -2222,6 +2235,7 @@
     "46895e1c9db0656648f972b80d30274bd489ee708a2c969335488133adef14f7": 1793436410.7226968,
     "47d5abd2cc622f2e71d9e58e28b02c4d360434a6a7a1b45b32644a0503e3f2fe": 1793416161.1853719,
     "4844a8be42b96b8f1cda4f9978cbcbb6d9041be4bbe2290203b2647451833238": 1793400554.2450414,
+    "48f59f42c60d83590c75fdaa7252beb7e0c050cddd55a8508aa616b582e22632": 1793439917.838081,
     "49c6bd052448285da7bc7ca6e5cc2fe7a4367dee40d6af5a22efd853a203a353": 1793438294.804903,
     "4b452b8b79e36c02c65ba0ab0d8d27138182a3cc25c54997011da6fe9951fe0d": 1793400894.9654374,
     "4de29901b7f40299d7ca0609f850ebadce01aa38f51ff4acda0c1860e80087a7": 1793430100.6793478,
@@ -2260,9 +2274,11 @@
     "6bf9c549a22efbb5db24bc79f123df649969b0b820a346e4f079c0a06caacf09": 1793427444.1456661,
     "6c85bc2461e08e0ba22925a5d07e0174d8b68e2f2815aca56ac4546d262882f9": 1793434285.4281273,
     "6d73012cb3199ef21d9133cc6dfc30f6bc197021fa2f89420ed56a06fa1d30f7": 1793438359.243894,
-    "6da85d8d60976a86396f178f8168631d51239a246087cb041bb6d310e9cea81c": 1793402918.5063343,
+    "6da85d8d60976a86396f178f8168631d51239a246087cb041bb6d310e9cea81c": 1793441639.1937284,
     "6db6f770180d86323e5d2d37bcd27ecc84e537e635c09ac896085db4a4934524": 1793438294.3399513,
+    "6ddc203fedfd9608c331442b856372d6b7c184efa64114b24f46fd2997b88206": 1793439917.8380916,
     "6dfdbd8da88e1a9a304a0cfb2f94d833e7f9957ea9f338e7fb94dae4581e8c20": 1793429381.9398553,
+    "6f11f26c9123fe1eb2a13ed45f18f00554099f5549f3107826b9241688ed7605": 1793440865.9391594,
     "6fb4865b04136b7d137096ef911905abf159b63c2b621a7b8fddb78ddac59097": 1793399936.8489068,
     "71e070328415b798c69e80474ffbb067fbe62ea9beddd8cb065447315ac3c201": 1793415939.26153,
     "726fa055b0880acd317fd7bf4a7582582f7347f9f6cdfcfd64ad5e50a09271c8": 1793406477.9375677,
@@ -2277,6 +2293,7 @@
     "78099d1690ef62b4085864e7ac2e00ed3588442921000cf713850c3e768f479d": 1793427013.9251192,
     "784993d60f395a0123c58e52ac520be4a252e01293cc029ea86eda47fc1f84df": 1793418834.6084893,
     "78d9490aa5b29446ecc1c4e96b8d1c97c0fc5921078b85cd77e1d902c5d364c5": 1793417263.7130492,
+    "794db8122d5d14ef636c17f8cdb44aef814d53f102638321ae21a9c408ef6693": 1793441424.656454,
     "7a35097078e03620c447de937121a5a084ffa4b9dacf2ae4c0f64cb71cdc3208": 1793396774.8811584,
     "7b5e42519c8c038caf54ec2d4a84efab61a3558b14f89220a199d4645424089a": 1793426272.9360883,
     "7b7ee4ec42379c86d95629615c948a26e1996909445cc2e14abad5c5230f601d": 1793417852.859943,
@@ -2293,6 +2310,7 @@
     "83c0e0644c5d0bde2e947d1ebed3242feaaa6f4bdaf5881fb69ab4610bc0b50e": 1793402601.9414892,
     "83ec5acadc1ed67f8875225cec09d244e89512b09d29c13e29f452a99be38a58": 1793425500.0893648,
     "86cc97fcceadafc7768caeeaa7f04da21e2f6af431f8352b800c4dd17d3a4122": 1793401565.403699,
+    "87ee30399ffea69db5be823b79bf3ebe77147d0cebc6236cac01294b93b95ecd": 1793441195.8939843,
     "88762b6a54efca3e7957bc57a90727c28cf19ca403e98fc33467fb3511a09290": 1793420698.3611014,
     "88e1f577600390d84c40896b886c59db636647bc0e13bce41f62e4af8ac105a0": 1793436410.1380475,
     "892f002a4887f51c29e150455a6fb0db4171d801691ae0a218b7661df34a07fb": 1793434285.4281113,
@@ -2345,6 +2363,7 @@
     "b3ef536aafd8106ebb5c8bc0d9be56cce3303b4fe2c42a9e0298ce4de6090ac6": 1793399937.4740076,
     "b4f103bdc7519b9baf3bbb276278ff5da145e8ccc080a5fb9627127456077cd9": 1793412153.3148735,
     "b5397f22bb688bdc7db8de459240e0f1da4e324b30c365b0a336ee1b9c5a6548": 1793405711.973945,
+    "b78a7deab7ee6c9b492c76fd831f3afd40cb1331c6106ad8e82a8790ed3b56a7": 1793440866.4698782,
     "b791b6367d248b6c55df2e0f02438e4c32b12da1f7e94a2d741823d53bcfaa2b": 1793401192.3504374,
     "b93f12b789b4e912caf00889edb41f313e3e62b2bd664950c22f6ca9c9aa49c1": 1793400894.9654374,
     "b9e6ca1ecb617fecadb6e4f8ca9e4cde442e8f2e61cd9538185926ffb24886f4": 1793430647.7767491,
@@ -2355,6 +2374,7 @@
     "c1374cc4129e4dad5dea4a7e3b37b3044a4bdd40e87ccdf0361dc2a750a280f1": 1793408996.2940273,
     "c164dc9dae20306379fb595c52f3f35b4eb9cd6469d451691c37eb52620e665f": 1793424698.4394996,
     "c3d6a95c042d9f74e8a19da94f35e97431179247feb3e6841d270ccd3e609f15": 1793430083.8848202,
+    "c41eac1db2e9f9ca09db2edffeebc5b384a101785c0248091a1b447c323c985a": 1793440514.486273,
     "c4232cadd778225c70fb6a0c6a81beb470c154b92ebaf623bec7924c6f7aa580": 1793400233.3161407,
     "c4b3e9c30ca87462914b589c30ecf482b48074cb1a7117582d05edf8da8d38c0": 1793420431.7048776,
     "c4bac26b87919ea950c0c9a52df956312a684518ca04b87695bd7073e12e73b9": 1793432676.8978434,
@@ -2362,6 +2382,7 @@
     "c560a8330c8243485ab65d73946ca48c5ceeaa12aeb10efdf19030ed7b9ff6f4": 1793428619.1202047,
     "c5ce7cd7c85b6d24a720a665ac95271379f07e61e095fa454703cc9ce54c09e4": 1793434628.471796,
     "c7cecd0745965c0a05d95baf91dad85b529a019b8fe3064c76ee0102c6056ca0": 1793401877.9942427,
+    "ca5c1b3e839da4830834b0695212b697520c0ec92450d35b6d2159363e5feebb": 1793440515.0532823,
     "ca8258944d961d92464e53de910d3120a67580e3a1bf5eff5da5559c9e37c008": 1793397595.838583,
     "cb42fc2b754dfa215ec849c9b6acab68d84deee7a33cfb0d6b22f9d82a1318ae": 1793424698.9104083,
     "cbe3ecc445c74bdb23df862bc0bf057da0997bacc8e34507654f012f10a23c2a": 1793429662.7731616,
@@ -2373,6 +2394,7 @@
     "d2540ba53f9e145103b451b36fc26cb528c5d037681c227d8ec3a660ba3c8820": 1793437824.3158004,
     "d29d33998a840038dba8d698ad1fd3df9b59c24c6c198b9cf9b325c38ee654af": 1793418833.9326992,
     "d31a5e328859a29e2bc8fc408411e9fa74add2c45de841382da69ee5d8d67e3a": 1793423819.4314885,
+    "d371dd0ec6b2e33fdc345a03c02b11caa39b553048e75702b5540646250fd640": 1793442042.3605158,
     "d3e6ae7a4b6de093ed407cb0d5e244e88429db77cebf971dadf53d20707ce0af": 1793406477.3617857,
     "d467b1f751c28c2ac90f290210594db843e62775626239eba39d02d2968daa9e": 1793435972.9708135,
     "d4f5baa3d6c3a86c0118d83c93498ea8e7b06bd92a1982df74c82984b7d1aed4": 1793437824.8628461,
@@ -2422,6 +2444,7 @@
     "f618cba48c1337e68e220208ffaed991819d3c50e7ea50615419dac74ecbff4a": 1793406849.6780999,
     "f64337d885f247436cd2cb43ad2b24ff7787afd970ff72f3247edada584630b1": 1793417621.7293282,
     "f6d937f4048060340621781a3a1f92bd0645683b2f0816e71f100dcb32a6f1be": 1793399199.4740376,
+    "f764275aaf47da79f93166fbf4c1c1b92a2d02568a8bd69f1722cb91dd56bb89": 1793439916.9296274,
     "f7af8726c9800035ebe93c4f49839f14627d8b9743dc619b48161b43ffed6e57": 1793431586.9795685,
     "fb3fe170179ac36f879ea2e02822774e1f9b0463206b9b836d38021a1e0e7d00": 1793409617.5493102,
     "fbbfd0fb27a52e0367c1788d010a39d81344483fcc2ad22ed31820858cfa81e6": 1793425708.5476546,
