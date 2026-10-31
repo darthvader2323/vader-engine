@@ -42,6 +42,10 @@ class CommunityTests(unittest.TestCase):
         self.reaction_step = patch.object(engine, "maybe_sticker", return_value=0)
         self.reaction_step.start()
         self.addCleanup(self.reaction_step.stop)
+        self.scripture_function = engine.daily_scripture
+        self.scripture_step = patch.object(engine, "daily_scripture", return_value=0)
+        self.scripture_step.start()
+        self.addCleanup(self.scripture_step.stop)
         moods = patch.object(engine, "sticker_moods", return_value={"serious"})
         moods.start()
         self.addCleanup(moods.stop)
@@ -562,6 +566,76 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(len({line for pair in MARS_CHOICES.values() for line in pair}), 14)
         for speaker, lines in MARS_CHOICES.items():
             self.assertEqual(render_style(lines[0], "fan", "question:mars_trip_choice", speaker, "plain"), lines[1])
+
+    def scripture_feed(self, day=None):
+        day = day or dt.date(2026, 10, 31)
+        return {"votd": {"version_id": "KJV", "year": str(day.year), "month": str(day.month), "day": str(day.day),
+                "rawtext": "Let all your things be done with charity.", "reference": "1 Corinthians 16:14",
+                "permalink": "https://www.biblegateway.com/passage/?search=1%20Corinthians%2016%3A14&amp;version=KJV"}}
+
+    def test_daily_scripture_preserves_exact_version_words_and_reference(self):
+        from daily_scripture import verse_item
+        day = dt.date(2026, 10, 31)
+        item = verse_item(self.scripture_feed(), day)
+        self.assertEqual(item, ('“Let all your things be done with charity.” — 1 Corinthians 16:14 (KJV)',
+                                'scripture:kjv:1corinthians16:14'))
+        self.assertEqual(render_style(item[0], "bible", item[1], "yoda", "plain"), item[0])
+
+    def test_scripture_rejects_stale_wrong_version_html_and_unverified_links(self):
+        from daily_scripture import verse_item
+        for change in ({"day": "30"}, {"day": "32"}, {"version_id": "NIV"}, {"rawtext": "<script>wrong</script>"},
+                       {"reference": "Made Up 1:2"}, {"permalink": "https://["},
+                       {"permalink": "https://example.org/passage/?search=1+Corinthians+16%3A14&version=KJV"},
+                       {"permalink": "https://www.biblegateway.com/passage/?search=John+1%3A1&version=KJV"}):
+            data = self.scripture_feed()
+            data["votd"].update(change)
+            with self.subTest(change=change):
+                self.assertIsNone(verse_item(data, dt.date(2026, 10, 31)))
+
+    def test_daily_scripture_posts_once_after_local_noon_across_checkpoint(self):
+        outgoing = []
+        day = dt.date(2026, 10, 31)
+        morning = dt.datetime(2026, 10, 31, 11, 59, tzinfo=engine.ZONE).timestamp()
+        afternoon = dt.datetime(2026, 10, 31, 12, 1, tzinfo=engine.ZONE).timestamp()
+        with patch.object(engine, "jget", return_value=self.scripture_feed(day)) as source, \
+             patch.object(engine, "tg", side_effect=self.api_for([], outgoing)):
+            with patch.object(engine.time, "time", return_value=morning):
+                self.assertEqual(self.scripture_function(), 0)
+                source.assert_not_called()
+            with patch.object(engine.time, "time", return_value=afternoon):
+                self.assertGreater(self.scripture_function(), 0)
+                engine.STATE = merge_state({}, json.loads((engine.S / "runtime.json").read_text()))
+                self.assertEqual(self.scripture_function(), 0)
+        self.assertEqual(len(outgoing), 1)
+        self.assertNotIn("reply_parameters", outgoing[0][1])
+        self.assertNotIn("https://", outgoing[0][1]["text"])
+        engine.maybe_sticker.assert_not_called()
+
+    def test_daily_scripture_known_failure_retries_unknown_delivery_stays_claimed(self):
+        afternoon = dt.datetime(2026, 10, 31, 12, 1, tzinfo=engine.ZONE).timestamp()
+        for outcome in ({"ok": False, "error_code": 403}, {"ok": False, "uncertain": True}):
+            engine.STATE = engine.initial_state()
+            outgoing = []
+            with self.subTest(outcome=outcome), patch.object(engine.time, "time", return_value=afternoon), \
+                 patch.object(engine, "jget", return_value=self.scripture_feed()), \
+                 patch.object(engine, "tg", side_effect=self.api_for([], outgoing, outcome)):
+                self.assertEqual(self.scripture_function(), -1 if outcome.get("uncertain") else 0)
+                self.assertEqual("bible_day:2026-10-31" in engine.STATE["last_topic_at"], bool(outcome.get("uncertain")))
+                if outcome.get("uncertain"):
+                    self.assertEqual(self.scripture_function(), 0)
+                    self.assertEqual(len(outgoing), 1)
+
+    def test_daily_scripture_waits_for_people_and_does_not_replay_a_used_passage(self):
+        engine.STATE["last_topic_at"]["human_activity"] = time.time()
+        self.assertEqual(engine.beat(), 0)
+        engine.daily_scripture.assert_not_called()
+        afternoon = dt.datetime(2026, 10, 31, 12, 1, tzinfo=engine.ZONE).timestamp()
+        engine.STATE["used"][engine.digest("scripture:kjv:1corinthians16:14")] = afternoon - 86400
+        with patch.object(engine.time, "time", return_value=afternoon), \
+             patch.object(engine, "jget", return_value=self.scripture_feed()), patch.object(engine, "send") as send:
+            self.assertEqual(self.scripture_function(), 0)
+        send.assert_not_called()
+        self.assertIn("bible_day:2026-10-31", engine.STATE["last_topic_at"])
 
     def test_scheduled_rap_has_no_scripted_opinion_fallback(self):
         with patch.object(engine, "youngboy", return_value=[]):

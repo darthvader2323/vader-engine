@@ -23,6 +23,7 @@ from writing_styles import daily_styles, render_style
 from reactions import comment_mood, sticker_moods
 from greetings import is_greeting, greeting_line
 from human_questions import fan_question_key, fan_reply, requests_update, matches_requested_subject
+from daily_scripture import FEED_URL as SCRIPTURE_FEED, verse_item
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -1155,11 +1156,45 @@ def continue_roleplay():
     return sent
 
 
+def daily_scripture():
+    now = time.time()
+    local = dt.datetime.fromtimestamp(now, ZONE)
+    day_key = "bible_day:" + local.date().isoformat()
+    if local.hour < 12 or day_key in STATE["last_topic_at"]:
+        return 0
+    item = verse_item(jget(SCRIPTURE_FEED), local.date())
+    if not item:
+        return 0
+    text, key = item
+    if repeated_content(text, key, "bible"):
+        # The feed must not replay an already used passage on another day.
+        STATE["last_topic_at"][day_key] = now
+        persist()
+        return 0
+    speaker = choose_speaker()
+    if not speaker:
+        return 0
+    # Claim the local calendar day before sending. Unknown delivery keeps the
+    # claim, while a definite rejection can be retried without duplicating it.
+    STATE["last_topic_at"][day_key] = now
+    persist()
+    sent = send(speaker, text, content_key=key, kind="bible", allow_sticker=False)
+    if not sent:
+        STATE["last_topic_at"].pop(day_key, None)
+        persist()
+        return 0
+    log("DAILY SCRIPTURE %s: %s" % ("SENT" if sent > 0 else "DELIVERY UNKNOWN", key))
+    return sent
+
+
 def beat():
     if time.time() - STATE["last_topic_at"].get("human_activity", 0) < 90:
         return 0
     if STATE.get("roleplay_pending"):
         return 0
+    scripture = daily_scripture()
+    if scripture:
+        return scripture
     rotation = ["starwars", "crypto", "sports", "world", "elon", "deals", "rap", "fragment"]
     cooldowns = {"starwars": 900, "crypto": 1800, "sports": 600, "world": 900,
                  "elon": 1800, "deals": 3600, "rap": 3600, "fragment": 1800}

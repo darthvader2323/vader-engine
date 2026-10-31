@@ -5,7 +5,7 @@ import re
 from fan_voices import DISCUSSION_VOICES
 
 NEWS_KINDS = {"world", "elon", "deals", "rap", "crypto", "sports", "fragment"}
-SIMILARITY_KINDS = {"world", "elon", "deals", "rap", "starwars", "fragment", "fan"}
+SIMILARITY_KINDS = {"world", "elon", "deals", "rap", "starwars", "fragment", "fan", "bible"}
 STOP_WORDS = set("a an and are as at be been by for from has have in is it of on or that the this to was were will with".split())
 
 # Short, authored fan-persona exchanges. Each has a different argument in the

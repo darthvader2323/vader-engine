@@ -58,6 +58,15 @@ unofficial fictional personas, not independent people, customers or endorsements
   cannot attach a separate reaction GIF. Existing pin/reply histories survive.
 - Scheduled posts rotate between Star Wars, NBA YoungBoy, sports, crypto, business deals,
   Elon Musk, world news and dated Fragment sale reports when available.
+- One daily KJV Bible passage is eligible from noon America/Chicago, using
+  Bible Gateway's documented public Verse of the Day feed. The worker checks
+  the feed's actual date, version, Bible reference and canonical source link.
+  Scripture wording and its reference are preserved exactly; no article footer,
+  promotion, unrelated GIF or reaction crowd is attached. The local-day claim
+  uses the existing checkpointed timing ledger and survives restarts and unknown
+  deliveries. Failed/stale feeds and already used passages are skipped. Human
+  conversation and pending fan threads keep their existing priority. This adds
+  no second poster or separate automation. Scheduled execution remains best effort.
 - News freshness is checked before rendering. Failed feeds are skipped.
 - Scheduled Star Wars discussion can use twelve short, authored two-persona
   exchanges with distinct viewpoints. The second turn is a native reply after
