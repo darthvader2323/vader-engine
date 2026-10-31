@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 5a133dd739798c1cc33d266dc852a97b972c1e9a
+          ref: 04052e7717270e7e2a765f13ebf031a3bcb4b722
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -26,7 +26,7 @@ jobs:
       - name: Publish validated character video packs
         env:
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
-          CHAT_HANDLE: '@darthvaderchat2'
+          CHAT_HANDLE: '@vadersocial'
         run: python3 sticker_setup.py
       - uses: actions/upload-artifact@v4
         with:

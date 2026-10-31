@@ -19,7 +19,7 @@ jobs:
           python-version: '3.11'
       - name: Inspect delivery without posts or acknowledgements
         env:
-          CHAT_HANDLE: '@darthvaderchat2'
+          CHAT_HANDLE: '@vadersocial'
           TG_JOHNNY: ${{ secrets.TG_JOHNNY }}
           TG_YODA: ${{ secrets.TG_YODA }}
           TG_LUKE: ${{ secrets.TG_LUKE }}

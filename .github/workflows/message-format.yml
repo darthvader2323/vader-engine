@@ -28,9 +28,9 @@ jobs:
                   try: return json.loads(error.read())
                   except (ValueError, OSError): return {"ok": False, "error_code": error.code}
               except (OSError, ValueError): return {"ok": False, "uncertain": True}
-          group = api(tokens["Bruce Wayne"], "getChat", {"chat_id": "@darthvaderchat2"})
+          group = api(tokens["Bruce Wayne"], "getChat", {"chat_id": "@vadersocial"})
           chat = group.get("result") or {}
-          if not group.get("ok") or chat.get("username", "").lower() != "darthvaderchat2" or chat.get("title") != "Darth Vader Chat" or chat.get("type") not in ("group", "supergroup"):
+          if not group.get("ok") or chat.get("username", "").lower() != "vadersocial" or chat.get("title") != "Darth Vader Chat" or chat.get("type") not in ("group", "supergroup"):
               raise SystemExit("Authorized group could not be verified; no messages changed")
           fixed = 0
           for item in targets:
