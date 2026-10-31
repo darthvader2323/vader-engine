@@ -34,6 +34,15 @@
     "world": 1793477088.6586924
   },
   "league_cursor": 3,
+  "ledger_recoveries": {},
+  "ledger_versions": {
+    "last_topic_at": {},
+    "recent_content": {},
+    "replies": {},
+    "sticker_counts": {},
+    "stickers": {},
+    "used": {}
+  },
   "next_beat": 1793477960.1410627,
   "offsets": {
     "yoda": 910447896
