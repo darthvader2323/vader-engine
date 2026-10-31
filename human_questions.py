@@ -7,6 +7,7 @@ import re
 
 
 MARS_CHOICES = {
+    "hitman": ("I would want the complete route and a working return plan before deciding. A launch is only one stage of the trip.", "Show me the whole trip first. Getting there is only half of it."),
     "assassin": ("A return plan would be my first question. A distant horizon is tempting, but the way home deserves just as much thought.",
                  "A new horizon sounds good. Show me the way home first."),
     "brucewayne": (

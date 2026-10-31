@@ -3,6 +3,11 @@ import re
 
 
 LINES = {
+    "hitman": (
+        "Aye, you made it. What is good?", "Welcome in. Got a topic for us?",
+        "Hey, take a seat in the chat.", "Good to see you arrive. How goes it?",
+        "Welcome. What is your take today?", "Hey there, jump in when you like.",
+        "Aye, another voice at the table. How are things?", "You are in. What should we talk about?"),
     "assassin": (
         "Aye, welcome in. What brings you to the room?", "Hey, a place for another voice. How are you?",
         "Welcome. Bring your best Star Wars take.", "Good to have you here. What caught your eye?",

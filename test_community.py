@@ -323,6 +323,17 @@ class CommunityTests(unittest.TestCase):
     def test_fragment_sale_question_can_mention_a_character_username(self):
         self.assertEqual(engine.topic("Who bought @yoda on Fragment?"), "fragment")
 
+    def test_hitman_has_a_distinct_catalog_and_shared_history(self):
+        from hitman_voice import DISCUSSIONS as catalog
+        self.assertEqual(set(catalog), {idea for idea, _ in DISCUSSIONS})
+        for idea, voices in DISCUSSIONS:
+            key = "discussion:starwars:" + idea
+            self.assertEqual(voices["hitman"], catalog[idea][0])
+            self.assertEqual(render_style(voices["hitman"], "starwars", key, "hitman", "plain"), catalog[idea][1])
+            self.assertNotEqual(*catalog[idea])
+            engine.STATE["used"][engine.digest(key)] = time.time()
+        self.assertEqual(engine.available_content("starwars", "hitman"), [])
+
     def test_assassin_has_a_distinct_catalog_and_shared_history(self):
         from assassin_voice import DISCUSSIONS as catalog
         self.assertEqual(set(catalog), {idea for idea, _ in DISCUSSIONS})
@@ -574,7 +585,7 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(fan_question_key("If Elon could send you to Mars, would you go?"), "mars_trip_choice")
         for factual in ("Did Elon send people to Mars?", "When will SpaceX reach Mars?", "Latest Mars news?"):
             self.assertIsNone(fan_question_key(factual))
-        self.assertEqual(len({line for pair in MARS_CHOICES.values() for line in pair}), 16)
+        self.assertEqual(len({line for pair in MARS_CHOICES.values() for line in pair}), 18)
         for speaker, lines in MARS_CHOICES.items():
             self.assertEqual(render_style(lines[0], "fan", "question:mars_trip_choice", speaker, "plain"), lines[1])
 

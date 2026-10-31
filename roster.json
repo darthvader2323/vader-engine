@@ -76,7 +76,7 @@
     "name": "hitman",
     "display": "hitman",
     "persona": "hitman",
-    "pack": "vader",
+    "pack": "",
     "env": "TG_HITMAN",
     "desks": [
       "general"
