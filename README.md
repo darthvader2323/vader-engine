@@ -236,6 +236,14 @@ and compared for 48 hours; checkpoint merges preserve both workers' recent histo
 The checkpoint updates only that file and merges ledgers/offsets, preserving concurrent
 code changes. Checkpoints require the workflow's repository-scoped GITHUB_TOKEN.
 
+Normal production runs confirm durable ledger saves during operation, including the
+claims made before sending text or a moving reaction. The single posting process
+receives Telegram credentials; a separate local checkpoint helper receives only the
+existing repository credential and no Telegram credentials. If the helper cannot
+confirm a save, posting stops. The final workflow checkpoint remains as a fallback.
+Versioned claims preserve both uncertain deliveries and explicit rollbacks after a
+known rejection, so a delayed older checkpoint cannot undo a successful rollback.
+
 GitHub scheduled runs are best effort: they can be delayed or skipped. This setup does not
 guarantee uninterrupted operation. A supervised persistent host and durable external state
 are the appropriate next step for stronger uptime requirements or a much larger deployment.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Disclosed character bots and sourced updates for Darth Vader Chat."""
 import datetime as dt
+import copy
 import email.utils
 import hashlib
 import html
@@ -24,6 +25,7 @@ from reactions import comment_mood, sticker_moods
 from greetings import is_greeting, greeting_line
 from human_questions import fan_question_key, fan_reply, requests_update, matches_requested_subject
 from daily_scripture import FEED_URL as SCRIPTURE_FEED, verse_item
+from checkpoint import apply_recovery, confirm_persist, version_changes
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -144,14 +146,25 @@ LEGACY_STICKERS = set(load("stk_used.json", []))
 _old_offsets = load("offsets.json", {})
 if isinstance(_old_offsets, dict) and _old_offsets.get("main"):
     STATE["offsets"].setdefault("main", _old_offsets["main"])
+_LAST_STATE = STATE
+_PERSISTED_STATE = copy.deepcopy(STATE)
+_recovery_path = HERE / "state" / "runner-recovery.json"
+if _recovery_path.is_file():
+    apply_recovery(STATE, json.loads(_recovery_path.read_text()))
 
 def persist():
+    global _LAST_STATE, _PERSISTED_STATE
     with LOCK:
+        if STATE is not _LAST_STATE:
+            _LAST_STATE, _PERSISTED_STATE = STATE, {}
         S.mkdir(parents=True, exist_ok=True)
         STATE["updated_at"] = time.time()
+        version_changes(STATE, _PERSISTED_STATE, STATE["updated_at"])
         tmp = S / "runtime.json.tmp"
         tmp.write_text(json.dumps(STATE, sort_keys=True, indent=2))
         tmp.replace(S / "runtime.json")
+        _PERSISTED_STATE = copy.deepcopy(STATE)
+        confirm_persist()
 
 def digest(text):
     return hashlib.sha256(re.sub(r"\s+", " ", text).strip().casefold().encode()).hexdigest()
@@ -1086,11 +1099,18 @@ def sticker(who, text=None, kind=None, content_key=None, reply_to=None):
     if reply_to is not None:
         params["reply_parameters"] = {"message_id": int(reply_to),
                                       "allow_sending_without_reply": False}
+    # Claim the clip before Telegram can accept it and the runner can disappear.
+    sticker_keys = ("uid:" + item["file_unique_id"], "fid:" + item["file_id"])
+    old_count = counts.get(character, 0)
+    for key in sticker_keys:
+        STATE["stickers"][key] = time.time()
+    counts[character] = old_count + 1
+    persist()
     result = tg(token, "sendSticker", params)
-    if result.get("ok") or result.get("uncertain"):
-        STATE["stickers"]["uid:" + item["file_unique_id"]] = time.time()
-        STATE["stickers"]["fid:" + item["file_id"]] = time.time()
-        counts[character] = counts.get(character, 0) + 1
+    if not (result.get("ok") or result.get("uncertain")):
+        for key in sticker_keys:
+            STATE["stickers"].pop(key, None)
+        counts[character] = old_count
         persist()
     if result.get("ok"):
         log("MOVING STICKER %s pack=%s mood=%s" % (who, character, mood))
