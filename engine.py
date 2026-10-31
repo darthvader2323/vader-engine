@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 from conversation import (NEWS_KINDS, ROLEPLAY_THREADS, SIMILARITY_KINDS, compact_sources, discussion_items,
                           signature, similar)
 from writing_styles import daily_styles, render_style
+from reactions import comment_mood, sticker_moods
 
 HERE = Path(__file__).resolve().parent
 S = Path(os.environ.get("VADER_STATE_DIR", HERE / "state"))
@@ -519,7 +520,9 @@ def send(who, text, reply=None, content_key=None, kind=None):
         persist()
         if result.get("ok"):
             log("SENT %s%s style=%s" % (who, " reply" if reply_key else " scheduled", style))
-            return result["result"]["message_id"]
+            mid = result["result"]["message_id"]
+            maybe_sticker(who, body, kind, content_key, mid)
+            return mid
         log("DELIVERY UNKNOWN %s; no automatic duplicate send" % who)
         return -1
     if reply_key:
@@ -767,6 +770,7 @@ def available_content(kind, speaker, scheduled=False, question=None):
         selected = None
         if kind == "starwars":
             for idea, pattern in [
+                ("order66_loss", r"order\s*66|jedi.*loss"),
                 ("suit_life_support", r"life support|respirator|respiratory|medical equipment"),
                 ("breathing_sound", r"breathing|breath sound"),
                 ("padme_fear", r"padm[eé]|fear of los"),
@@ -928,7 +932,19 @@ def react_to_pin():
         return 1
     return 0
 
-def sticker(who):
+def maybe_sticker(who, text, kind, content_key, reply_to):
+    # The same context path covers broadcasts, native answers and fan threads.
+    # A service/help/pin message never gets an unrelated movie reaction.
+    mood = comment_mood(text, kind, content_key)
+    if mood and (mood != "serious" or random.random() < 0.4):
+        return sticker(who, text, kind, content_key, reply_to)
+    return 0
+
+
+def sticker(who, text=None, kind=None, content_key=None, reply_to=None):
+    mood = comment_mood(text, kind, content_key)
+    if not mood:
+        return 0
     token = TOK.get(who)
     if not token:
         return 0
@@ -953,30 +969,36 @@ def sticker(who):
     else:
         stickers = cached[1]
     fresh = []
-    for item in stickers:
+    for index, item in enumerate(stickers):
         fid = item.get("file_id")
         uid = item.get("file_unique_id")
         if not fid or not uid or not (item.get("is_animated") or item.get("is_video")):
             continue
         if fid in LEGACY_STICKERS or "fid:" + fid in STATE["stickers"] or "uid:" + uid in STATE["stickers"]:
             continue
+        if mood not in sticker_moods(character, pack, index):
+            continue
         fresh.append(item)
     if not fresh:
         # Newly published matching clips should be seen at the next opportunity,
         # rather than remaining hidden behind an exhausted one-hour cache.
         CACHE.pop(cache_key, None)
-        log("NO UNUSED MATCHING MOVING STICKER %s; skipped" % who)
+        log("NO UNUSED MATCHING MOVING STICKER %s mood=%s; skipped" % (who, mood))
         return 0
     counts = STATE.setdefault("sticker_counts", {})
     item = random.choice(fresh)
-    result = tg(token, "sendSticker", {"chat_id": CHAT, "sticker": item["file_id"]})
+    params = {"chat_id": CHAT, "sticker": item["file_id"]}
+    if reply_to is not None:
+        params["reply_parameters"] = {"message_id": int(reply_to),
+                                      "allow_sending_without_reply": False}
+    result = tg(token, "sendSticker", params)
     if result.get("ok") or result.get("uncertain"):
         STATE["stickers"]["uid:" + item["file_unique_id"]] = time.time()
         STATE["stickers"]["fid:" + item["file_id"]] = time.time()
         counts[character] = counts.get(character, 0) + 1
         persist()
     if result.get("ok"):
-        log("MOVING STICKER %s pack=%s" % (who, character))
+        log("MOVING STICKER %s pack=%s mood=%s" % (who, character, mood))
         return 1
     return 0
 
@@ -1080,8 +1102,6 @@ def beat():
             if mention_trillion:
                 STATE["last_topic_at"]["trillion_context"] = time.time()
             persist()
-            if sent > 0 and random.random() < 0.4:
-                sticker(speaker)
             return sent
     STATE["cursor"] = (cursor + 1) % len(rotation)
     persist()
@@ -1191,7 +1211,6 @@ def main():
     style_day = None
     log("ENGINE READY: %d configured character bots; disclosed activity; chat=%s" % (len(TOK), CHAT))
     try:
-        sticker(choose_speaker(["yoda"]))
         while not STOP.is_set() and time.monotonic() < deadline:
             answer_humans()
             continue_roleplay()

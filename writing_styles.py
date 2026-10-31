@@ -13,6 +13,12 @@ def daily_styles(speakers, day):
 # Changing reading style never creates a new content key or resets used history.
 PLAIN_NAMES = ("brucewayne", "yoda", "chewbacca", "lukeskywalker", "chucky")
 PLAIN_DISCUSSIONS = {
+    "order66_loss": (
+        "Yoda feels the Jedi dying during Order 66. That scene is so sad.",
+        "Sad, that Order 66 scene is. The Jedi's loss, Yoda feels.",
+        "Yoda looks so sad during Order 66. That part is hard to watch.",
+        "Yoda feels the loss during Order 66. It is a sad, quiet moment.",
+        "Yoda's Order 66 scene is sad. Even I stop joking for that part."),
     "presence": (
         "Vader stands still and the whole room watches. That is control.",
         "Still, Vader stands. Nervous, everyone else gets.",

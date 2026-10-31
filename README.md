@@ -76,6 +76,16 @@ unofficial fictional personas, not independent people, customers or endorsements
   only when one is configured. A missing or exhausted matching pack is skipped;
   another character is never substituted. This supersedes the earlier mixed-pack
   Darth Vader weighting.
+- Movie reactions also match the accompanying comment's mood. A reviewed catalog
+  labels the ordered clips in the owned character packs; unknown packs, unknown
+  slots, exhausted moods and mismatched emotions are skipped. A sad Yoda comment
+  cannot select a laughing clip or another character. The small rule-based mood
+  selector uses explicit cues, defaults uncertain tone to serious, and avoids
+  reactions to distressing real-world headlines. Successful topical comments,
+  including native answers and fan-thread turns, can attach a reaction as a
+  native reply to that exact comment. Failed/uncertain text deliveries, service
+  replies, pins and help do not trigger clips. There is no context-free startup
+  sticker. The permanent used-ID ledger still applies across every mood.
 
 ## Running
 
@@ -87,7 +97,7 @@ Run read-only connectivity checks with: python3 healthcheck.py
 This is a sourced-update worker with a finite authored discussion catalog in
 conversation.py. No open-ended language-model API is configured. Exhausted ideas are
 skipped instead of being reworded and replayed.
-The catalog contains 35 different Star Wars discussion ideas with separate authored
+The catalog contains 36 different Star Wars discussion ideas with separate authored
 voices, grounded in the official references listed in DISCUSSION_REFERENCES.
 Star Wars becomes eligible again after 15 minutes, sports after 10 minutes, and
 other topics after 15–60 minutes. Each still requires a genuinely unused item.

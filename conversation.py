@@ -51,6 +51,15 @@ ROLEPLAY_THREADS = [
 # Each idea has one shared key, regardless of which character delivers it.
 # Questions are occasional; these are not interchangeable engagement banners.
 DISCUSSIONS = [
+    ("order66_loss", {
+        "default": "Yoda sensing the Jedi being killed during Order 66 is such a sad moment. His quiet reaction makes the loss feel enormous.",
+        "yoda": "Through the Force, the Jedi's loss Yoda feels. Sad, that quiet moment during Order 66 remains.",
+        "lukeskywalker": "Yoda sensing the Jedi fall during Order 66 gets to me. That small reaction carries so much sadness.",
+        "chewbacca": "Yoda's reaction to Order 66 is rough. Seeing someone that strong feel so much loss makes the scene sadder.",
+        "brucewayne": "Yoda's reaction during Order 66 gives a galaxy-wide loss a personal scale. It is a quietly sad scene.",
+        "chucky": "Even I go quiet for Yoda's Order 66 scene. That little pause carries a lot of sadness.",
+        "darthvader": "Yoda sensing the loss during Order 66 makes the destruction of the Jedi feel painfully personal.",
+    }),
     ("presence", {
         "default": "Vader can hold a scene through stillness. The pause before he moves does a lot of the work.",
         "yoda": "Still, Vader stands. Uncomfortable, the room becomes. Much can a pause accomplish.",

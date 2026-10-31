@@ -37,6 +37,14 @@ class CommunityTests(unittest.TestCase):
         tone = patch.object(engine, "writing_style", return_value="analytical")
         tone.start()
         self.addCleanup(tone.stop)
+        # These existing routing/format tests isolate the new optional GIF step;
+        # reaction integration and real catalog order are covered separately.
+        self.reaction_step = patch.object(engine, "maybe_sticker", return_value=0)
+        self.reaction_step.start()
+        self.addCleanup(self.reaction_step.stop)
+        moods = patch.object(engine, "sticker_moods", return_value={"serious"})
+        moods.start()
+        self.addCleanup(moods.stop)
 
     def message(self, update_id=100, mid=300, text="How much for Instagram verification?", username="visitor"):
         return {"update_id": update_id, "message": {
@@ -170,8 +178,8 @@ class CommunityTests(unittest.TestCase):
             {"file_id": "moving", "file_unique_id": "unique", "is_video": True}]}}, {"ok": True}]
         with patch.object(engine, "PACKS", {"yoda": "one-pack"}), \
              patch.object(engine, "tg", side_effect=responses):
-            self.assertEqual(engine.sticker("yoda"), 0)
-            self.assertEqual(engine.sticker("yoda"), 1)
+            self.assertEqual(engine.sticker("yoda", "A quiet moment."), 0)
+            self.assertEqual(engine.sticker("yoda", "A quiet moment."), 1)
 
     def test_failed_avatar_does_not_repeat_successful_profile_writes(self):
         calls = []
@@ -581,7 +589,7 @@ class CommunityTests(unittest.TestCase):
         self.assertIn("https://www.coingecko.com/", raw)
         body, _ = compact_sources(render_style(raw, "crypto", key, "yoda", "plain"), "crypto")
         self.assertIn("$12.00", body)
-        self.assertIn("down 1.00%", body)
+        self.assertRegex(body, r"(?:down 1\.00%|1\.00% lower)")
         self.assertNotIn("CoinGecko", body)
 
     def test_exhausted_sticker_cache_can_see_new_clips_without_resetting_history(self):
@@ -591,14 +599,14 @@ class CommunityTests(unittest.TestCase):
         engine.STATE["stickers"]["uid:old-uid"] = time.time()
         with patch.object(engine, "PACKS", {"yoda": "matching-pack"}):
             engine.CACHE["stickers:yoda:matching-pack"] = (time.time()+3600, [old])
-            self.assertEqual(engine.sticker("yoda"), 0)
+            self.assertEqual(engine.sticker("yoda", "A quiet moment."), 0)
             def api(token, method, params):
                 if method == "getStickerSet":
                     return {"ok": True, "result": {"stickers": [old, fresh]}}
                 self.assertEqual(params["sticker"], "new-file")
                 return {"ok": True, "result": {"message_id": 900}}
             with patch.object(engine, "tg", side_effect=api):
-                self.assertEqual(engine.sticker("yoda"), 1)
+                self.assertEqual(engine.sticker("yoda", "A quiet moment."), 1)
         self.assertIn("uid:old-uid", engine.STATE["stickers"])
         self.assertIn("uid:new-uid", engine.STATE["stickers"])
 
@@ -892,8 +900,8 @@ class CommunityTests(unittest.TestCase):
             return {"ok": False}
         with patch.object(engine, "PACKS", {"yoda": "yoda-pack", "chucky": "chucky-pack"}), \
              patch.object(engine, "tg", side_effect=api):
-            self.assertEqual(engine.sticker("yoda"), 1)
-            self.assertEqual(engine.sticker("chucky"), 0)
+            self.assertEqual(engine.sticker("yoda", "A quiet moment."), 1)
+            self.assertEqual(engine.sticker("chucky", "A quiet moment."), 0)
         self.assertEqual(outgoing, ["yoda-token-moving"])
         self.assertIn("uid:shared-moving", engine.STATE["stickers"])
 
@@ -912,7 +920,7 @@ class CommunityTests(unittest.TestCase):
         with patch.object(engine, "PACKS", {"vader": "vader", "yoda": "yoda"}), \
              patch.object(engine, "tg", side_effect=api):
             for _ in range(10):
-                engine.sticker("yoda")
+                engine.sticker("yoda", "A quiet moment.")
         self.assertEqual(looked_up, ["yoda"])
         self.assertEqual(len(outgoing), 10)
         self.assertTrue(all(item.startswith("yoda-") for item in outgoing))
@@ -923,13 +931,13 @@ class CommunityTests(unittest.TestCase):
         with patch.object(engine, "PACKS", {"yoda": "yoda-pack", "vader": "vader-pack"}), \
              patch.object(engine, "tg", return_value={"ok": True, "result": {"stickers": [
                  {"file_id": "yoda-file", "file_unique_id": "already-used", "is_video": True}]}}) as api:
-            self.assertEqual(engine.sticker("yoda"), 0)
+            self.assertEqual(engine.sticker("yoda", "A quiet moment."), 0)
         api.assert_called_once_with("yoda-token", "getStickerSet", {"name": "yoda-pack"})
 
     def test_missing_matching_pack_never_uses_a_legacy_unrelated_pack(self):
         with patch.object(engine, "PACKS", {"han": "han-pack", "vader": "vader-pack"}), \
              patch.object(engine, "tg") as api:
-            self.assertEqual(engine.sticker("brucewayne"), 0)
+            self.assertEqual(engine.sticker("brucewayne", "A quiet moment."), 0)
         api.assert_not_called()
 
     def test_display_name_aliases_route_to_the_correct_character_pack(self):
@@ -941,7 +949,7 @@ class CommunityTests(unittest.TestCase):
                  patch.object(engine, "TOK", {who: "character-token"}), \
                  patch.object(engine, "PACKS", {character: character + "-pack"}), \
                  patch.object(engine, "tg", return_value={"ok": True, "result": {"stickers": []}}) as api:
-                self.assertEqual(engine.sticker(who), 0)
+                self.assertEqual(engine.sticker(who, "A quiet moment."), 0)
                 api.assert_called_once_with("character-token", "getStickerSet", {"name": character + "-pack"})
 
     def test_pin_ack_is_once_even_if_the_original_message_was_answered(self):
