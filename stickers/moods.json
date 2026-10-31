@@ -126,6 +126,18 @@
         "moods": [
           "sad"
         ]
+      },
+      {
+        "file": "yoda_10.webm",
+        "moods": [
+          "serious"
+        ]
+      },
+      {
+        "file": "yoda_11.webm",
+        "moods": [
+          "serious"
+        ]
       }
     ]
   },

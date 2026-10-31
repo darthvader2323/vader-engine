@@ -270,5 +270,21 @@
     "bytes": 25166,
     "unique_frames": 57,
     "sha256": "c5b5b8a4778427161b43e63a536e828397060ce81fb54a262a257c4397791bef"
+  },
+  "yoda_10.webm": {
+    "width": 512,
+    "height": 218,
+    "seconds": 2.8,
+    "bytes": 52883,
+    "unique_frames": 56,
+    "sha256": "aa9c0dd8f5fbdf90e34364214761182d8ac7fb6f5ff939a200cc15fbef3a3173"
+  },
+  "yoda_11.webm": {
+    "width": 512,
+    "height": 222,
+    "seconds": 2.6,
+    "bytes": 29446,
+    "unique_frames": 52,
+    "sha256": "2cc624b06fce99f60ae7277080ba4aa406b906893c5eecd81d345571ec38adcd"
   }
 }

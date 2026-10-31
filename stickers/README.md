@@ -1,6 +1,6 @@
 # Vader Social video stickers
 
-Eighteen actual moving clips encoded as silent VP9 WEBM files for Telegram. Three each are Darth Vader, Yoda, Luke Skywalker, Chewbacca and Chucky; two are Batman; one is NBA YoungBoy.
+Thirty-six actual moving clips encoded as silent VP9 WEBM files for Telegram: Vader 3 (paused), Chewbacca 6, Yoda 11, Luke 5, Chucky 5, YoungBoy 1, Batman 2 and Tony Soprano 3. The first 34 ordered assets remain unchanged; two reviewed, distinct Yoda movie scenes append to the Yoda pack tail. Both new scenes are official Star Wars GIPHY uploads: a thoughtful seated council reaction and a focused standing response, reviewed as serious. Existing community-uploaded clips retain their own attributions; not every source is an official studio upload.
 
 `manifest.json` preserves the original GIPHY post and creator for each clip. These are unofficial fan sticker conversions of existing published clips, not newly generated footage or endorsements. Source artwork remains with its respective rights holders.
 
